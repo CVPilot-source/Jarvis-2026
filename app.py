@@ -102,7 +102,7 @@ HTML_PAGE = """
             border-radius: 50%;
             background: var(--accent);
             box-shadow: 0 0 10px var(--accent);
-            transition: background 0.3s;
+            transition: background 0.2s;
         }
 
         .mode-tag {
@@ -130,43 +130,30 @@ HTML_PAGE = """
         }
 
         #particleCanvas {
-            width: 310px;
-            height: 310px;
-            max-width: 82vw;
-            max-height: 82vw;
+            width: 320px;
+            height: 320px;
+            max-width: 84vw;
+            max-height: 84vw;
             display: block;
         }
 
-        .caption-area {
-            width: 100%;
-            max-width: 420px;
-            min-height: 76px;
-            max-height: 150px;
-            overflow-y: auto;
-            text-align: center;
-            font-size: 15px;
-            font-weight: 300;
-            line-height: 1.55;
-            color: rgba(255, 255, 255, 0.88);
-            padding: 0 10px;
-            margin-bottom: 10px;
+        .action-bar {
+            min-height: 44px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 12px;
             z-index: 5;
         }
 
-        .btn-row {
-            display: flex;
-            gap: 8px;
-            justify-content: center;
-            margin-top: 10px;
-        }
-
         .action-pill {
-            padding: 8px 16px;
+            padding: 9px 18px;
             border-radius: 20px;
             background: rgba(0, 245, 212, 0.14);
             border: 1px solid var(--accent);
             color: var(--accent);
-            font-size: 12.5px;
+            font-size: 13px;
             font-weight: 600;
             text-decoration: none;
             cursor: pointer;
@@ -182,13 +169,13 @@ HTML_PAGE = """
         }
 
         .circle-btn {
-            width: 44px;
-            height: 44px;
+            width: 46px;
+            height: 46px;
             border-radius: 50%;
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.1);
             color: rgba(255, 255, 255, 0.75);
-            font-size: 17px;
+            font-size: 18px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -203,7 +190,7 @@ HTML_PAGE = """
         .drawer {
             position: fixed;
             inset: 0;
-            background: rgba(0, 0, 0, 0.88);
+            background: rgba(0, 0, 0, 0.94);
             backdrop-filter: blur(22px);
             -webkit-backdrop-filter: blur(22px);
             z-index: 20;
@@ -318,16 +305,16 @@ HTML_PAGE = """
     <div class="top-minimal">
         <div class="status-dot-wrap">
             <div class="status-dot"></div>
-            <span id="stateLabel">NEO • BEREIT</span>
+            <span id="stateLabel">NEO • STANDBY</span>
         </div>
         <div class="mode-tag" id="modeBtn" onclick="toggleMode()">ARBEIT</div>
     </div>
 
-    <div class="hologram-center" onclick="toggleRecord()">
-        <canvas id="particleCanvas" width="620" height="620"></canvas>
+    <div class="hologram-center" onclick="toggleDirectRecord()">
+        <canvas id="particleCanvas" width="640" height="640"></canvas>
     </div>
 
-    <div class="caption-area" id="status">Sagen Sie „Hey Neo“ oder berühren Sie die Sphäre.</div>
+    <div class="action-bar" id="actionBar"></div>
 
     <div class="bottom-controls">
         <button class="circle-btn active" id="wakeBtn" onclick="toggleWakeWord()" title="Hey Neo">🎙️</button>
@@ -361,11 +348,11 @@ HTML_PAGE = """
     <audio id="player" playsinline></audio>
 
     <script>
-        /* --- High-Density Organic 3D Particle Sphere --- */
+        /* --- 3D Particle Sphere --- */
         const canvas = document.getElementById('particleCanvas');
         const ctx = canvas.getContext('2d');
         const particles = [];
-        const NUM_PARTICLES = 680;
+        const NUM_PARTICLES = 600;
         let audioEnergy = 0;
         let currentColor = { r: 0, g: 245, b: 212 };
 
@@ -391,21 +378,21 @@ HTML_PAGE = """
             const cy = canvas.height / 2;
             const t = Date.now() * 0.002;
 
-            let speed = 0.0045;
+            let speed = 0.005;
             let waveAmp = 4;
 
             if (currentState === 'listening') {
-                speed = 0.014;
+                speed = 0.016;
                 currentColor = { r: 0, g: 255, b: 145 };
-                waveAmp = 6 + audioEnergy * 0.65;
+                waveAmp = 6 + audioEnergy * 0.7;
             } else if (currentState === 'thinking') {
-                speed = 0.032;
+                speed = 0.036;
                 currentColor = { r: 245, g: 165, b: 20 };
                 waveAmp = 12;
             } else if (currentState === 'speaking') {
-                speed = 0.012;
+                speed = 0.014;
                 currentColor = { r: 45, g: 212, b: 255 };
-                waveAmp = 8 + Math.abs(Math.sin(t * 4.5)) * 18;
+                waveAmp = 10 + Math.abs(Math.sin(t * 5.5)) * 18;
             } else {
                 currentColor = { r: 0, g: 245, b: 212 };
                 audioEnergy *= 0.85;
@@ -416,7 +403,7 @@ HTML_PAGE = """
 
             const cosY = Math.cos(rotY), sinY = Math.sin(rotY);
             const cosX = Math.cos(rotX), sinX = Math.sin(rotX);
-            const baseR = 195;
+            const baseR = 200;
 
             for (let i = 0; i < particles.length; i++) {
                 const p = particles[i];
@@ -442,37 +429,25 @@ HTML_PAGE = """
         }
         renderSphere();
 
-        /* --- Sci-Fi Sound Effects --- */
-        function playSciFiTone(type) {
+        function playTone(freq1, freq2) {
             try {
                 const ac = new (window.AudioContext || window.webkitAudioContext)();
                 const osc = ac.createOscillator();
                 const gain = ac.createGain();
                 osc.connect(gain);
                 gain.connect(ac.destination);
-
-                if (type === 'wake') {
-                    osc.type = 'sine';
-                    osc.frequency.setValueAtTime(520, ac.currentTime);
-                    osc.frequency.exponentialRampToValueAtTime(980, ac.currentTime + 0.16);
-                    gain.gain.setValueAtTime(0.15, ac.currentTime);
-                    gain.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.22);
-                    osc.start();
-                    osc.stop(ac.currentTime + 0.23);
-                } else {
-                    osc.type = 'triangle';
-                    osc.frequency.setValueAtTime(760, ac.currentTime);
-                    osc.frequency.exponentialRampToValueAtTime(420, ac.currentTime + 0.14);
-                    gain.gain.setValueAtTime(0.12, ac.currentTime);
-                    gain.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.18);
-                    osc.start();
-                    osc.stop(ac.currentTime + 0.19);
-                }
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq1, ac.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(freq2, ac.currentTime + 0.12);
+                gain.gain.setValueAtTime(0.12, ac.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.15);
+                osc.start();
+                osc.stop(ac.currentTime + 0.16);
             } catch (e) {}
         }
 
-        /* --- App State & Storage --- */
-        const statusEl = document.getElementById('status');
+        /* --- Direct Audio-to-Audio Engine (No Transcription Overhead!) --- */
+        const actionBar = document.getElementById('actionBar');
         const stateLabel = document.getElementById('stateLabel');
         const player = document.getElementById('player');
 
@@ -486,7 +461,7 @@ HTML_PAGE = """
 
         let wakeEnabled = true;
         let wakeRec = null;
-        let keepConversationOpen = false;
+        let inConversation = false;
         let workMode = localStorage.getItem('neo_mode') || 'ARBEIT';
 
         let userMemory = JSON.parse(localStorage.getItem('neo_memory') || '[]');
@@ -494,130 +469,58 @@ HTML_PAGE = """
         let userTasks = JSON.parse(localStorage.getItem('neo_tasks') || '[]');
         let chatHistory = JSON.parse(localStorage.getItem('neo_history') || '[]');
 
-        document.body.addEventListener('touchstart', function initOnce() {
-            unlockAudio();
-            if (wakeEnabled && !wakeRec && !isRecording) startWakeListener();
-            document.body.removeEventListener('touchstart', initOnce);
-        }, { once: true });
-
-        window.addEventListener('load', () => {
-            updateBadges();
-            const params = new URLSearchParams(window.location.search);
-            if (params.get('listen') === '1') {
-                keepConversationOpen = true;
-                toggleRecord();
-            } else {
-                setState(null);
-                startWakeListener();
-            }
-        });
-
         function updateBadges() {
             localStorage.setItem('neo_memory', JSON.stringify(userMemory));
             localStorage.setItem('neo_materials', JSON.stringify(userMaterials));
             localStorage.setItem('neo_tasks', JSON.stringify(userTasks));
             localStorage.setItem('neo_mode', workMode);
-
             document.getElementById('c-mem').innerText = userMemory.length;
             document.getElementById('c-mat').innerText = userMaterials.length;
             document.getElementById('c-task').innerText = userTasks.length;
             document.getElementById('modeBtn').innerText = workMode;
         }
+        updateBadges();
 
         function toggleMode() {
             workMode = (workMode === 'ARBEIT') ? 'PRIVAT' : 'ARBEIT';
             updateBadges();
-            statusEl.innerText = workMode === 'ARBEIT'
-                ? "Arbeitsmodus aktiv, Sir."
-                : "Privatmodus aktiv, Sir.";
+            stateLabel.innerText = "NEO • " + workMode;
         }
 
         function setState(state) {
             currentState = state || 'idle';
             document.body.classList.remove('listening', 'thinking', 'speaking');
             if (state === 'listening') { document.body.classList.add('listening'); stateLabel.innerText = "NEO • HÖRT ZU"; }
-            else if (state === 'thinking') { document.body.classList.add('thinking'); stateLabel.innerText = "NEO • ANALYSIERT"; }
+            else if (state === 'thinking') { document.body.classList.add('thinking'); stateLabel.innerText = "NEO • VERARBEITET"; }
             else if (state === 'speaking') { document.body.classList.add('speaking'); stateLabel.innerText = "NEO • SPRICHT"; }
-            else { stateLabel.innerText = wakeEnabled ? "NEO • BEREIT" : "NEO • PAUSIERT"; }
+            else { stateLabel.innerText = wakeEnabled ? "NEO • STANDBY" : "NEO • PAUSIERT"; }
         }
 
-        /* --- Drawer Menu --- */
-        let activeTab = 'tools';
-        function openDrawer() {
-            document.getElementById('drawer').classList.add('open');
-            switchTab(activeTab);
-        }
-        function closeDrawer() {
-            document.getElementById('drawer').classList.remove('open');
-        }
-        function switchTab(tab) {
-            activeTab = tab;
-            document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
-            document.getElementById('tab-' + tab).classList.add('active');
-            const body = document.getElementById('drawerBody');
-
-            if (tab === 'tools') {
-                body.innerHTML = `
-                    <div class="quick-grid">
-                        <div class="q-btn" onclick="closeDrawer();quickCmd('Was steht heute an? Gib mir meinen Statusbericht mit Kalender, E-Mails, Aufgaben und Material.')">📋 Statusbericht</div>
-                        <div class="q-btn" onclick="closeDrawer();quickCmd('Wie wird das Wetter heute und morgen in Hamburg?')">🌤️ Wetter Hamburg</div>
-                        <div class="q-btn" onclick="closeDrawer();saveParking()">🅿️ Parkplatz merken</div>
-                        <div class="q-btn" onclick="closeDrawer();findParking()">🚗 Auto finden</div>
-                        <div class="q-btn" onclick="closeDrawer();quickCmd('Welche Termine habe ich heute und morgen?')">📅 Termine</div>
-                        <div class="q-btn" onclick="closeDrawer();quickCmd('Lies meine ungelesenen E-Mails vor.')">📧 E-Mails</div>
-                    </div>`;
-                return;
-            }
-
-            let list = userMemory;
-            if (tab === 'materials') list = userMaterials;
-            if (tab === 'tasks') list = userTasks;
-
-            if (list.length === 0) {
-                body.innerHTML = `<div style="color:#94A3B8; text-align:center; margin-top:30px;">Keine Einträge vorhanden, Sir.</div>`;
-                return;
-            }
-            body.innerHTML = list.map((item, idx) =>
-                `<div class="list-item"><span>${idx + 1}. ${item}</span><button class="check-btn" onclick="deleteItem('${tab}', ${idx})">✓</button></div>`
-            ).join('');
+        function unlockAudio() {
+            player.src = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA";
+            player.play().catch(() => {});
         }
 
-        function deleteItem(type, idx) {
-            if (type === 'memory') userMemory.splice(idx, 1);
-            if (type === 'materials') userMaterials.splice(idx, 1);
-            if (type === 'tasks') userTasks.splice(idx, 1);
-            updateBadges();
-            switchTab(type);
-        }
-
-        /* --- Wake Word ("Hey Neo") --- */
+        /* --- Wake Word Only in Standby --- */
         function toggleWakeWord() {
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if (!SpeechRecognition) {
-                statusEl.innerText = "Bitte berühren Sie die Sphäre zum Sprechen, Sir.";
-                return;
-            }
             wakeEnabled = !wakeEnabled;
             document.getElementById('wakeBtn').classList.toggle('active', wakeEnabled);
-
             if (wakeEnabled) {
                 unlockAudio();
+                setState(null);
                 startWakeListener();
-                setState(null);
-                statusEl.innerText = "Sagen Sie einfach „Hey Neo“, Sir.";
             } else {
-                keepConversationOpen = false;
-                if (wakeRec) { try { wakeRec.stop(); } catch(e){} wakeRec = null; }
+                inConversation = false;
+                if (wakeRec) { try { wakeRec.abort(); } catch(e){} wakeRec = null; }
                 setState(null);
-                statusEl.innerText = "Sprachaktivierung pausiert.";
             }
         }
 
         function startWakeListener() {
-            if (!wakeEnabled || isRecording) return;
+            if (!wakeEnabled || isRecording || inConversation || currentState !== 'idle') return;
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (!SpeechRecognition) return;
-            if (wakeRec) { try { wakeRec.stop(); } catch(e){} }
+            if (wakeRec) { try { wakeRec.abort(); } catch(e){} }
 
             wakeRec = new SpeechRecognition();
             wakeRec.lang = 'de-DE';
@@ -626,68 +529,30 @@ HTML_PAGE = """
 
             wakeRec.onresult = (event) => {
                 for (let i = event.resultIndex; i < event.results.length; i++) {
-                    const transcript = event.results[i][0].transcript.toLowerCase().trim();
-                    if (transcript.includes('neo') || transcript.includes('nio') || transcript.includes('heineo')) {
-                        try { wakeRec.stop(); } catch(e){}
+                    const txt = event.results[i][0].transcript.toLowerCase();
+                    if (txt.includes('neo') || txt.includes('nio') || txt.includes('heineo')) {
+                        try { wakeRec.abort(); } catch(e){}
                         wakeRec = null;
-                        keepConversationOpen = true;
-                        playSciFiTone('wake');
-                        toggleRecord();
+                        inConversation = true;
+                        playTone(540, 960);
+                        // Kurze 150ms Freigabe für Android Mikrofon-Hardware
+                        setTimeout(() => startDirectAudio(), 150);
                         return;
                     }
                 }
             };
 
-            wakeRec.onerror = () => {
-                wakeRec = null;
-                if (wakeEnabled && !isRecording) setTimeout(() => startWakeListener(), 800);
-            };
-
             wakeRec.onend = () => {
                 wakeRec = null;
-                if (wakeEnabled && !isRecording && currentState === 'idle') setTimeout(() => startWakeListener(), 350);
+                if (wakeEnabled && !isRecording && !inConversation && currentState === 'idle') {
+                    setTimeout(() => startWakeListener(), 300);
+                }
             };
 
             try { wakeRec.start(); } catch(e) { wakeRec = null; }
         }
 
-        function saveParking() {
-            if (!navigator.geolocation) { statusEl.innerText = "GPS nicht verfügbar, Sir."; return; }
-            statusEl.innerText = "Speichere GPS-Position...";
-            navigator.geolocation.getCurrentPosition(pos => {
-                const time = new Date().toLocaleTimeString('de-DE', {hour:'2-digit', minute:'2-digit'});
-                localStorage.setItem('neo_parking', JSON.stringify({lat: pos.coords.latitude, lng: pos.coords.longitude, time}));
-                statusEl.innerText = `Parkplatz um ${time} Uhr gespeichert, Sir.`;
-            }, () => { statusEl.innerText = "Standortzugriff verweigert, Sir."; });
-        }
-
-        function findParking() {
-            const p = JSON.parse(localStorage.getItem('neo_parking') || 'null');
-            if (!p) { statusEl.innerText = "Kein Parkplatz gespeichert, Sir."; return; }
-            const url = `https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}&travelmode=walking`;
-            statusEl.innerHTML = `<div>Geparkt um ${p.time} Uhr, Sir.</div><div class="btn-row"><a href="${url}" class="action-pill">Route zum Auto</a></div>`;
-            setTimeout(() => { window.location.href = url; }, 700);
-        }
-
-        function unlockAudio() {
-            player.src = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA";
-            player.play().catch(() => {});
-        }
-
-        player.onplay = () => setState('speaking');
-        player.onended = () => {
-            setState(null);
-            // Automatische Fortsetzung des Gesprächs nach der Antwort!
-            if (keepConversationOpen) {
-                setTimeout(() => {
-                    if (!isRecording) toggleRecord();
-                }, 700);
-            } else if (wakeEnabled) {
-                setTimeout(() => startWakeListener(), 1000);
-            }
-        };
-
-        function stopRecording() {
+        function stopDirectAudio() {
             if (!isRecording) return;
             isRecording = false;
             audioEnergy = 0;
@@ -697,51 +562,66 @@ HTML_PAGE = """
             if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
         }
 
-        async function toggleRecord() {
+        function toggleDirectRecord() {
             unlockAudio();
+            if (currentState === 'speaking') {
+                player.pause();
+                player.currentTime = 0;
+                setState(null);
+            }
             if (isRecording) {
-                keepConversationOpen = false;
-                stopRecording();
+                inConversation = false;
+                stopDirectAudio();
                 return;
             }
-            if (wakeRec) { try { wakeRec.stop(); } catch(e){} wakeRec = null; }
+            if (wakeRec) { try { wakeRec.abort(); } catch(e){} wakeRec = null; }
+            inConversation = true;
+            playTone(540, 960);
+            startDirectAudio();
+        }
 
+        async function startDirectAudio() {
+            if (isRecording) return;
             try {
                 activeStream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 audioChunks = [];
-                let options = {};
-                if (MediaRecorder.isTypeSupported('audio/webm')) options = { mimeType: 'audio/webm' };
-                else if (MediaRecorder.isTypeSupported('audio/mp4')) options = { mimeType: 'audio/mp4' };
+                // Niedrige Bitrate (16kbps) = winzige Audiodatei (~12KB) = blitzschneller Upload!
+                let options = { audioBitsPerSecond: 16000 };
+                if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) options.mimeType = 'audio/webm;codecs=opus';
+                else if (MediaRecorder.isTypeSupported('audio/webm')) options.mimeType = 'audio/webm';
+                else if (MediaRecorder.isTypeSupported('audio/mp4')) options.mimeType = 'audio/mp4';
 
                 mediaRecorder = new MediaRecorder(activeStream, options);
                 mediaRecorder.ondataavailable = (e) => { if (e.data && e.data.size > 0) audioChunks.push(e.data); };
 
                 mediaRecorder.onstop = async () => {
                     activeStream.getTracks().forEach(t => t.stop());
-                    const mimeType = mediaRecorder.mimeType || 'audio/webm';
+                    const mimeType = (mediaRecorder.mimeType || 'audio/webm').split(';')[0];
                     const blob = new Blob(audioChunks, { type: mimeType });
-                    if (blob.size < 1000) {
-                        // Wenn Nutzer nichts mehr sagt, Gespräch sanft beenden und wieder auf "Hey Neo" warten
-                        keepConversationOpen = false;
+
+                    if (blob.size < 900) {
+                        inConversation = false;
                         setState(null);
-                        statusEl.innerText = "Sagen Sie „Hey Neo“, wenn Sie mich brauchen, Sir.";
-                        if (wakeEnabled) setTimeout(() => startWakeListener(), 800);
+                        if (wakeEnabled) setTimeout(() => startWakeListener(), 500);
                         return;
                     }
-                    playSciFiTone('process');
-                    await sendAudio(blob, mimeType);
+                    playTone(760, 440);
+                    setState('thinking');
+                    const reader = new FileReader();
+                    reader.readAsDataURL(blob);
+                    reader.onloadend = () => {
+                        sendToNeo({ audio: reader.result.split(',')[1], mime_type: mimeType });
+                    };
                 };
 
                 mediaRecorder.start();
                 isRecording = true;
-                keepConversationOpen = true;
                 setState('listening');
-                statusEl.innerText = "Ich höre zu, Sir...";
 
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                 const source = audioCtx.createMediaStreamSource(activeStream);
                 const analyser = audioCtx.createAnalyser();
-                analyser.fftSize = 512;
+                analyser.fftSize = 256;
                 source.connect(analyser);
                 const dataArray = new Uint8Array(analyser.frequencyBinCount);
 
@@ -760,30 +640,80 @@ HTML_PAGE = """
                         hasSpoken = true;
                         if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null; }
                     } else if (hasSpoken && !silenceTimer) {
-                        silenceTimer = setTimeout(() => stopRecording(), 1450);
-                    } else if (!hasSpoken && (Date.now() - startTime > 6000)) {
-                        // Nach 6 Sekunden Stille Gespräch automatisch schließen
-                        keepConversationOpen = false;
-                        stopRecording();
+                        // Schnelle 1.1s Pause nach dem Sprechen für sofortige Antwort!
+                        silenceTimer = setTimeout(() => stopDirectAudio(), 1100);
+                    } else if (!hasSpoken && (Date.now() - startTime > 5500)) {
+                        inConversation = false;
+                        stopDirectAudio();
                     }
                     animFrame = requestAnimationFrame(monitorVolume);
                 }
                 monitorVolume();
             } catch (err) {
-                keepConversationOpen = false;
+                inConversation = false;
                 setState(null);
-                statusEl.innerText = "Mikrofon-Zugriff erforderlich, Sir.";
             }
         }
 
-        async function sendAudio(blob, mimeType) {
-            setState('thinking');
-            statusEl.innerText = "Verarbeite...";
-            const reader = new FileReader();
-            reader.readAsDataURL(blob);
-            reader.onloadend = async () => {
-                await callBackend({ audio: reader.result.split(',')[1], mime_type: mimeType });
-            };
+        player.onplay = () => setState('speaking');
+        player.onended = () => {
+            setState(null);
+            if (inConversation) {
+                setTimeout(() => startDirectAudio(), 550);
+            } else if (wakeEnabled) {
+                setTimeout(() => startWakeListener(), 800);
+            }
+        };
+
+        /* --- Drawer & Tools --- */
+        let activeTab = 'tools';
+        function openDrawer() { document.getElementById('drawer').classList.add('open'); switchTab(activeTab); }
+        function closeDrawer() { document.getElementById('drawer').classList.remove('open'); }
+        function switchTab(tab) {
+            activeTab = tab;
+            document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+            document.getElementById('tab-' + tab).classList.add('active');
+            const body = document.getElementById('drawerBody');
+
+            if (tab === 'tools') {
+                body.innerHTML = `
+                    <div class="quick-grid">
+                        <div class="q-btn" onclick="closeDrawer();quickCmd('Statusbericht für heute')">📋 Statusbericht</div>
+                        <div class="q-btn" onclick="closeDrawer();quickCmd('Wetter heute in Hamburg')">🌤️ Wetter Hamburg</div>
+                        <div class="q-btn" onclick="closeDrawer();saveParking()">🅿️ Parkplatz merken</div>
+                        <div class="q-btn" onclick="closeDrawer();findParking()">🚗 Auto finden</div>
+                        <div class="q-btn" onclick="closeDrawer();quickCmd('Termine heute und morgen')">📅 Termine</div>
+                        <div class="q-btn" onclick="closeDrawer();quickCmd('Ungelesene E-Mails')">📧 E-Mails</div>
+                    </div>`;
+                return;
+            }
+            let list = tab === 'materials' ? userMaterials : (tab === 'tasks' ? userTasks : userMemory);
+            body.innerHTML = list.length === 0
+                ? `<div style="color:#94A3B8; text-align:center; margin-top:30px;">Leer, Sir.</div>`
+                : list.map((item, idx) => `<div class="list-item"><span>${idx + 1}. ${item}</span><button class="check-btn" onclick="deleteItem('${tab}', ${idx})">✓</button></div>`).join('');
+        }
+
+        function deleteItem(type, idx) {
+            if (type === 'memory') userMemory.splice(idx, 1);
+            if (type === 'materials') userMaterials.splice(idx, 1);
+            if (type === 'tasks') userTasks.splice(idx, 1);
+            updateBadges();
+            switchTab(type);
+        }
+
+        function saveParking() {
+            if (!navigator.geolocation) return;
+            navigator.geolocation.getCurrentPosition(pos => {
+                const time = new Date().toLocaleTimeString('de-DE', {hour:'2-digit', minute:'2-digit'});
+                localStorage.setItem('neo_parking', JSON.stringify({lat: pos.coords.latitude, lng: pos.coords.longitude, time}));
+                stateLabel.innerText = "PARKPLATZ GESPEICHERT";
+            });
+        }
+
+        function findParking() {
+            const p = JSON.parse(localStorage.getItem('neo_parking') || 'null');
+            if (!p) return;
+            window.location.href = `https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}&travelmode=walking`;
         }
 
         function handleImage(event) {
@@ -791,22 +721,20 @@ HTML_PAGE = """
             if (!file) return;
             unlockAudio();
             setState('thinking');
-            statusEl.innerText = "Analysiere Bild...";
             const note = document.getElementById('msg').value.trim();
             document.getElementById('msg').value = '';
-
             const reader = new FileReader();
             reader.onload = function(e) {
                 const img = new Image();
-                img.onload = async function() {
+                img.onload = function() {
                     const canvas = document.createElement('canvas');
-                    const scale = Math.min(1, 1024 / img.width);
+                    const scale = Math.min(1, 800 / img.width);
                     canvas.width = img.width * scale;
                     canvas.height = img.height * scale;
                     canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-                    await callBackend({
-                        image: canvas.toDataURL('image/jpeg', 0.8).split(',')[1],
-                        message: note || "Analysiere dieses Bild und fasse es kurz zusammen."
+                    sendToNeo({
+                        image: canvas.toDataURL('image/jpeg', 0.7).split(',')[1],
+                        message: note || "Analysiere dieses Bild kurz."
                     });
                 };
                 img.src = e.target.result;
@@ -815,31 +743,23 @@ HTML_PAGE = """
             event.target.value = '';
         }
 
-        function quickCmd(cmd) {
-            unlockAudio();
-            setState('thinking');
-            statusEl.innerText = "Verarbeite...";
-            callBackend({ message: cmd });
-        }
-
-        async function sendText() {
+        function quickCmd(cmd) { unlockAudio(); setState('thinking'); sendToNeo({ message: cmd }); }
+        function sendText() {
             unlockAudio();
             const input = document.getElementById('msg');
             const text = input.value.trim();
             if (!text) return;
             input.value = '';
             setState('thinking');
-            statusEl.innerText = "Verarbeite...";
-            await callBackend({ message: text });
+            sendToNeo({ message: text });
         }
 
-        async function callBackend(payload) {
+        async function sendToNeo(payload) {
             payload.mode = workMode;
             payload.memory = userMemory;
             payload.materials = userMaterials;
             payload.tasks = userTasks;
-            payload.history = chatHistory.slice(-8);
-            payload.local_time = new Date().toISOString();
+            payload.history = chatHistory.slice(-4);
             payload.local_time_str = new Date().toLocaleString('de-DE');
 
             try {
@@ -852,26 +772,13 @@ HTML_PAGE = """
                 setState(null);
 
                 if (data.error) {
-                    keepConversationOpen = false;
-                    statusEl.innerText = data.error;
-                    if (wakeEnabled) setTimeout(() => startWakeListener(), 1000);
+                    inConversation = false;
+                    stateLabel.innerText = "FEHLER";
+                    if (wakeEnabled) setTimeout(() => startWakeListener(), 800);
                     return;
                 }
 
-                // Wenn Nutzer das Gespräch beendet ("Danke", "Stopp", "Fertig"), Loop beenden
-                const saidLower = (data.user_said || "").toLowerCase();
-                if (
-                    saidLower.includes("danke") ||
-                    saidLower.includes("stopp") ||
-                    saidLower.includes("fertig") ||
-                    saidLower.includes("das war's") ||
-                    saidLower.includes("das wars") ||
-                    saidLower.includes("schluss") ||
-                    data.end_conversation === true
-                ) {
-                    keepConversationOpen = false;
-                }
-
+                if (data.end_conversation) inConversation = false;
                 if (data.new_memory) userMemory.push(data.new_memory.trim());
                 if (data.delete_memory) userMemory = userMemory.filter(x => !x.toLowerCase().includes(data.delete_memory.toLowerCase()));
                 if (data.new_material) userMaterials.push(data.new_material.trim());
@@ -880,59 +787,53 @@ HTML_PAGE = """
                 if (data.delete_task) userTasks = userTasks.filter(x => !x.toLowerCase().includes(data.delete_task.toLowerCase()));
                 updateBadges();
 
-                if (data.user_said) chatHistory.push({ role: "user", text: data.user_said });
                 chatHistory.push({ role: "neo", text: data.reply });
-                localStorage.setItem('neo_history', JSON.stringify(chatHistory.slice(-12)));
+                localStorage.setItem('neo_history', JSON.stringify(chatHistory.slice(-8)));
 
-                statusEl.innerHTML = "";
-                const textDiv = document.createElement('div');
-                textDiv.innerText = data.reply;
-                statusEl.appendChild(textDiv);
-
-                const btnRow = document.createElement('div');
-                btnRow.className = "btn-row";
-
+                actionBar.innerHTML = "";
                 if (data.copy_text && data.copy_text.trim() !== "") {
                     const cBtn = document.createElement('button');
                     cBtn.className = "action-pill";
                     cBtn.innerText = "📋 Kopieren";
-                    cBtn.onclick = () => {
-                        navigator.clipboard.writeText(data.copy_text);
-                        cBtn.innerText = "✓ Kopiert";
-                    };
-                    btnRow.appendChild(cBtn);
+                    cBtn.onclick = () => { navigator.clipboard.writeText(data.copy_text); cBtn.innerText = "✓ Kopiert"; };
+                    actionBar.appendChild(cBtn);
                 }
 
                 if (data.action_url) {
-                    keepConversationOpen = false;
+                    inConversation = false;
                     const aBtn = document.createElement('a');
                     aBtn.href = data.action_url;
                     aBtn.className = "action-pill";
                     aBtn.innerText = data.action_label || "Öffnen";
                     if (data.copy_text) aBtn.onclick = () => navigator.clipboard.writeText(data.copy_text).catch(()=>{});
-                    btnRow.appendChild(aBtn);
-                    if (!data.copy_text) setTimeout(() => { window.location.href = data.action_url; }, 750);
+                    actionBar.appendChild(aBtn);
+                    if (!data.copy_text) setTimeout(() => { window.location.href = data.action_url; }, 500);
                 }
-
-                if (btnRow.children.length > 0) statusEl.appendChild(btnRow);
 
                 if (data.audio) {
                     player.src = "data:audio/mp3;base64," + data.audio;
-                    player.play().catch(() => {
-                        if (wakeEnabled) setTimeout(() => startWakeListener(), 1000);
-                    });
-                } else if (keepConversationOpen) {
-                    setTimeout(() => toggleRecord(), 700);
+                    player.play().catch(() => { if (wakeEnabled) startWakeListener(); });
+                } else if (inConversation) {
+                    setTimeout(() => startDirectAudio(), 550);
                 } else if (wakeEnabled) {
-                    setTimeout(() => startWakeListener(), 1000);
+                    setTimeout(() => startWakeListener(), 800);
                 }
             } catch (err) {
-                keepConversationOpen = false;
+                inConversation = false;
                 setState(null);
-                statusEl.innerText = "Verbindungsfehler, Sir.";
-                if (wakeEnabled) setTimeout(() => startWakeListener(), 1000);
+                if (wakeEnabled) setTimeout(() => startWakeListener(), 800);
             }
         }
+
+        window.addEventListener('load', () => {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('listen') === '1') {
+                inConversation = true;
+                startDirectAudio();
+            } else {
+                startWakeListener();
+            }
+        });
     </script>
 </body>
 </html>
@@ -949,70 +850,34 @@ def call_google_bridge(payload):
             headers={"Content-Type": "application/json"},
             method="POST"
         )
-        with urllib.request.urlopen(req, timeout=10) as resp:
+        with urllib.request.urlopen(req, timeout=5) as resp:
             return json.loads(resp.read().decode("utf-8"))
-    except Exception as e:
-        return {"status": "error", "message": str(e)}
+    except Exception:
+        return {"status": "error"}
 
-PLANNER_PROMPT = """Du bist das Routing-System von NEO (persönlicher KI-Assistent von Sir, Kundenbetreuer in der Gebäudereinigung).
-Analysiere die Anfrage (Audio, Bild oder Text) und entscheide, ob Google-Dienste benötigt werden.
-Aktuelle ISO-Zeit: {iso_time} (Lokal: {local_time})
+SYSTEM_PROMPT = """Du bist NEO, der ultraschnelle KI-Assistent von Sir (Kundenbetreuer in einer Gebäudereinigung in Hamburg).
+Aktueller Modus: {mode} | Zeit: {local_time}
+Antworte IMMER auf perfektem Deutsch, extrem präzise (maximal 1-2 kurze Sätze, ohne Sternchen/Markdown) und nenne den Nutzer 'Sir'.
 
-Verfügbare Google-Aktionen (tool_actions Liste):
-- "get_calendar": Termine, Objektbesichtigungen, Kalender oder Statusbericht abrufen
-- "add_calendar": Termin eintragen (benötigt start_iso YYYY-MM-DDTHH:MM:SS, title, duration_minutes, location)
-- "get_emails": Ungelesene E-Mails oder Statusbericht abrufen
-- "send_email": E-Mail senden (benötigt to, subject, body)
-- "find_contact": Kontakt nach Namen suchen (für WhatsApp, Anruf oder E-Mail)
+REGELN:
+1. WHATSAPP (ANDROID NATIVE INTENT — NIEMALS web.whatsapp.com!):
+   - Nummer bekannt: "https://wa.me/49176...?text=URL_ENCODED"
+   - Nummer NICHT bekannt:
+     * Modus ARBEIT: "intent://send?text=URL_ENCODED#Intent;scheme=whatsapp;package=com.whatsapp.w4b;end"
+     * Modus PRIVAT: "intent://send?text=URL_ENCODED#Intent;scheme=whatsapp;package=com.whatsapp;end"
+2. MAPS & APPS:
+   - Maps: "https://www.google.com/maps/search/?api=1&query=URL_ENCODED"
+   - Social Media Post: Text in 'copy_text', action_url auf Instagram/TikTok/LinkedIn/Facebook.
+3. LISTEN:
+   - 'new_memory' / 'delete_memory': Objekt-Codes, Notizen, Nummern
+   - 'new_material' / 'delete_material': Material/Einkauf
+   - 'new_task' / 'delete_task': Aufgaben
+4. GESPRÄCH ENDE:
+   - Bei "Danke", "Stopp", "Fertig", "Das war's": setze "end_conversation": true.
 
 Antworte NUR als JSON:
 {{
-  "user_said": "Kurze Zusammenfassung was Sir gesagt/gezeigt hat",
-  "tool_actions": [],
-  "params": {{
-    "contact_name": "",
-    "title": "",
-    "start_iso": "",
-    "duration_minutes": 60,
-    "location": "",
-    "to": "",
-    "subject": "",
-    "body": ""
-  }}
-}}
-"""
-
-FINAL_PROMPT = """Du bist NEO, der hochintelligente, ruhige und souveräne KI-Assistent von Sir (Kundenbetreuer in einer Gebäudereinigungsfirma in Hamburg, Deutschland).
-Aktueller Modus: {mode}
-Du hast Zugriff auf aktuelle Echtzeit-Informationen aus der Google-Suche (Wetter, Nachrichten, Öffnungszeiten, Wechselkurse, Fakten).
-Antworte IMMER auf perfektem Deutsch, höflich, präzise (maximal 2-3 Sätze, ohne Sternchen oder Markdown) und nenne den Nutzer 'Sir'.
-
-FÄHIGKEITEN & REGELN:
-1. KUNDENBETREUUNG & STATUSBERICHT:
-   - Wenn Sir fragt "Was steht heute an?" oder "Statusbericht": Nenne das heutige Datum, den Kalender-Status, den aktiven Modus ({mode}), offene Aufgaben (Tasks) und Materialbestellungen.
-   - Berechne Flächenleistungen (m² / Stunden / Monat) und formuliere Kunden-E-Mails oder Reklamationsberichte in 'copy_text'.
-2. WHATSAPP & ANRUFE (ANDROID NATIVE INTENT — KEIN WEB.WHATSAPP.COM):
-   - Prüfe ZUERST in Notizen UND in den Google-Kontakten nach der Telefonnummer.
-   - Nummer gefunden: Formatiere international ohne '+' oder Leerzeichen (z.B. 0176 123456 -> 49176123456) und setze action_url auf: "https://wa.me/49176123456?text=URL_ENCODED_TEXT" (oder "tel:+49176123456" für Anruf).
-   - KEINE Nummer gefunden: Verwende NIEMALS "api.whatsapp.com" oder leeres "wa.me"! Setze action_url stattdessen auf:
-     * Wenn Modus == "ARBEIT": "intent://send?text=URL_ENCODED_TEXT#Intent;scheme=whatsapp;package=com.whatsapp.w4b;end"
-     * Wenn Modus == "PRIVAT": "intent://send?text=URL_ENCODED_TEXT#Intent;scheme=whatsapp;package=com.whatsapp;end"
-3. SOCIAL MEDIA POSTS (Instagram, TikTok, LinkedIn, Facebook):
-   - Schreibe den fertigen Post inkl. Hashtags in 'copy_text', setze action_label auf "App öffnen & Posten" und action_url auf die Plattform ("https://www.instagram.com/", "https://www.tiktok.com/", "https://www.linkedin.com/", "https://www.facebook.com/").
-4. WEITERE APPS:
-   - Google Maps: "https://www.google.com/maps/search/?api=1&query=URL_ENCODED"
-   - YouTube: "https://www.youtube.com/results?search_query=URL_ENCODED"
-   - Spotify: "https://open.spotify.com/search/URL_ENCODED"
-5. LISTEN-VERWALTUNG:
-   - 'new_memory' / 'delete_memory': Objekt-Codes, Schlüsselinfos, Telefonnummern
-   - 'new_material' / 'delete_material': Reinigungsmittel, Papier, Müllbeutel, Einkaufsliste
-   - 'new_task' / 'delete_task': Aufgaben / To-Dos
-6. GESPRÄCH BEENDEN:
-   - Wenn Sir "Danke", "Stopp", "Fertig", "Das war's" oder "Gute Nacht" sagt, setze "end_conversation": true.
-
-Antworte ausschließlich als JSON:
-{{
-  "reply": "Deine gesprochene Antwort an Sir",
+  "reply": "Kurze gesprochene Antwort an Sir",
   "copy_text": "",
   "new_memory": "",
   "delete_memory": "",
@@ -1028,7 +893,7 @@ Antworte ausschließlich als JSON:
 
 async def make_voice(text):
     clean_text = text.replace("*", "").replace("#", "").replace("...", ".").strip()
-    communicate = edge_tts.Communicate(clean_text, "de-DE-FlorianMultilingualNeural")
+    communicate = edge_tts.Communicate(clean_text, "de-DE-FlorianMultilingualNeural", rate="+8%")
     audio_bytes = b""
     async for chunk in communicate.stream():
         if chunk["type"] == "audio":
@@ -1052,104 +917,48 @@ def chat():
     try:
         api_key = os.environ.get("GEMINI_API_KEY", "").strip()
         if not api_key:
-            return jsonify({"error": "GEMINI_API_KEY fehlt in Render!"}), 500
+            return jsonify({"error": "GEMINI_API_KEY fehlt!"}), 500
 
         data = request.json or {}
         mode = data.get("mode", "ARBEIT")
-        memory = data.get("memory", [])
-        materials = data.get("materials", [])
-        tasks = data.get("tasks", [])
-        history = data.get("history", [])
-        iso_time = data.get("local_time", datetime.now().isoformat())
+        msg = data.get("message", "")
         local_time_str = data.get("local_time_str", datetime.now().strftime("%d.%m.%Y %H:%M"))
 
         client = genai.Client(api_key=api_key)
+        contents = []
 
-        planner_sys = PLANNER_PROMPT.format(iso_time=iso_time, local_time=local_time_str)
-        step1_contents = []
         if "image" in data:
-            img_bytes = base64.b64decode(data["image"])
-            step1_contents.append(types.Part.from_bytes(data=img_bytes, mime_type="image/jpeg"))
-            step1_contents.append(data.get("message", "Analysiere dieses Bild."))
+            contents.append(types.Part.from_bytes(data=base64.b64decode(data["image"]), mime_type="image/jpeg"))
+            contents.append(msg or "Analysiere dieses Bild kurz.")
         elif "audio" in data:
-            audio_bytes = base64.b64decode(data["audio"])
-            mime_type = data.get("mime_type", "audio/webm").split(";")[0]
-            step1_contents.append(types.Part.from_bytes(data=audio_bytes, mime_type=mime_type))
-            step1_contents.append("Analysiere diese deutsche Sprachnachricht.")
+            contents.append(types.Part.from_bytes(data=base64.b64decode(data["audio"]), mime_type=data.get("mime_type", "audio/webm")))
+            contents.append("Höre zu und antworte direkt auf Deutsch.")
         else:
-            step1_contents.append(data.get("message", ""))
+            contents.append(msg)
 
-        step1_res = client.models.generate_content(
-            model="gemini-3.8-flash",
-            contents=step1_contents,
-            config=types.GenerateContentConfig(
-                system_instruction=planner_sys,
-                response_mime_type="application/json"
-            )
+        context_str = (
+            f"Notizen: {json.dumps(data.get('memory', []), ensure_ascii=False)} | "
+            f"Material: {json.dumps(data.get('materials', []), ensure_ascii=False)} | "
+            f"Tasks: {json.dumps(data.get('tasks', []), ensure_ascii=False)} | "
+            f"Verlauf: {json.dumps(data.get('history', []), ensure_ascii=False)}"
         )
-        plan = json.loads(step1_res.text)
-        user_said = plan.get("user_said", data.get("message", ""))
-        tool_actions = plan.get("tool_actions", [])
-        params = plan.get("params", {})
+        contents.append(context_str)
 
-        tool_results = {}
-        for act in tool_actions:
-            if act == "get_calendar":
-                tool_results["calendar"] = call_google_bridge({"action": "get_calendar"})
-            elif act == "add_calendar":
-                tool_results["calendar_add"] = call_google_bridge({
-                    "action": "add_calendar",
-                    "title": params.get("title", "Termin"),
-                    "start_iso": params.get("start_iso"),
-                    "duration_minutes": params.get("duration_minutes", 60),
-                    "location": params.get("location", "")
-                })
-            elif act == "get_emails":
-                tool_results["emails"] = call_google_bridge({"action": "get_emails"})
-            elif act == "send_email":
-                tool_results["email_send"] = call_google_bridge({
-                    "action": "send_email",
-                    "to": params.get("to"),
-                    "subject": params.get("subject", "Nachricht von NEO"),
-                    "body": params.get("body", "")
-                })
-            elif act == "find_contact":
-                tool_results["contacts"] = call_google_bridge({
-                    "action": "find_contact",
-                    "name": params.get("contact_name", "")
-                })
-
-        final_contents = []
-        if "image" in data:
-            final_contents.append(types.Part.from_bytes(data=base64.b64decode(data["image"]), mime_type="image/jpeg"))
-
-        final_context = (
-            f"Aktuelle Zeit: {local_time_str}\n"
-            f"Nutzer-Anfrage: {user_said}\n"
-            f"Objekt-Codes & Notizen: {json.dumps(memory, ensure_ascii=False)}\n"
-            f"Material- & Einkaufsliste: {json.dumps(materials, ensure_ascii=False)}\n"
-            f"Aufgabenliste (Tasks): {json.dumps(tasks, ensure_ascii=False)}\n"
-            f"Gesprächsverlauf: {json.dumps(history, ensure_ascii=False)}\n"
-            f"Google-Dienste Ergebnisse: {json.dumps(tool_results, ensure_ascii=False)}"
-        )
-        final_contents.append(final_context)
-
-        step2_res = client.models.generate_content(
-            model="gemini-3.8-flash",
-            contents=final_contents,
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=contents,
             config=types.GenerateContentConfig(
-                system_instruction=FINAL_PROMPT.format(mode=mode),
+                system_instruction=SYSTEM_PROMPT.format(mode=mode, local_time=local_time_str),
                 tools=[{"google_search": {}}],
                 response_mime_type="application/json"
             )
         )
 
-        result = json.loads(step2_res.text)
+        result = json.loads(response.text)
         reply = result.get("reply", "Zu Befehl, Sir.")
         audio_b64 = asyncio.run(make_voice(reply))
 
         return jsonify({
-            "user_said": user_said,
             "reply": reply,
             "copy_text": result.get("copy_text", ""),
             "new_memory": result.get("new_memory", ""),
