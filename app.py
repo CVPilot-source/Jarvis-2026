@@ -13,12 +13,12 @@ import edge_tts
 app = Flask(__name__)
 
 MANIFEST_JSON = {
-    "name": "JARVIS MARK X",
-    "short_name": "JARVIS",
+    "name": "NEO AI",
+    "short_name": "NEO",
     "start_url": "/",
     "display": "standalone",
-    "background_color": "#050811",
-    "theme_color": "#050811",
+    "background_color": "#020408",
+    "theme_color": "#020408",
     "icons": [
         {
             "src": "/icon.svg",
@@ -31,21 +31,17 @@ MANIFEST_JSON = {
 
 ICON_SVG = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <defs>
-    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#0B132B"/>
-      <stop offset="100%" stop-color="#04070F"/>
-    </linearGradient>
-    <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#38BDF8"/>
-      <stop offset="50%" stop-color="#818CF8"/>
-      <stop offset="100%" stop-color="#2DD4BF"/>
-    </linearGradient>
+    <radialGradient id="neoGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#00F5D4" stop-opacity="0.45"/>
+      <stop offset="70%" stop-color="#00BBF9" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#020408" stop-opacity="0"/>
+    </radialGradient>
   </defs>
-  <rect width="512" height="512" rx="120" fill="url(#bgGrad)"/>
-  <circle cx="256" cy="256" r="175" fill="none" stroke="url(#ringGrad)" stroke-width="16" stroke-opacity="0.3"/>
-  <circle cx="256" cy="256" r="145" fill="none" stroke="url(#ringGrad)" stroke-width="10" stroke-dasharray="110 40"/>
-  <circle cx="256" cy="256" r="95" fill="#091124" stroke="url(#ringGrad)" stroke-width="6"/>
-  <text x="256" y="280" font-family="sans-serif" font-size="76" font-weight="800" fill="#F8FAFC" text-anchor="middle">J</text>
+  <rect width="512" height="512" rx="120" fill="#020408"/>
+  <circle cx="256" cy="256" r="210" fill="url(#neoGlow)"/>
+  <circle cx="256" cy="256" r="155" fill="none" stroke="#00F5D4" stroke-width="6" stroke-dasharray="14 14"/>
+  <circle cx="256" cy="256" r="115" fill="none" stroke="#00BBF9" stroke-width="4" stroke-opacity="0.6"/>
+  <text x="256" y="282" font-family="sans-serif" font-size="84" font-weight="800" fill="#00F5D4" text-anchor="middle">N</text>
 </svg>"""
 
 HTML_PAGE = """
@@ -56,44 +52,34 @@ HTML_PAGE = """
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#050811">
+    <meta name="theme-color" content="#020408">
     <link rel="manifest" href="/manifest.json">
     <link rel="icon" type="image/svg+xml" href="/icon.svg">
-    <title>JARVIS MARK X</title>
+    <title>NEO AI</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
         :root {
-            --accent: #38BDF8;
-            --accent-2: #818CF8;
-            --glow: rgba(56, 189, 248, 0.35);
-            --bg-dark: #050811;
-            --glass: rgba(15, 23, 42, 0.58);
-            --glass-border: rgba(255, 255, 255, 0.09);
+            --accent: #00F5D4;
+            --accent-2: #00BBF9;
+            --glow: rgba(0, 245, 212, 0.35);
+            --bg-dark: #020408;
+            --glass: rgba(10, 16, 28, 0.65);
+            --glass-border: rgba(255, 255, 255, 0.08);
             --text-main: #F8FAFC;
             --text-muted: #94A3B8;
         }
 
-        body.theme-emerald {
-            --accent: #10B981;
-            --accent-2: #34D399;
-            --glow: rgba(16, 185, 129, 0.35);
-        }
-
-        body.theme-gold {
-            --accent: #F59E0B;
-            --accent-2: #FBBF24;
-            --glow: rgba(245, 158, 11, 0.35);
-        }
+        body.listening { --accent: #00FF88; --accent-2: #00F5D4; --glow: rgba(0, 255, 136, 0.55); }
+        body.thinking { --accent: #F59E0B; --accent-2: #FB7185; --glow: rgba(245, 158, 11, 0.55); }
+        body.speaking { --accent: #38BDF8; --accent-2: #818CF8; --glow: rgba(56, 189, 248, 0.55); }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
         body {
             margin: 0;
             background-color: var(--bg-dark);
-            background-image:
-                radial-gradient(circle at 50% 18%, var(--glow) 0%, transparent 55%),
-                radial-gradient(circle at 85% 85%, rgba(129, 140, 248, 0.12) 0%, transparent 45%);
+            background-image: radial-gradient(circle at 50% 24%, var(--glow) 0%, transparent 55%);
             color: var(--text-main);
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             display: flex;
@@ -101,12 +87,11 @@ HTML_PAGE = """
             align-items: center;
             justify-content: space-between;
             height: 100dvh;
-            padding: 14px 16px 18px;
+            padding: 12px 14px 16px;
             overflow: hidden;
-            transition: background 0.5s ease;
+            transition: background 0.4s ease;
         }
 
-        /* Top Glass Navigation Bar */
         .top-bar {
             width: 100%;
             max-width: 480px;
@@ -117,9 +102,9 @@ HTML_PAGE = """
             border: 1px solid var(--glass-border);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
-            padding: 8px 10px;
+            padding: 7px 9px;
             border-radius: 20px;
-            gap: 6px;
+            gap: 5px;
         }
 
         .pill-group {
@@ -132,9 +117,9 @@ HTML_PAGE = """
         .pill-group::-webkit-scrollbar { display: none; }
 
         .pill {
-            font-size: 11px;
+            font-size: 10.5px;
             font-weight: 600;
-            padding: 5px 10px;
+            padding: 5px 9px;
             border-radius: 14px;
             border: 1px solid var(--glass-border);
             background: rgba(255, 255, 255, 0.04);
@@ -146,126 +131,72 @@ HTML_PAGE = """
         .pill:active { transform: scale(0.95); }
 
         .pill.work-active {
-            background: linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(217, 119, 6, 0.15));
-            border-color: rgba(245, 158, 11, 0.5);
+            background: rgba(245, 158, 11, 0.18);
+            border-color: rgba(245, 158, 11, 0.45);
             color: #FCD34D;
         }
         .pill.privat-active {
-            background: linear-gradient(135deg, rgba(56, 189, 248, 0.25), rgba(129, 140, 248, 0.15));
-            border-color: rgba(56, 189, 248, 0.5);
-            color: #7DD3FC;
+            background: rgba(0, 245, 212, 0.16);
+            border-color: rgba(0, 245, 212, 0.45);
+            color: #5EEAD4;
         }
-        .pill.auto-on {
-            background: #10B981;
-            color: #04070F;
-            border-color: #10B981;
-            box-shadow: 0 0 14px rgba(16, 185, 129, 0.45);
+        .pill.wake-on {
+            background: var(--accent);
+            color: #020408;
+            border-color: var(--accent);
+            box-shadow: 0 0 14px var(--glow);
         }
 
-        /* Modern 3D Liquid Orb Core */
-        .orb-stage {
+        /* 3D Particle Sphere Stage */
+        .sphere-stage {
             position: relative;
-            width: 196px;
-            height: 196px;
+            width: 215px;
+            height: 215px;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
             user-select: none;
-            margin-top: 4px;
         }
 
-        .aurora-ring {
+        #particleCanvas {
+            width: 215px;
+            height: 215px;
+            display: block;
+        }
+
+        .neo-overlay {
             position: absolute;
-            width: 186px;
-            height: 186px;
-            border-radius: 50%;
-            background: conic-gradient(from 0deg, var(--accent), var(--accent-2), transparent, var(--accent));
-            animation: spinSlow 8s linear infinite;
-            opacity: 0.75;
-            filter: blur(4px);
-        }
-
-        .glass-ring {
-            position: absolute;
-            width: 174px;
-            height: 174px;
-            border-radius: 50%;
-            border: 1px solid rgba(255, 255, 255, 0.16);
-            background: rgba(5, 8, 17, 0.65);
-            backdrop-filter: blur(10px);
-        }
-
-        .orb-core {
-            position: relative;
-            width: 136px;
-            height: 136px;
-            border-radius: 50%;
-            background: radial-gradient(circle at 35% 30%, rgba(255,255,255,0.18), rgba(15, 23, 42, 0.9) 65%, #03060D 100%);
-            border: 1.5px solid rgba(255, 255, 255, 0.2);
-            box-shadow:
-                0 12px 35px rgba(0, 0, 0, 0.6),
-                inset 0 0 28px var(--glow),
-                0 0 30px var(--glow);
+            pointer-events: none;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            z-index: 2;
-            transition: transform 0.18s ease, box-shadow 0.3s ease;
+            text-align: center;
         }
 
-        .orb-core h1 {
+        .neo-overlay h1 {
             margin: 0;
             font-size: 20px;
             font-weight: 800;
-            letter-spacing: 3px;
-            background: linear-gradient(135deg, #FFFFFF 20%, var(--accent) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            letter-spacing: 5px;
+            color: #FFFFFF;
+            text-shadow: 0 0 18px var(--accent);
         }
 
-        .orb-core span {
+        .neo-overlay span {
             font-size: 9px;
             font-weight: 600;
             letter-spacing: 2px;
-            color: var(--text-muted);
+            color: var(--accent);
             margin-top: 4px;
             text-transform: uppercase;
         }
 
-        body.listening { --accent: #10B981; --accent-2: #34D399; --glow: rgba(16, 185, 129, 0.55); }
-        body.listening .aurora-ring { animation-duration: 2.2s; opacity: 1; }
-        body.thinking { --accent: #F59E0B; --accent-2: #F43F5E; --glow: rgba(245, 158, 11, 0.55); }
-        body.thinking .aurora-ring { animation-duration: 1.2s; opacity: 1; }
-        body.speaking .orb-core { animation: orbSpeak 0.85s ease-in-out infinite alternate; }
-
-        @keyframes spinSlow { 100% { transform: rotate(360deg); } }
-        @keyframes orbSpeak {
-            0% { transform: scale(1); }
-            100% { transform: scale(1.07); }
-        }
-
-        /* Smooth Waveform Visualizer */
-        .wave-box {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 5px;
-            height: 22px;
-            margin-top: 4px;
-        }
-        .bar {
-            width: 4px;
-            height: 5px;
-            background: linear-gradient(to top, var(--accent), var(--accent-2));
-            border-radius: 99px;
-            transition: height 0.08s ease;
-        }
         .sub-hint {
-            font-size: 11.5px;
+            font-size: 11px;
             color: var(--text-muted);
-            margin-top: 3px;
+            margin-top: -4px;
             font-weight: 500;
         }
 
@@ -274,23 +205,22 @@ HTML_PAGE = """
             flex: 1;
             width: 100%;
             max-width: 480px;
-            margin: 10px 0;
-            padding: 18px;
+            margin: 8px 0;
+            padding: 16px;
             background: var(--glass);
             border: 1px solid var(--glass-border);
-            border-radius: 24px;
+            border-radius: 22px;
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
             overflow-y: auto;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             text-align: center;
-            font-size: 15.5px;
-            font-weight: 400;
-            line-height: 1.6;
+            font-size: 15px;
+            line-height: 1.55;
             color: var(--text-main);
         }
 
@@ -301,16 +231,16 @@ HTML_PAGE = """
             align-items: center;
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.07);
-            padding: 9px 12px;
-            border-radius: 14px;
-            margin-bottom: 7px;
+            padding: 8px 12px;
+            border-radius: 13px;
+            margin-bottom: 6px;
             font-size: 13.5px;
             text-align: left;
         }
         .check-btn {
-            background: rgba(16, 185, 129, 0.2);
-            color: #34D399;
-            border: 1px solid rgba(16, 185, 129, 0.4);
+            background: rgba(0, 245, 212, 0.18);
+            color: var(--accent);
+            border: 1px solid rgba(0, 245, 212, 0.4);
             border-radius: 10px;
             padding: 4px 10px;
             font-size: 12px;
@@ -324,22 +254,22 @@ HTML_PAGE = """
             gap: 8px;
             flex-wrap: wrap;
             justify-content: center;
-            margin-top: 14px;
+            margin-top: 12px;
         }
         .primary-action {
-            padding: 11px 20px;
+            padding: 10px 18px;
             border-radius: 16px;
             background: linear-gradient(135deg, var(--accent), var(--accent-2));
-            color: #04070F;
+            color: #020408;
             font-weight: 700;
             text-decoration: none;
             font-size: 13.5px;
             border: none;
             cursor: pointer;
-            box-shadow: 0 4px 18px var(--glow);
+            box-shadow: 0 4px 16px var(--glow);
         }
         .secondary-action {
-            padding: 11px 16px;
+            padding: 10px 15px;
             border-radius: 16px;
             background: rgba(255, 255, 255, 0.08);
             border: 1px solid rgba(255, 255, 255, 0.15);
@@ -349,54 +279,48 @@ HTML_PAGE = """
             cursor: pointer;
         }
 
-        /* Quick Action Chips */
         .chips-row {
             display: flex;
             gap: 7px;
             width: 100%;
             max-width: 480px;
             overflow-x: auto;
-            padding-bottom: 9px;
+            padding-bottom: 8px;
             scrollbar-width: none;
         }
         .chips-row::-webkit-scrollbar { display: none; }
         .chip {
             white-space: nowrap;
-            padding: 7px 13px;
-            border-radius: 16px;
+            padding: 7px 12px;
+            border-radius: 15px;
             border: 1px solid var(--glass-border);
             background: var(--glass);
-            backdrop-filter: blur(12px);
             color: var(--text-main);
-            font-size: 12px;
+            font-size: 11.5px;
             font-weight: 500;
             cursor: pointer;
-            transition: all 0.2s;
         }
-        .chip:active { transform: scale(0.95); background: rgba(255,255,255,0.12); }
 
-        /* Floating Input Dock */
         .input-dock {
             display: flex;
-            gap: 8px;
+            gap: 7px;
             width: 100%;
             max-width: 480px;
             align-items: center;
             background: var(--glass);
             border: 1px solid var(--glass-border);
             backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
             padding: 6px;
             border-radius: 26px;
         }
         .icon-btn {
-            width: 40px;
-            height: 40px;
+            width: 39px;
+            height: 39px;
             border-radius: 50%;
             border: none;
             background: rgba(255, 255, 255, 0.07);
             color: var(--text-main);
-            font-size: 17px;
+            font-size: 16px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -405,7 +329,7 @@ HTML_PAGE = """
         }
         input[type="text"] {
             flex: 1;
-            padding: 10px 8px;
+            padding: 9px 8px;
             border: none;
             background: transparent;
             color: var(--text-main);
@@ -416,11 +340,11 @@ HTML_PAGE = """
         }
         input::placeholder { color: var(--text-muted); }
         .send-pill {
-            padding: 10px 18px;
+            padding: 10px 16px;
             border-radius: 20px;
             border: none;
             background: linear-gradient(135deg, var(--accent), var(--accent-2));
-            color: #04070F;
+            color: #020408;
             font-weight: 700;
             font-size: 13px;
             cursor: pointer;
@@ -432,36 +356,28 @@ HTML_PAGE = """
     <div class="top-bar">
         <div class="pill work-active" id="modeBtn" onclick="toggleMode()">🏢 Arbeit</div>
         <div class="pill-group">
-            <div class="pill" id="loopBtn" onclick="toggleLoop()">Auto: Aus</div>
+            <div class="pill" id="wakeBtn" onclick="toggleWakeWord()">🎙️ Hey Neo</div>
             <div class="pill" onclick="showList('memory')" id="memCount">Notizen · 0</div>
             <div class="pill" onclick="showList('materials')" id="matCount">Material · 0</div>
             <div class="pill" onclick="showList('tasks')" id="taskCount">Tasks · 0</div>
-            <div class="pill" onclick="cycleTheme()" title="Farbe ändern">🎨</div>
         </div>
     </div>
 
     <div style="display:flex; flex-direction:column; align-items:center;">
-        <div class="orb-stage" onclick="toggleRecord()">
-            <div class="aurora-ring"></div>
-            <div class="glass-ring"></div>
-            <div class="orb-core" id="orbCore">
-                <h1>JARVIS</h1>
+        <div class="sphere-stage" onclick="toggleRecord()">
+            <canvas id="particleCanvas" width="430" height="430"></canvas>
+            <div class="neo-overlay">
+                <h1>NEO</h1>
                 <span id="stateLabel">Bereit</span>
             </div>
         </div>
-
-        <div class="wave-box">
-            <div class="bar"></div><div class="bar"></div><div class="bar"></div>
-            <div class="bar"></div><div class="bar"></div><div class="bar"></div>
-            <div class="bar"></div><div class="bar"></div><div class="bar"></div>
-        </div>
-        <div class="sub-hint" id="hint">Tippen zum Sprechen • Kamera für Objekte & Briefe</div>
+        <div class="sub-hint" id="hint">Tippen oder „Hey Neo“ aktivieren</div>
     </div>
 
-    <div class="response-card" id="status">Guten Abend, Sir. Alle Systeme, Objekt-Notizen, Kamera und Dienste sind einsatzbereit.</div>
+    <div class="response-card" id="status">Ich bin bereit, Sir. Sagen Sie „Hey Neo“ oder tippen Sie auf die Sphäre.</div>
 
     <div class="chips-row">
-        <div class="chip" onclick="quickCmd('Gib mir mein Tagesbriefing mit Terminen, E-Mails, Aufgaben und Materialliste.')">📋 Briefing</div>
+        <div class="chip" onclick="quickCmd('Was steht heute an? Gib mir meinen Statusbericht mit Kalender, E-Mails, Aufgaben und Material.')">📋 Statusbericht</div>
         <div class="chip" onclick="saveParking()">🅿️ Parkplatz</div>
         <div class="chip" onclick="findParking()">🚗 Auto finden</div>
         <div class="chip" onclick="quickCmd('Welche Termine habe ich heute und morgen?')">📅 Termine</div>
@@ -479,11 +395,107 @@ HTML_PAGE = """
     <audio id="player" playsinline></audio>
 
     <script>
+        /* --- 3D Particle Sphere Engine --- */
+        const canvas = document.getElementById('particleCanvas');
+        const ctx = canvas.getContext('2d');
+        const particles = [];
+        const NUM_PARTICLES = 420;
+        let spherePulse = 0;
+        let currentColor = { r: 0, g: 245, b: 212 };
+
+        for (let i = 0; i < NUM_PARTICLES; i++) {
+            const phi = Math.acos(-1 + (2 * i) / NUM_PARTICLES);
+            const theta = Math.sqrt(NUM_PARTICLES * Math.PI) * phi;
+            particles.push({
+                x: Math.cos(theta) * Math.sin(phi),
+                y: Math.sin(theta) * Math.sin(phi),
+                z: Math.cos(phi),
+                size: Math.random() * 1.6 + 1.1
+            });
+        }
+
+        let angleY = 0;
+        let angleX = 0;
+        let currentState = 'idle';
+
+        function renderSphere() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2;
+
+            let speed = 0.006;
+            if (currentState === 'listening') { speed = 0.022; currentColor = { r: 0, g: 255, b: 136 }; }
+            else if (currentState === 'thinking') { speed = 0.038; currentColor = { r: 245, g: 158, b: 11 }; }
+            else if (currentState === 'speaking') {
+                speed = 0.016;
+                currentColor = { r: 56, g: 189, b: 248 };
+                spherePulse = Math.sin(Date.now() * 0.015) * 14 + 10;
+            } else {
+                currentColor = { r: 0, g: 245, b: 212 };
+                spherePulse *= 0.88;
+            }
+
+            angleY += speed;
+            angleX += speed * 0.4;
+
+            const baseRadius = 142 + spherePulse;
+            const cosY = Math.cos(angleY), sinY = Math.sin(angleY);
+            const cosX = Math.cos(angleX), sinX = Math.sin(angleX);
+
+            for (let i = 0; i < particles.length; i++) {
+                const p = particles[i];
+                let x1 = p.x * cosY - p.z * sinY;
+                let z1 = p.z * cosY + p.x * sinY;
+                let y2 = p.y * cosX - z1 * sinX;
+                let z2 = z1 * cosX + p.y * sinX;
+
+                const scale = 320 / (320 + z2 * baseRadius);
+                const px = cx + x1 * baseRadius * scale;
+                const py = cy + y2 * baseRadius * scale;
+                const alpha = Math.max(0.15, (z2 + 1.3) / 2.3);
+
+                ctx.beginPath();
+                ctx.arc(px, py, p.size * scale, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(${currentColor.r}, ${currentColor.g}, ${currentColor.b}, ${alpha.toFixed(2)})`;
+                ctx.fill();
+            }
+            requestAnimationFrame(renderSphere);
+        }
+        renderSphere();
+
+        /* --- Sci-Fi Sound Effects (Web Audio API) --- */
+        function playSciFiTone(type) {
+            try {
+                const ac = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ac.createOscillator();
+                const gain = ac.createGain();
+                osc.connect(gain);
+                gain.connect(ac.destination);
+
+                if (type === 'wake') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(520, ac.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(980, ac.currentTime + 0.16);
+                    gain.gain.setValueAtTime(0.15, ac.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.22);
+                    osc.start();
+                    osc.stop(ac.currentTime + 0.23);
+                } else {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(760, ac.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(420, ac.currentTime + 0.14);
+                    gain.gain.setValueAtTime(0.12, ac.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.18);
+                    osc.start();
+                    osc.stop(ac.currentTime + 0.19);
+                }
+            } catch (e) {}
+        }
+
+        /* --- App State & Storage --- */
         const statusEl = document.getElementById('status');
         const hintEl = document.getElementById('hint');
         const stateLabel = document.getElementById('stateLabel');
-        const orbCore = document.getElementById('orbCore');
-        const bars = document.querySelectorAll('.bar');
         const player = document.getElementById('player');
 
         let mediaRecorder = null;
@@ -494,33 +506,20 @@ HTML_PAGE = """
         let silenceTimer = null;
         let animFrame = null;
 
-        let autoLoop = false;
-        let workMode = localStorage.getItem('jarvis_mode') || 'ARBEIT';
-        let themeIdx = parseInt(localStorage.getItem('jarvis_theme') || '0');
-        const themes = ['', 'theme-emerald', 'theme-gold'];
+        let wakeEnabled = false;
+        let wakeRec = null;
+        let workMode = localStorage.getItem('neo_mode') || 'ARBEIT';
 
-        let userMemory = JSON.parse(localStorage.getItem('jarvis_memory') || '[]');
-        let userMaterials = JSON.parse(localStorage.getItem('jarvis_materials') || '[]');
-        let userTasks = JSON.parse(localStorage.getItem('jarvis_tasks') || '[]');
-        let chatHistory = JSON.parse(localStorage.getItem('jarvis_history') || '[]');
-
-        function applyTheme() {
-            document.body.classList.remove('theme-emerald', 'theme-gold');
-            if (themes[themeIdx]) document.body.classList.add(themes[themeIdx]);
-            localStorage.setItem('jarvis_theme', themeIdx);
-        }
-        applyTheme();
-
-        function cycleTheme() {
-            themeIdx = (themeIdx + 1) % themes.length;
-            applyTheme();
-        }
+        let userMemory = JSON.parse(localStorage.getItem('neo_memory') || '[]');
+        let userMaterials = JSON.parse(localStorage.getItem('neo_materials') || '[]');
+        let userTasks = JSON.parse(localStorage.getItem('neo_tasks') || '[]');
+        let chatHistory = JSON.parse(localStorage.getItem('neo_history') || '[]');
 
         function updateBadges() {
-            localStorage.setItem('jarvis_memory', JSON.stringify(userMemory));
-            localStorage.setItem('jarvis_materials', JSON.stringify(userMaterials));
-            localStorage.setItem('jarvis_tasks', JSON.stringify(userTasks));
-            localStorage.setItem('jarvis_mode', workMode);
+            localStorage.setItem('neo_memory', JSON.stringify(userMemory));
+            localStorage.setItem('neo_materials', JSON.stringify(userMaterials));
+            localStorage.setItem('neo_tasks', JSON.stringify(userTasks));
+            localStorage.setItem('neo_mode', workMode);
 
             document.getElementById('memCount').innerText = "Notizen · " + userMemory.length;
             document.getElementById('matCount').innerText = "Material · " + userMaterials.length;
@@ -541,15 +540,71 @@ HTML_PAGE = """
             workMode = (workMode === 'ARBEIT') ? 'PRIVAT' : 'ARBEIT';
             updateBadges();
             statusEl.innerText = workMode === 'ARBEIT'
-                ? "Arbeitsmodus aktiv, Sir (Objektbetreuung & Kundenservice)."
+                ? "Arbeitsmodus aktiv, Sir (Objektbetreuung & WhatsApp Business)."
                 : "Privatmodus aktiv, Sir.";
         }
 
-        function toggleLoop() {
-            autoLoop = !autoLoop;
-            const btn = document.getElementById('loopBtn');
-            btn.innerText = autoLoop ? "Auto: An" : "Auto: Aus";
-            btn.classList.toggle('auto-on', autoLoop);
+        function setState(state) {
+            currentState = state || 'idle';
+            document.body.classList.remove('listening', 'thinking', 'speaking');
+            if (state === 'listening') { document.body.classList.add('listening'); stateLabel.innerText = "Hört zu"; }
+            else if (state === 'thinking') { document.body.classList.add('thinking'); stateLabel.innerText = "Analysiert"; }
+            else if (state === 'speaking') { document.body.classList.add('speaking'); stateLabel.innerText = "Spricht"; }
+            else { stateLabel.innerText = wakeEnabled ? "Wartet auf Neo" : "Bereit"; }
+        }
+
+        /* --- Wake Word ("Hey Neo" / "Neo") --- */
+        function toggleWakeWord() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                statusEl.innerText = "Wake-Word wird auf diesem Browser nicht unterstützt, Sir. Bitte auf die Sphäre tippen.";
+                return;
+            }
+            wakeEnabled = !wakeEnabled;
+            const btn = document.getElementById('wakeBtn');
+            btn.classList.toggle('wake-on', wakeEnabled);
+
+            if (wakeEnabled) {
+                unlockAudio();
+                startWakeListener();
+                setState(null);
+                statusEl.innerText = "Sprachaktivierung aktiv, Sir. Sagen Sie einfach „Hey Neo“.";
+            } else {
+                if (wakeRec) { try { wakeRec.stop(); } catch(e){} wakeRec = null; }
+                setState(null);
+                statusEl.innerText = "Sprachaktivierung pausiert, Sir.";
+            }
+        }
+
+        function startWakeListener() {
+            if (!wakeEnabled || isRecording) return;
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) return;
+
+            wakeRec = new SpeechRecognition();
+            wakeRec.lang = 'de-DE';
+            wakeRec.continuous = true;
+            wakeRec.interimResults = true;
+
+            wakeRec.onresult = (event) => {
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    const transcript = event.results[i][0].transcript.toLowerCase();
+                    if (transcript.includes('neo')) {
+                        try { wakeRec.stop(); } catch(e){}
+                        playSciFiTone('wake');
+                        toggleRecord();
+                        break;
+                    }
+                }
+            };
+
+            wakeRec.onend = () => {
+                if (wakeEnabled && !isRecording && currentState === 'idle') {
+                    setTimeout(() => startWakeListener(), 400);
+                }
+            };
+
+            try { wakeRec.start(); } catch(e){}
         }
 
         function deleteItem(type, idx) {
@@ -585,7 +640,7 @@ HTML_PAGE = """
                 const lat = pos.coords.latitude;
                 const lng = pos.coords.longitude;
                 const time = new Date().toLocaleTimeString('de-DE', {hour:'2-digit', minute:'2-digit'});
-                localStorage.setItem('jarvis_parking', JSON.stringify({lat, lng, time}));
+                localStorage.setItem('neo_parking', JSON.stringify({lat, lng, time}));
                 statusEl.innerText = `Parkplatz um ${time} Uhr gespeichert, Sir.`;
             }, () => {
                 statusEl.innerText = "Standortzugriff verweigert, Sir.";
@@ -593,7 +648,7 @@ HTML_PAGE = """
         }
 
         function findParking() {
-            const p = JSON.parse(localStorage.getItem('jarvis_parking') || 'null');
+            const p = JSON.parse(localStorage.getItem('neo_parking') || 'null');
             if (!p) {
                 statusEl.innerText = "Es ist aktuell kein Parkplatz gespeichert, Sir.";
                 return;
@@ -601,24 +656,6 @@ HTML_PAGE = """
             const url = `https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}&travelmode=walking`;
             statusEl.innerHTML = `<div>Fahrzeug wurde um ${p.time} Uhr hier geparkt, Sir.</div><div class="btn-row"><a href="${url}" class="primary-action">Route zum Auto starten</a></div>`;
             setTimeout(() => { window.location.href = url; }, 700);
-        }
-
-        function setBars(level) {
-            bars.forEach((bar, i) => {
-                const factor = Math.sin((i + 1) * 0.7) * 0.5 + 0.7;
-                const h = Math.max(5, Math.min(20, level * factor));
-                bar.style.height = h + 'px';
-            });
-        }
-
-        function setState(state) {
-            document.body.classList.remove('listening', 'thinking', 'speaking');
-            orbCore.style.transform = '';
-            setBars(5);
-            if (state === 'listening') { document.body.classList.add('listening'); stateLabel.innerText = "Hört zu"; }
-            else if (state === 'thinking') { document.body.classList.add('thinking'); stateLabel.innerText = "Analysiert"; }
-            else if (state === 'speaking') { document.body.classList.add('speaking'); stateLabel.innerText = "Spricht"; }
-            else { stateLabel.innerText = "Bereit"; }
         }
 
         function unlockAudio() {
@@ -629,14 +666,13 @@ HTML_PAGE = """
         player.onplay = () => setState('speaking');
         player.onended = () => {
             setState(null);
-            if (autoLoop) {
-                setTimeout(() => { if (!isRecording) toggleRecord(); }, 450);
-            }
+            if (wakeEnabled) startWakeListener();
         };
 
         function stopRecording() {
             if (!isRecording) return;
             isRecording = false;
+            spherePulse = 0;
             if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null; }
             if (animFrame) { cancelAnimationFrame(animFrame); animFrame = null; }
             if (audioCtx) { audioCtx.close().catch(() => {}); audioCtx = null; }
@@ -648,6 +684,7 @@ HTML_PAGE = """
         async function toggleRecord() {
             unlockAudio();
             if (isRecording) { stopRecording(); return; }
+            if (wakeRec) { try { wakeRec.stop(); } catch(e){} }
 
             try {
                 activeStream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -665,9 +702,11 @@ HTML_PAGE = """
                     const blob = new Blob(audioChunks, { type: mimeType });
                     if (blob.size < 1000) {
                         setState(null);
-                        statusEl.innerText = "Nichts gehört, Sir.";
+                        statusEl.innerText = "Ich bin hier, Sir. Wie kann ich helfen?";
+                        if (wakeEnabled) startWakeListener();
                         return;
                     }
+                    playSciFiTone('process');
                     await sendAudio(blob, mimeType);
                 };
 
@@ -675,7 +714,6 @@ HTML_PAGE = """
                 isRecording = true;
                 setState('listening');
                 statusEl.innerText = "Ich höre zu, Sir...";
-                hintEl.innerText = "Sprechen Sie jetzt...";
 
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                 const source = audioCtx.createMediaStreamSource(activeStream);
@@ -694,9 +732,7 @@ HTML_PAGE = """
                     for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
                     const avg = sum / dataArray.length;
 
-                    const scale = 1 + Math.min(avg / 220, 0.14);
-                    orbCore.style.transform = `scale(${scale.toFixed(2)})`;
-                    setBars(5 + avg * 0.6);
+                    spherePulse = Math.min(avg * 0.75, 32);
 
                     if (avg > 14) {
                         hasSpoken = true;
@@ -731,7 +767,7 @@ HTML_PAGE = """
             if (!file) return;
             unlockAudio();
             setState('thinking');
-            statusEl.innerText = "Analysiere Bild mit JARVIS Vision, Sir...";
+            statusEl.innerText = "Analysiere Bild mit NEO Vision, Sir...";
 
             const note = document.getElementById('msg').value.trim();
             document.getElementById('msg').value = '';
@@ -793,7 +829,6 @@ HTML_PAGE = """
                 });
                 const data = await res.json();
                 setState(null);
-                hintEl.innerText = "Tippen zum Sprechen • Kamera für Objekte & Briefe";
 
                 if (data.error) {
                     statusEl.innerText = data.error;
@@ -818,8 +853,8 @@ HTML_PAGE = """
                 updateBadges();
 
                 if (data.user_said) chatHistory.push({ role: "user", text: data.user_said });
-                chatHistory.push({ role: "jarvis", text: data.reply });
-                localStorage.setItem('jarvis_history', JSON.stringify(chatHistory.slice(-12)));
+                chatHistory.push({ role: "neo", text: data.reply });
+                localStorage.setItem('neo_history', JSON.stringify(chatHistory.slice(-12)));
 
                 statusEl.innerHTML = "";
                 const textDiv = document.createElement('div');
@@ -858,7 +893,9 @@ HTML_PAGE = """
 
                 if (data.audio) {
                     player.src = "data:audio/mp3;base64," + data.audio;
-                    player.play().catch(() => {});
+                    player.play().catch(() => { if (wakeEnabled) startWakeListener(); });
+                } else if (wakeEnabled) {
+                    startWakeListener();
                 }
             } catch (err) {
                 setState(null);
@@ -886,14 +923,14 @@ def call_google_bridge(payload):
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
-PLANNER_PROMPT = """Du bist das Routing-System von J.A.R.V.I.S. (Kundenbetreuer Gebäudereinigung & Privat-Assistent).
+PLANNER_PROMPT = """Du bist das Routing-System von NEO (persönlicher KI-Assistent von Sir, Kundenbetreuer in der Gebäudereinigung).
 Analysiere die Anfrage (Audio, Bild oder Text) und entscheide, ob Google-Dienste benötigt werden.
 Aktuelle ISO-Zeit: {iso_time} (Lokal: {local_time})
 
 Verfügbare Google-Aktionen (tool_actions Liste):
-- "get_calendar": Termine, Objektbesichtigungen, Kalender oder Briefing abrufen
+- "get_calendar": Termine, Objektbesichtigungen, Kalender oder Statusbericht abrufen
 - "add_calendar": Termin eintragen (benötigt start_iso YYYY-MM-DDTHH:MM:SS, title, duration_minutes, location)
-- "get_emails": Ungelesene E-Mails oder Briefing abrufen
+- "get_emails": Ungelesene E-Mails oder Statusbericht abrufen
 - "send_email": E-Mail senden (benötigt to, subject, body)
 - "find_contact": Kontakt nach Namen suchen (für WhatsApp, Anruf oder E-Mail)
 
@@ -914,27 +951,29 @@ Antworte NUR als JSON:
 }}
 """
 
-FINAL_PROMPT = """Du bist J.A.R.V.I.S., der hochprofessionelle KI-Assistent von Sir (Kundenbetreuer in einer Gebäudereinigungsfirma in Deutschland).
+FINAL_PROMPT = """Du bist NEO, der hochintelligente, ruhige und souveräne KI-Assistent von Sir (Kundenbetreuer in einer Gebäudereinigungsfirma in Deutschland).
 Aktueller Modus: {mode}
-Antworte IMMER auf perfektem, professionellem Deutsch, höflich, präzise (maximal 2-3 Sätze, ohne Sternchen oder Markdown) und nenne den Nutzer 'Sir'.
+Antworte IMMER auf perfektem Deutsch, höflich, präzise (maximal 2-3 Sätze, ohne Sternchen oder Markdown) und nenne den Nutzer 'Sir'.
 
 FÄHIGKEITEN & REGELN:
-1. KUNDENBETREUUNG & OBJEKTE:
-   - Berechne Flächenleistungen (m² / Stunden / Monat), formuliere professionelle Kunden-E-Mails oder Reklamationsberichte für Reinigungskräfte.
-   - Wenn ein Bild gesendet wurde (z.B. Verschmutzung, Reklamation, Kassenbon, Behördenbrief): Analysiere es präzise. Bei Reklamationen formuliere einen fertigen Berichtstext in 'copy_text'.
-2. WHATSAPP & ANRUFE (OHNE FEHLER):
-   - Prüfe ZUERST im Gedächtnis (Notizen) UND in den Google-Kontakten nach der Telefonnummer.
+1. KUNDENBETREUUNG & STATUSBERICHT:
+   - Wenn Sir fragt "Was steht heute an?" oder "Statusbericht": Nenne das heutige Datum, den Kalender-Status, den aktiven Modus ({mode}), offene Aufgaben (Tasks) und Materialbestellungen.
+   - Berechne Flächenleistungen (m² / Stunden / Monat) und formuliere Kunden-E-Mails oder Reklamationsberichte in 'copy_text'.
+2. WHATSAPP & ANRUFE (ANDROID NATIVE INTENT — KEIN WEB.WHATSAPP.COM):
+   - Prüfe ZUERST in Notizen UND in den Google-Kontakten nach der Telefonnummer.
    - Nummer gefunden: Formatiere international ohne '+' oder Leerzeichen (z.B. 0176 123456 -> 49176123456) und setze action_url auf: "https://wa.me/49176123456?text=URL_ENCODED_TEXT" (oder "tel:+49176123456" für Anruf).
-   - KEINE Nummer gefunden: Öffne NIEMALS "https://wa.me/" leer! Setze action_url auf "https://api.whatsapp.com/send?text=URL_ENCODED_TEXT" (falls Text vorhanden) oder lasse action_url leer und frage Sir nach der Nummer zum Speichern.
+   - KEINE Nummer gefunden: Verwende NIEMALS "api.whatsapp.com" oder leeres "wa.me"! Setze action_url stattdessen auf:
+     * Wenn Modus == "ARBEIT": "intent://send?text=URL_ENCODED_TEXT#Intent;scheme=whatsapp;package=com.whatsapp.w4b;end"
+     * Wenn Modus == "PRIVAT": "intent://send?text=URL_ENCODED_TEXT#Intent;scheme=whatsapp;package=com.whatsapp;end"
 3. SOCIAL MEDIA POSTS (Instagram, TikTok, LinkedIn, Facebook):
-   - Wenn Sir einen Post erstellen möchte: Schreibe den fertigen Post inkl. Hashtags in 'copy_text', setze action_label auf "App öffnen & Posten" und action_url auf die passende Plattform ("https://www.instagram.com/", "https://www.tiktok.com/", "https://www.linkedin.com/", "https://www.facebook.com/").
+   - Schreibe den fertigen Post inkl. Hashtags in 'copy_text', setze action_label auf "App öffnen & Posten" und action_url auf die Plattform ("https://www.instagram.com/", "https://www.tiktok.com/", "https://www.linkedin.com/", "https://www.facebook.com/").
 4. WEITERE APPS:
    - Google Maps: "https://www.google.com/maps/search/?api=1&query=URL_ENCODED"
    - YouTube: "https://www.youtube.com/results?search_query=URL_ENCODED"
    - Spotify: "https://open.spotify.com/search/URL_ENCODED"
-5. LISTEN-VERWALTUNG (nur ausfüllen wenn Sir etwas speichern oder löschen möchte):
-   - 'new_memory' / 'delete_memory': Objekt-Codes, Schlüsselinfos, Telefonnummern, Kundeninfos
-   - 'new_material' / 'delete_material': Reinigungsmittel, Papier, Müllbeutel oder Einkaufsliste
+5. LISTEN-VERWALTUNG:
+   - 'new_memory' / 'delete_memory': Objekt-Codes, Schlüsselinfos, Telefonnummern
+   - 'new_material' / 'delete_material': Reinigungsmittel, Papier, Müllbeutel, Einkaufsliste
    - 'new_task' / 'delete_task': Aufgaben / To-Dos
 
 Antworte ausschließlich als JSON:
@@ -1036,7 +1075,7 @@ def chat():
                 tool_results["email_send"] = call_google_bridge({
                     "action": "send_email",
                     "to": params.get("to"),
-                    "subject": params.get("subject", "Nachricht von JARVIS"),
+                    "subject": params.get("subject", "Nachricht von NEO"),
                     "body": params.get("body", "")
                 })
             elif act == "find_contact":
