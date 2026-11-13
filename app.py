@@ -13,12 +13,12 @@ import edge_tts
 app = Flask(__name__)
 
 MANIFEST_JSON = {
-    "name": "JARVIS MARK IX ULTIMATE",
+    "name": "JARVIS MARK X",
     "short_name": "JARVIS",
     "start_url": "/",
     "display": "standalone",
-    "background_color": "#030712",
-    "theme_color": "#030712",
+    "background_color": "#050811",
+    "theme_color": "#050811",
     "icons": [
         {
             "src": "/icon.svg",
@@ -31,19 +31,21 @@ MANIFEST_JSON = {
 
 ICON_SVG = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <defs>
-    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#00F0FF" stop-opacity="0.5"/>
-      <stop offset="70%" stop-color="#0284C7" stop-opacity="0.15"/>
-      <stop offset="100%" stop-color="#030712" stop-opacity="0"/>
-    </radialGradient>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0B132B"/>
+      <stop offset="100%" stop-color="#04070F"/>
+    </linearGradient>
+    <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8"/>
+      <stop offset="50%" stop-color="#818CF8"/>
+      <stop offset="100%" stop-color="#2DD4BF"/>
+    </linearGradient>
   </defs>
-  <rect width="512" height="512" rx="115" fill="#030712"/>
-  <circle cx="256" cy="256" r="220" fill="url(#glow)"/>
-  <circle cx="256" cy="256" r="188" fill="none" stroke="#00F0FF" stroke-width="6" stroke-opacity="0.35"/>
-  <circle cx="256" cy="256" r="160" fill="none" stroke="#00F0FF" stroke-width="14" stroke-dasharray="65 25 15 25"/>
-  <circle cx="256" cy="256" r="120" fill="none" stroke="#38BDF8" stroke-width="6" stroke-dasharray="12 12"/>
-  <circle cx="256" cy="256" r="82" fill="#061626" stroke="#00F0FF" stroke-width="5"/>
-  <text x="256" y="276" font-family="sans-serif" font-size="64" font-weight="800" fill="#00F0FF" text-anchor="middle">J</text>
+  <rect width="512" height="512" rx="120" fill="url(#bgGrad)"/>
+  <circle cx="256" cy="256" r="175" fill="none" stroke="url(#ringGrad)" stroke-width="16" stroke-opacity="0.3"/>
+  <circle cx="256" cy="256" r="145" fill="none" stroke="url(#ringGrad)" stroke-width="10" stroke-dasharray="110 40"/>
+  <circle cx="256" cy="256" r="95" fill="#091124" stroke="url(#ringGrad)" stroke-width="6"/>
+  <text x="256" y="280" font-family="sans-serif" font-size="76" font-weight="800" fill="#F8FAFC" text-anchor="middle">J</text>
 </svg>"""
 
 HTML_PAGE = """
@@ -54,279 +56,347 @@ HTML_PAGE = """
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#030712">
+    <meta name="theme-color" content="#050811">
     <link rel="manifest" href="/manifest.json">
     <link rel="icon" type="image/svg+xml" href="/icon.svg">
-    <title>JARVIS MARK IX</title>
+    <title>JARVIS MARK X</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
         :root {
-            --primary: #00F0FF;
-            --glow: rgba(0, 240, 255, 0.45);
-            --bg: #030712;
+            --accent: #38BDF8;
+            --accent-2: #818CF8;
+            --glow: rgba(56, 189, 248, 0.35);
+            --bg-dark: #050811;
+            --glass: rgba(15, 23, 42, 0.58);
+            --glass-border: rgba(255, 255, 255, 0.09);
+            --text-main: #F8FAFC;
+            --text-muted: #94A3B8;
         }
+
+        body.theme-emerald {
+            --accent: #10B981;
+            --accent-2: #34D399;
+            --glow: rgba(16, 185, 129, 0.35);
+        }
+
+        body.theme-gold {
+            --accent: #F59E0B;
+            --accent-2: #FBBF24;
+            --glow: rgba(245, 158, 11, 0.35);
+        }
+
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
         body {
             margin: 0;
-            background-color: var(--bg);
-            background-image: 
-                radial-gradient(circle at 50% 25%, rgba(0, 240, 255, 0.13) 0%, transparent 55%),
-                linear-gradient(rgba(0, 240, 255, 0.04) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0, 240, 255, 0.04) 1px, transparent 1px);
-            background-size: 100% 100%, 32px 32px, 32px 32px;
-            color: var(--primary);
-            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg-dark);
+            background-image:
+                radial-gradient(circle at 50% 18%, var(--glow) 0%, transparent 55%),
+                radial-gradient(circle at 85% 85%, rgba(129, 140, 248, 0.12) 0%, transparent 45%);
+            color: var(--text-main);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: space-between;
             height: 100dvh;
-            padding: 12px 14px 16px;
+            padding: 14px 16px 18px;
             overflow: hidden;
+            transition: background 0.5s ease;
         }
-        .hud-top {
+
+        /* Top Glass Navigation Bar */
+        .top-bar {
             width: 100%;
             max-width: 480px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 10px;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            border-bottom: 1px solid rgba(0, 240, 255, 0.22);
-            padding-bottom: 8px;
-            gap: 4px;
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            padding: 8px 10px;
+            border-radius: 20px;
+            gap: 6px;
         }
-        .top-actions { display: flex; gap: 5px; flex-wrap: wrap; justify-content: flex-end; }
-        .badge-btn {
-            font-size: 9.5px;
-            padding: 4px 8px;
-            border: 1px solid rgba(0, 240, 255, 0.45);
-            background: rgba(0, 240, 255, 0.08);
-            border-radius: 12px;
-            cursor: pointer;
-            color: var(--primary);
+
+        .pill-group {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+        .pill-group::-webkit-scrollbar { display: none; }
+
+        .pill {
+            font-size: 11px;
             font-weight: 600;
+            padding: 5px 10px;
+            border-radius: 14px;
+            border: 1px solid var(--glass-border);
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text-main);
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s ease;
         }
-        .badge-btn.active {
-            background: #00FF88;
-            color: #030712;
-            border-color: #00FF88;
-            box-shadow: 0 0 10px rgba(0, 255, 136, 0.4);
+        .pill:active { transform: scale(0.95); }
+
+        .pill.work-active {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(217, 119, 6, 0.15));
+            border-color: rgba(245, 158, 11, 0.5);
+            color: #FCD34D;
         }
-        .badge-btn.work {
-            background: rgba(255, 165, 0, 0.2);
-            border-color: #FFA500;
-            color: #FFD280;
+        .pill.privat-active {
+            background: linear-gradient(135deg, rgba(56, 189, 248, 0.25), rgba(129, 140, 248, 0.15));
+            border-color: rgba(56, 189, 248, 0.5);
+            color: #7DD3FC;
         }
-        .core-wrapper {
+        .pill.auto-on {
+            background: #10B981;
+            color: #04070F;
+            border-color: #10B981;
+            box-shadow: 0 0 14px rgba(16, 185, 129, 0.45);
+        }
+
+        /* Modern 3D Liquid Orb Core */
+        .orb-stage {
             position: relative;
-            width: 185px;
-            height: 185px;
+            width: 196px;
+            height: 196px;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
             user-select: none;
-            margin-top: 2px;
+            margin-top: 4px;
         }
-        .ring-outer {
+
+        .aurora-ring {
             position: absolute;
-            width: 182px;
-            height: 182px;
+            width: 186px;
+            height: 186px;
             border-radius: 50%;
-            border: 2px dashed rgba(0, 240, 255, 0.45);
-            animation: spinRight 24s linear infinite;
+            background: conic-gradient(from 0deg, var(--accent), var(--accent-2), transparent, var(--accent));
+            animation: spinSlow 8s linear infinite;
+            opacity: 0.75;
+            filter: blur(4px);
         }
-        .ring-mid {
+
+        .glass-ring {
             position: absolute;
-            width: 158px;
-            height: 158px;
+            width: 174px;
+            height: 174px;
             border-radius: 50%;
-            border: 4px solid transparent;
-            border-top-color: var(--primary);
-            border-bottom-color: var(--primary);
-            box-shadow: 0 0 22px var(--glow);
-            animation: spinLeft 10s linear infinite;
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            background: rgba(5, 8, 17, 0.65);
+            backdrop-filter: blur(10px);
         }
-        .ring-inner {
-            position: absolute;
-            width: 134px;
-            height: 134px;
-            border-radius: 50%;
-            border: 2px dotted rgba(0, 240, 255, 0.75);
-            animation: spinRight 16s linear infinite;
-        }
-        .core-center {
+
+        .orb-core {
             position: relative;
-            width: 112px;
-            height: 112px;
+            width: 136px;
+            height: 136px;
             border-radius: 50%;
-            background: radial-gradient(circle, rgba(0, 240, 255, 0.24) 0%, rgba(3, 7, 18, 0.94) 75%);
-            border: 2px solid var(--primary);
-            box-shadow: 0 0 28px var(--glow), inset 0 0 20px var(--glow);
+            background: radial-gradient(circle at 35% 30%, rgba(255,255,255,0.18), rgba(15, 23, 42, 0.9) 65%, #03060D 100%);
+            border: 1.5px solid rgba(255, 255, 255, 0.2);
+            box-shadow:
+                0 12px 35px rgba(0, 0, 0, 0.6),
+                inset 0 0 28px var(--glow),
+                0 0 30px var(--glow);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             z-index: 2;
-            transition: all 0.2s;
+            transition: transform 0.18s ease, box-shadow 0.3s ease;
         }
-        .core-center h1 {
+
+        .orb-core h1 {
             margin: 0;
-            font-size: 18px;
+            font-size: 20px;
             font-weight: 800;
             letter-spacing: 3px;
-            text-shadow: 0 0 12px var(--primary);
+            background: linear-gradient(135deg, #FFFFFF 20%, var(--accent) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
-        .core-center span {
-            font-size: 7px;
-            letter-spacing: 1.8px;
-            opacity: 0.85;
-            margin-top: 3px;
-        }
-        body.listening { --primary: #00FF88; --glow: rgba(0, 255, 136, 0.55); }
-        body.listening .ring-mid { animation-duration: 3s; }
-        body.thinking { --primary: #FF9500; --glow: rgba(255, 149, 0, 0.55); }
-        body.thinking .ring-mid { animation-duration: 1.4s; }
-        body.speaking .core-center { animation: pulseSpeak 0.85s ease-in-out infinite alternate; }
 
-        @keyframes spinRight { 100% { transform: rotate(360deg); } }
-        @keyframes spinLeft { 100% { transform: rotate(-360deg); } }
-        @keyframes pulseSpeak {
-            0% { transform: scale(1); box-shadow: 0 0 25px var(--glow); }
-            100% { transform: scale(1.07); box-shadow: 0 0 48px var(--glow); }
+        .orb-core span {
+            font-size: 9px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            color: var(--text-muted);
+            margin-top: 4px;
+            text-transform: uppercase;
         }
-        .visualizer {
+
+        body.listening { --accent: #10B981; --accent-2: #34D399; --glow: rgba(16, 185, 129, 0.55); }
+        body.listening .aurora-ring { animation-duration: 2.2s; opacity: 1; }
+        body.thinking { --accent: #F59E0B; --accent-2: #F43F5E; --glow: rgba(245, 158, 11, 0.55); }
+        body.thinking .aurora-ring { animation-duration: 1.2s; opacity: 1; }
+        body.speaking .orb-core { animation: orbSpeak 0.85s ease-in-out infinite alternate; }
+
+        @keyframes spinSlow { 100% { transform: rotate(360deg); } }
+        @keyframes orbSpeak {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.07); }
+        }
+
+        /* Smooth Waveform Visualizer */
+        .wave-box {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 4px;
-            height: 18px;
+            gap: 5px;
+            height: 22px;
             margin-top: 4px;
         }
         .bar {
-            width: 3.5px;
+            width: 4px;
             height: 5px;
-            background: var(--primary);
-            border-radius: 3px;
-            box-shadow: 0 0 8px var(--primary);
+            background: linear-gradient(to top, var(--accent), var(--accent-2));
+            border-radius: 99px;
             transition: height 0.08s ease;
         }
-        .hint {
-            font-size: 10.5px;
-            opacity: 0.72;
-            margin-top: 2px;
-            text-align: center;
+        .sub-hint {
+            font-size: 11.5px;
+            color: var(--text-muted);
+            margin-top: 3px;
+            font-weight: 500;
         }
-        .hud-panel {
+
+        /* Glass Response Card */
+        .response-card {
             flex: 1;
             width: 100%;
-            max-width: 460px;
-            margin: 8px 0;
-            padding: 14px;
-            background: rgba(11, 19, 36, 0.72);
-            border: 1px solid rgba(0, 240, 255, 0.25);
-            border-left: 3px solid var(--primary);
-            border-right: 3px solid var(--primary);
-            border-radius: 14px;
-            backdrop-filter: blur(8px);
+            max-width: 480px;
+            margin: 10px 0;
+            padding: 18px;
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
             overflow-y: auto;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             text-align: center;
-            font-size: 14.5px;
-            line-height: 1.5;
-            color: #E0F7FA;
+            font-size: 15.5px;
+            font-weight: 400;
+            line-height: 1.6;
+            color: var(--text-main);
         }
-        .list-item {
+
+        .list-card-item {
             width: 100%;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: rgba(0, 240, 255, 0.08);
-            padding: 7px 10px;
-            border-radius: 8px;
-            margin-bottom: 6px;
-            font-size: 13px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            padding: 9px 12px;
+            border-radius: 14px;
+            margin-bottom: 7px;
+            font-size: 13.5px;
             text-align: left;
         }
-        .del-btn {
-            background: #FF4D4D;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            padding: 3px 8px;
-            font-size: 11px;
+        .check-btn {
+            background: rgba(16, 185, 129, 0.2);
+            color: #34D399;
+            border: 1px solid rgba(16, 185, 129, 0.4);
+            border-radius: 10px;
+            padding: 4px 10px;
+            font-size: 12px;
+            font-weight: 700;
             cursor: pointer;
-            margin-left: 8px;
+            margin-left: 10px;
         }
+
         .btn-row {
             display: flex;
             gap: 8px;
             flex-wrap: wrap;
             justify-content: center;
-            margin-top: 10px;
+            margin-top: 14px;
         }
-        .action-btn {
-            padding: 10px 18px;
-            border-radius: 25px;
-            background: #00FF88;
-            color: #030712;
-            font-weight: 800;
+        .primary-action {
+            padding: 11px 20px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            color: #04070F;
+            font-weight: 700;
             text-decoration: none;
-            font-size: 13px;
-            display: inline-block;
+            font-size: 13.5px;
             border: none;
             cursor: pointer;
-            box-shadow: 0 0 18px rgba(0, 255, 136, 0.45);
+            box-shadow: 0 4px 18px var(--glow);
         }
-        .copy-btn {
-            padding: 10px 16px;
-            border-radius: 25px;
-            background: #38BDF8;
-            color: #030712;
-            font-weight: 800;
-            font-size: 13px;
-            border: none;
+        .secondary-action {
+            padding: 11px 16px;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #F8FAFC;
+            font-weight: 600;
+            font-size: 13.5px;
             cursor: pointer;
         }
-        .quick-apps {
+
+        /* Quick Action Chips */
+        .chips-row {
             display: flex;
-            gap: 6px;
+            gap: 7px;
             width: 100%;
-            max-width: 460px;
+            max-width: 480px;
             overflow-x: auto;
-            padding-bottom: 7px;
+            padding-bottom: 9px;
             scrollbar-width: none;
         }
-        .quick-apps::-webkit-scrollbar { display: none; }
+        .chips-row::-webkit-scrollbar { display: none; }
         .chip {
             white-space: nowrap;
-            padding: 6px 11px;
+            padding: 7px 13px;
             border-radius: 16px;
-            border: 1px solid rgba(0, 240, 255, 0.35);
-            background: rgba(11, 19, 36, 0.85);
-            color: #00F0FF;
-            font-size: 11.5px;
+            border: 1px solid var(--glass-border);
+            background: var(--glass);
+            backdrop-filter: blur(12px);
+            color: var(--text-main);
+            font-size: 12px;
+            font-weight: 500;
             cursor: pointer;
+            transition: all 0.2s;
         }
-        .input-box {
+        .chip:active { transform: scale(0.95); background: rgba(255,255,255,0.12); }
+
+        /* Floating Input Dock */
+        .input-dock {
             display: flex;
-            gap: 6px;
+            gap: 8px;
             width: 100%;
-            max-width: 460px;
+            max-width: 480px;
             align-items: center;
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            padding: 6px;
+            border-radius: 26px;
         }
-        .cam-btn {
-            width: 44px;
-            height: 44px;
+        .icon-btn {
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
-            border: 1px solid rgba(0, 240, 255, 0.45);
-            background: rgba(11, 19, 36, 0.9);
-            color: #00F0FF;
-            font-size: 18px;
+            border: none;
+            background: rgba(255, 255, 255, 0.07);
+            color: var(--text-main);
+            font-size: 17px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -335,75 +405,75 @@ HTML_PAGE = """
         }
         input[type="text"] {
             flex: 1;
-            padding: 12px 14px;
-            border-radius: 25px;
-            border: 1px solid rgba(0, 240, 255, 0.45);
-            background: rgba(11, 19, 36, 0.88);
-            color: white;
+            padding: 10px 8px;
+            border: none;
+            background: transparent;
+            color: var(--text-main);
             font-size: 15px;
+            font-family: inherit;
             outline: none;
             min-width: 0;
         }
-        button.send-btn {
-            padding: 12px 16px;
-            border-radius: 25px;
+        input::placeholder { color: var(--text-muted); }
+        .send-pill {
+            padding: 10px 18px;
+            border-radius: 20px;
             border: none;
-            background: var(--primary);
-            color: #030712;
-            font-weight: 800;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            color: #04070F;
+            font-weight: 700;
             font-size: 13px;
             cursor: pointer;
-            box-shadow: 0 0 14px var(--glow);
             flex-shrink: 0;
         }
     </style>
 </head>
 <body>
-    <div class="hud-top">
-        <div class="badge-btn work" id="modeBtn" onclick="toggleMode()">🏢 ARBEIT</div>
-        <div class="top-actions">
-            <div class="badge-btn" id="loopBtn" onclick="toggleLoop()">AUTO: AUS</div>
-            <div class="badge-btn" onclick="showList('memory')" id="memCount">NOTIZEN: 0</div>
-            <div class="badge-btn" onclick="showList('materials')" id="matCount">MATERIAL: 0</div>
-            <div class="badge-btn" onclick="showList('tasks')" id="taskCount">TASKS: 0</div>
+    <div class="top-bar">
+        <div class="pill work-active" id="modeBtn" onclick="toggleMode()">🏢 Arbeit</div>
+        <div class="pill-group">
+            <div class="pill" id="loopBtn" onclick="toggleLoop()">Auto: Aus</div>
+            <div class="pill" onclick="showList('memory')" id="memCount">Notizen · 0</div>
+            <div class="pill" onclick="showList('materials')" id="matCount">Material · 0</div>
+            <div class="pill" onclick="showList('tasks')" id="taskCount">Tasks · 0</div>
+            <div class="pill" onclick="cycleTheme()" title="Farbe ändern">🎨</div>
         </div>
     </div>
 
     <div style="display:flex; flex-direction:column; align-items:center;">
-        <div class="core-wrapper" onclick="toggleRecord()">
-            <div class="ring-outer"></div>
-            <div class="ring-mid"></div>
-            <div class="ring-inner"></div>
-            <div class="core-center" id="coreCenter">
+        <div class="orb-stage" onclick="toggleRecord()">
+            <div class="aurora-ring"></div>
+            <div class="glass-ring"></div>
+            <div class="orb-core" id="orbCore">
                 <h1>JARVIS</h1>
-                <span>MARK IX PRO</span>
+                <span id="stateLabel">Bereit</span>
             </div>
         </div>
 
-        <div class="visualizer">
+        <div class="wave-box">
             <div class="bar"></div><div class="bar"></div><div class="bar"></div>
             <div class="bar"></div><div class="bar"></div><div class="bar"></div>
             <div class="bar"></div><div class="bar"></div><div class="bar"></div>
         </div>
-        <div class="hint" id="hint">Tippen & sprechen • Kamera für Objekte/Briefe</div>
+        <div class="sub-hint" id="hint">Tippen zum Sprechen • Kamera für Objekte & Briefe</div>
     </div>
 
-    <div class="hud-panel" id="status">Bereit, Sir. Objekt-Codes, Materialbestellungen, Termine, Kamera und WhatsApp sind aktiv.</div>
+    <div class="response-card" id="status">Guten Abend, Sir. Alle Systeme, Objekt-Notizen, Kamera und Dienste sind einsatzbereit.</div>
 
-    <div class="quick-apps">
+    <div class="chips-row">
         <div class="chip" onclick="quickCmd('Gib mir mein Tagesbriefing mit Terminen, E-Mails, Aufgaben und Materialliste.')">📋 Briefing</div>
-        <div class="chip" onclick="saveParking()">🅿️ Parkplatz merken</div>
+        <div class="chip" onclick="saveParking()">🅿️ Parkplatz</div>
         <div class="chip" onclick="findParking()">🚗 Auto finden</div>
         <div class="chip" onclick="quickCmd('Welche Termine habe ich heute und morgen?')">📅 Termine</div>
         <div class="chip" onclick="quickCmd('Lies meine ungelesenen E-Mails vor.')">📧 E-Mails</div>
         <div class="chip" onclick="quickCmd('Öffne Google Maps')">🗺️ Maps</div>
     </div>
 
-    <div class="input-box">
-        <button class="cam-btn" onclick="document.getElementById('camInput').click()" title="Kamera / Foto">📷</button>
+    <div class="input-dock">
+        <button class="icon-btn" onclick="document.getElementById('camInput').click()" title="Kamera">📷</button>
         <input type="file" id="camInput" accept="image/*" capture="environment" style="display:none" onchange="handleImage(event)">
         <input type="text" id="msg" placeholder="Befehl, Objekt-Code oder Notiz..." onkeypress="if(event.key==='Enter') sendText()">
-        <button class="send-btn" onclick="sendText()">SEND</button>
+        <button class="send-pill" onclick="sendText()">Senden</button>
     </div>
 
     <audio id="player" playsinline></audio>
@@ -411,7 +481,8 @@ HTML_PAGE = """
     <script>
         const statusEl = document.getElementById('status');
         const hintEl = document.getElementById('hint');
-        const coreCenter = document.getElementById('coreCenter');
+        const stateLabel = document.getElementById('stateLabel');
+        const orbCore = document.getElementById('orbCore');
         const bars = document.querySelectorAll('.bar');
         const player = document.getElementById('player');
 
@@ -425,10 +496,25 @@ HTML_PAGE = """
 
         let autoLoop = false;
         let workMode = localStorage.getItem('jarvis_mode') || 'ARBEIT';
+        let themeIdx = parseInt(localStorage.getItem('jarvis_theme') || '0');
+        const themes = ['', 'theme-emerald', 'theme-gold'];
+
         let userMemory = JSON.parse(localStorage.getItem('jarvis_memory') || '[]');
         let userMaterials = JSON.parse(localStorage.getItem('jarvis_materials') || '[]');
         let userTasks = JSON.parse(localStorage.getItem('jarvis_tasks') || '[]');
         let chatHistory = JSON.parse(localStorage.getItem('jarvis_history') || '[]');
+
+        function applyTheme() {
+            document.body.classList.remove('theme-emerald', 'theme-gold');
+            if (themes[themeIdx]) document.body.classList.add(themes[themeIdx]);
+            localStorage.setItem('jarvis_theme', themeIdx);
+        }
+        applyTheme();
+
+        function cycleTheme() {
+            themeIdx = (themeIdx + 1) % themes.length;
+            applyTheme();
+        }
 
         function updateBadges() {
             localStorage.setItem('jarvis_memory', JSON.stringify(userMemory));
@@ -436,17 +522,17 @@ HTML_PAGE = """
             localStorage.setItem('jarvis_tasks', JSON.stringify(userTasks));
             localStorage.setItem('jarvis_mode', workMode);
 
-            document.getElementById('memCount').innerText = "NOTIZEN: " + userMemory.length;
-            document.getElementById('matCount').innerText = "MATERIAL: " + userMaterials.length;
-            document.getElementById('taskCount').innerText = "TASKS: " + userTasks.length;
+            document.getElementById('memCount').innerText = "Notizen · " + userMemory.length;
+            document.getElementById('matCount').innerText = "Material · " + userMaterials.length;
+            document.getElementById('taskCount').innerText = "Tasks · " + userTasks.length;
 
             const modeBtn = document.getElementById('modeBtn');
             if (workMode === 'ARBEIT') {
-                modeBtn.innerText = "🏢 ARBEIT";
-                modeBtn.classList.add('work');
+                modeBtn.innerText = "🏢 Arbeit";
+                modeBtn.className = "pill work-active";
             } else {
-                modeBtn.innerText = "🏠 PRIVAT";
-                modeBtn.classList.remove('work');
+                modeBtn.innerText = "🏠 Privat";
+                modeBtn.className = "pill privat-active";
             }
         }
         updateBadges();
@@ -462,8 +548,8 @@ HTML_PAGE = """
         function toggleLoop() {
             autoLoop = !autoLoop;
             const btn = document.getElementById('loopBtn');
-            btn.innerText = autoLoop ? "AUTO: AN" : "AUTO: AUS";
-            btn.classList.toggle('active', autoLoop);
+            btn.innerText = autoLoop ? "Auto: An" : "Auto: Aus";
+            btn.classList.toggle('auto-on', autoLoop);
         }
 
         function deleteItem(type, idx) {
@@ -484,8 +570,8 @@ HTML_PAGE = """
                 statusEl.innerText = `Ihre Liste "${title}" ist aktuell leer, Sir.`;
                 return;
             }
-            statusEl.innerHTML = `<div style='width:100%;'><div style='margin-bottom:8px;font-weight:bold;color:#00F0FF;'>${title}:</div>` +
-                list.map((m, i) => `<div class="list-item"><span>${i+1}. ${m}</span><button class="del-btn" onclick="deleteItem('${type}', ${i})">✓</button></div>`).join("") +
+            statusEl.innerHTML = `<div style='width:100%;'><div style='margin-bottom:10px;font-weight:700;color:var(--accent);'>${title}</div>` +
+                list.map((m, i) => `<div class="list-card-item"><span>${i+1}. ${m}</span><button class="check-btn" onclick="deleteItem('${type}', ${i})">✓</button></div>`).join("") +
                 "</div>";
         }
 
@@ -494,13 +580,13 @@ HTML_PAGE = """
                 statusEl.innerText = "GPS wird auf diesem Gerät nicht unterstützt, Sir.";
                 return;
             }
-            statusEl.innerText = "Ermittle GPS-Position des Fahrzeugs...";
+            statusEl.innerText = "Ermittle genaue GPS-Position des Fahrzeugs...";
             navigator.geolocation.getCurrentPosition(pos => {
                 const lat = pos.coords.latitude;
                 const lng = pos.coords.longitude;
                 const time = new Date().toLocaleTimeString('de-DE', {hour:'2-digit', minute:'2-digit'});
                 localStorage.setItem('jarvis_parking', JSON.stringify({lat, lng, time}));
-                statusEl.innerText = `Parkplatz um ${time} Uhr gespeichert, Sir!`;
+                statusEl.innerText = `Parkplatz um ${time} Uhr gespeichert, Sir.`;
             }, () => {
                 statusEl.innerText = "Standortzugriff verweigert, Sir.";
             });
@@ -513,23 +599,26 @@ HTML_PAGE = """
                 return;
             }
             const url = `https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}&travelmode=walking`;
-            statusEl.innerHTML = `<div>Ihr Fahrzeug wurde um ${p.time} Uhr hier geparkt, Sir.</div><div class="btn-row"><a href="${url}" class="action-btn">Route zum Auto starten</a></div>`;
+            statusEl.innerHTML = `<div>Fahrzeug wurde um ${p.time} Uhr hier geparkt, Sir.</div><div class="btn-row"><a href="${url}" class="primary-action">Route zum Auto starten</a></div>`;
             setTimeout(() => { window.location.href = url; }, 700);
         }
 
         function setBars(level) {
             bars.forEach((bar, i) => {
                 const factor = Math.sin((i + 1) * 0.7) * 0.5 + 0.7;
-                const h = Math.max(5, Math.min(18, level * factor));
+                const h = Math.max(5, Math.min(20, level * factor));
                 bar.style.height = h + 'px';
             });
         }
 
         function setState(state) {
             document.body.classList.remove('listening', 'thinking', 'speaking');
-            coreCenter.style.transform = '';
+            orbCore.style.transform = '';
             setBars(5);
-            if (state) document.body.classList.add(state);
+            if (state === 'listening') { document.body.classList.add('listening'); stateLabel.innerText = "Hört zu"; }
+            else if (state === 'thinking') { document.body.classList.add('thinking'); stateLabel.innerText = "Analysiert"; }
+            else if (state === 'speaking') { document.body.classList.add('speaking'); stateLabel.innerText = "Spricht"; }
+            else { stateLabel.innerText = "Bereit"; }
         }
 
         function unlockAudio() {
@@ -606,7 +695,7 @@ HTML_PAGE = """
                     const avg = sum / dataArray.length;
 
                     const scale = 1 + Math.min(avg / 220, 0.14);
-                    coreCenter.style.transform = `scale(${scale.toFixed(2)})`;
+                    orbCore.style.transform = `scale(${scale.toFixed(2)})`;
                     setBars(5 + avg * 0.6);
 
                     if (avg > 14) {
@@ -704,7 +793,7 @@ HTML_PAGE = """
                 });
                 const data = await res.json();
                 setState(null);
-                hintEl.innerText = "Tippen & sprechen • Kamera für Objekte/Briefe";
+                hintEl.innerText = "Tippen zum Sprechen • Kamera für Objekte & Briefe";
 
                 if (data.error) {
                     statusEl.innerText = data.error;
@@ -742,11 +831,11 @@ HTML_PAGE = """
 
                 if (data.copy_text && data.copy_text.trim() !== "") {
                     const cBtn = document.createElement('button');
-                    cBtn.className = "copy-btn";
-                    cBtn.innerText = "📋 Text kopieren";
+                    cBtn.className = "secondary-action";
+                    cBtn.innerText = "📋 Kopieren";
                     cBtn.onclick = () => {
                         navigator.clipboard.writeText(data.copy_text);
-                        cBtn.innerText = "✓ Kopiert!";
+                        cBtn.innerText = "✓ Kopiert";
                     };
                     btnRow.appendChild(cBtn);
                 }
@@ -754,7 +843,7 @@ HTML_PAGE = """
                 if (data.action_url) {
                     const aBtn = document.createElement('a');
                     aBtn.href = data.action_url;
-                    aBtn.className = "action-btn";
+                    aBtn.className = "primary-action";
                     aBtn.innerText = data.action_label || "Öffnen";
                     if (data.copy_text) {
                         aBtn.onclick = () => { navigator.clipboard.writeText(data.copy_text).catch(()=>{}); };
