@@ -17,11 +17,11 @@ HTML_PAGE = """
     <title>JARVIS MARK IX</title>
     <style>
         body { margin: 0; background: #060B14; color: #00F0FF; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
-        .ring { width: 200px; height: 200px; border-radius: 50%; border: 4px solid #00F0FF; box-shadow: 0 0 30px #00F0FF, inset 0 0 20px #00F0FF; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: 0.3s; }
+        .ring { width: 200px; height: 200px; border-radius: 50%; border: 4px solid #00F0FF; box-shadow: 0 0 30px #00F0FF, inset 0 0 20px #00F0FF; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: 0.3s; user-select: none; }
         .ring.active { transform: scale(1.1); border-color: #FF8C00; box-shadow: 0 0 50px #FF8C00; }
         h1 { margin: 0; font-size: 28px; letter-spacing: 4px; }
         p { font-size: 10px; letter-spacing: 2px; opacity: 0.8; }
-        #status { margin-top: 30px; font-size: 15px; text-align: center; padding: 0 20px; min-height: 40px; }
+        #status { margin-top: 30px; font-size: 15px; text-align: center; padding: 0 20px; min-height: 40px; max-width: 90%; }
         .input-box { position: fixed; bottom: 25px; display: flex; gap: 8px; width: 90%; max-width: 400px; }
         input { flex: 1; padding: 12px; border-radius: 20px; border: 1px solid #00F0FF; background: #0B1324; color: white; outline: none; }
         button { padding: 12px 18px; border-radius: 20px; border: none; background: #00F0FF; color: #060B14; font-weight: bold; cursor: pointer; }
@@ -41,19 +41,41 @@ HTML_PAGE = """
         const statusEl = document.getElementById('status');
         const ring = document.getElementById('ring');
 
-        function startVoice() {
+        async function startVoice() {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if (!SpeechRecognition) { statusEl.innerText = "Sprache nicht unterstützt. Bitte tippen."; return; }
+            if (!SpeechRecognition) {
+                statusEl.innerText = "Sprache wird in diesem Browser nicht unterstützt. Bitte Chrome oder Safari nutzen.";
+                return;
+            }
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                stream.getTracks().forEach(track => track.stop());
+            } catch (err) {
+                statusEl.innerText = "Mikrofon-Zugriff blockiert (" + err.name + "). Bitte oben in der Adressleiste erlauben.";
+                return;
+            }
+
             const recog = new SpeechRecognition();
             recog.lang = 'de-DE';
+            recog.interimResults = false;
             ring.classList.add('active');
-            statusEl.innerText = "Höre zu...";
+            statusEl.innerText = "Höre zu, Sir...";
+
             recog.onresult = (e) => {
                 const text = e.results[0][0].transcript;
                 document.getElementById('msg').value = text;
                 sendMsg();
             };
-            recog.onerror = () => { ring.classList.remove('active'); statusEl.innerText = "Bereit, Sir."; };
+            recog.onerror = (e) => {
+                ring.classList.remove('active');
+                statusEl.innerText = "Mikrofon-Fehler: " + e.error;
+            };
+            recog.onend = () => {
+                if (statusEl.innerText === "Höre zu, Sir...") {
+                    ring.classList.remove('active');
+                    statusEl.innerText = "Nichts gehört. Bitte erneut tippen, Sir.";
+                }
+            };
             recog.start();
         }
 
