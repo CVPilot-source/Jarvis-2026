@@ -147,7 +147,6 @@ HTML_PAGE = """
             box-shadow: 0 0 14px var(--glow);
         }
 
-        /* 3D Particle Sphere Stage */
         .sphere-stage {
             position: relative;
             width: 215px;
@@ -200,7 +199,6 @@ HTML_PAGE = """
             font-weight: 500;
         }
 
-        /* Glass Response Card */
         .response-card {
             flex: 1;
             width: 100%;
@@ -374,21 +372,21 @@ HTML_PAGE = """
         <div class="sub-hint" id="hint">Sagen Sie einfach „Hey Neo“ zum Starten</div>
     </div>
 
-    <div class="response-card" id="status">Hands-Free aktiv, Sir. Sagen Sie einfach „Hey Neo“ und stellen Sie Ihre Frage.</div>
+    <div class="response-card" id="status">Hands-Free & Live-Web aktiv, Sir. Sagen Sie einfach „Hey Neo“ und stellen Sie Ihre Frage.</div>
 
     <div class="chips-row">
         <div class="chip" onclick="quickCmd('Was steht heute an? Gib mir meinen Statusbericht mit Kalender, E-Mails, Aufgaben und Material.')">📋 Statusbericht</div>
+        <div class="chip" onclick="quickCmd('Wie wird das Wetter heute und morgen in Hamburg?')">🌤️ Wetter</div>
         <div class="chip" onclick="saveParking()">🅿️ Parkplatz</div>
         <div class="chip" onclick="findParking()">🚗 Auto finden</div>
         <div class="chip" onclick="quickCmd('Welche Termine habe ich heute und morgen?')">📅 Termine</div>
         <div class="chip" onclick="quickCmd('Lies meine ungelesenen E-Mails vor.')">📧 E-Mails</div>
-        <div class="chip" onclick="quickCmd('Öffne Google Maps')">🗺️ Maps</div>
     </div>
 
     <div class="input-dock">
         <button class="icon-btn" onclick="document.getElementById('camInput').click()" title="Kamera">📷</button>
         <input type="file" id="camInput" accept="image/*" capture="environment" style="display:none" onchange="handleImage(event)">
-        <input type="text" id="msg" placeholder="Befehl, Objekt-Code oder Notiz..." onkeypress="if(event.key==='Enter') sendText()">
+        <input type="text" id="msg" placeholder="Befehl, Objekt-Code oder Suche..." onkeypress="if(event.key==='Enter') sendText()">
         <button class="send-pill" onclick="sendText()">Senden</button>
     </div>
 
@@ -463,7 +461,7 @@ HTML_PAGE = """
         }
         renderSphere();
 
-        /* --- Sci-Fi Sound Effects (Web Audio API) --- */
+        /* --- Sci-Fi Sound Effects --- */
         function playSciFiTone(type) {
             try {
                 const ac = new (window.AudioContext || window.webkitAudioContext)();
@@ -988,8 +986,9 @@ Antworte NUR als JSON:
 }}
 """
 
-FINAL_PROMPT = """Du bist NEO, der hochintelligente, ruhige und souveräne KI-Assistent von Sir (Kundenbetreuer in einer Gebäudereinigungsfirma in Deutschland).
+FINAL_PROMPT = """Du bist NEO, der hochintelligente, ruhige und souveräne KI-Assistent von Sir (Kundenbetreuer in einer Gebäudereinigungsfirma in Hamburg, Deutschland).
 Aktueller Modus: {mode}
+Du hast Zugriff auf aktuelle Echtzeit-Informationen aus der Google-Suche (Wetter, Nachrichten, Öffnungszeiten, Wechselkurse, Fakten).
 Antworte IMMER auf perfektem Deutsch, höflich, präzise (maximal 2-3 Sätze, ohne Sternchen oder Markdown) und nenne den Nutzer 'Sir'.
 
 FÄHIGKEITEN & REGELN:
@@ -1141,6 +1140,7 @@ def chat():
             contents=final_contents,
             config=types.GenerateContentConfig(
                 system_instruction=FINAL_PROMPT.format(mode=mode),
+                tools=[{"google_search": {}}],
                 response_mime_type="application/json"
             )
         )
