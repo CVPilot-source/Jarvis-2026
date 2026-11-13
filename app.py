@@ -447,7 +447,7 @@ HTML_PAGE = """
             } catch (e) {}
         }
 
-        /* --- Pure Voice-Only Engine (No Transcripts on Screen!) --- */
+        /* --- Directional Voice-Isolation Engine (Ignores Room/TV/Background!) --- */
         const actionBar = document.getElementById('actionBar');
         const stateLabel = document.getElementById('stateLabel');
         const player = document.getElementById('player');
@@ -532,8 +532,9 @@ HTML_PAGE = """
             wakeRec.onresult = (event) => {
                 if (isSpeaking || isRecording) return;
                 for (let i = event.resultIndex; i < event.results.length; i++) {
-                    const txt = event.results[i][0].transcript.toLowerCase();
-                    if (txt.includes('neo') || txt.includes('nio') || txt.includes('heineo')) {
+                    // Nur auf exaktes "Hey Neo" reagieren (verhindert Fehlstarts durch TV/Gespräche im Raum!)
+                    const txt = event.results[i][0].transcript.toLowerCase().trim();
+                    if (txt.includes('hey neo') || txt.includes('hey nio') || txt.includes('heineo') || txt === 'neo') {
                         stopWakeListener();
                         inConversation = true;
                         playTone(540, 960);
@@ -585,7 +586,15 @@ HTML_PAGE = """
             if (isRecording || isSpeaking) return;
             stopWakeListener();
             try {
-                activeStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                // Hardware-Rauschunterdrückung aktivieren (isolierter Nahbereichs-Fokus)
+                activeStream = await navigator.mediaDevices.getUserMedia({
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: false,
+                        channelCount: 1
+                    }
+                });
                 audioChunks = [];
                 let options = { audioBitsPerSecond: 16000 };
                 if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) options.mimeType = 'audio/webm;codecs=opus';
@@ -595,12 +604,15 @@ HTML_PAGE = """
                 mediaRecorder = new MediaRecorder(activeStream, options);
                 mediaRecorder.ondataavailable = (e) => { if (e.data && e.data.size > 0) audioChunks.push(e.data); };
 
+                let voiceFramesCount = 0;
+
                 mediaRecorder.onstop = async () => {
                     activeStream.getTracks().forEach(t => t.stop());
                     const mimeType = (mediaRecorder.mimeType || 'audio/webm').split(';')[0];
                     const blob = new Blob(audioChunks, { type: mimeType });
 
-                    if (blob.size < 900) {
+                    // Wenn nur Hintergrundgeräusche im Raum waren (zu wenig direkte Sprach-Frames), ignorieren!
+                    if (blob.size < 1100 || voiceFramesCount < 8) {
                         inConversation = false;
                         setState(null);
                         if (wakeEnabled) setTimeout(() => startWakeListener(), 600);
@@ -619,11 +631,25 @@ HTML_PAGE = """
                 isRecording = true;
                 setState('listening');
 
+                // Bandpass-Filter (140Hz - 3200Hz): Filtert Raumgeräusche, TV-Bässe und entfernte Stimmen heraus
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                 const source = audioCtx.createMediaStreamSource(activeStream);
+
+                const highPass = audioCtx.createBiquadFilter();
+                highPass.type = 'highpass';
+                highPass.frequency.value = 140;
+
+                const lowPass = audioCtx.createBiquadFilter();
+                lowPass.type = 'lowpass';
+                lowPass.frequency.value = 3200;
+
                 const analyser = audioCtx.createAnalyser();
                 analyser.fftSize = 256;
-                source.connect(analyser);
+
+                source.connect(highPass);
+                highPass.connect(lowPass);
+                lowPass.connect(analyser);
+
                 const dataArray = new Uint8Array(analyser.frequencyBinCount);
 
                 let hasSpoken = false;
@@ -637,12 +663,14 @@ HTML_PAGE = """
                     const avg = sum / dataArray.length;
                     audioEnergy = avg;
 
-                    if (avg > 14) {
+                    // Höhere Schwelle (26): Reagiert nur auf direkte Stimme am Gerät, nicht auf Stimmen im Raum!
+                    if (avg > 26) {
                         hasSpoken = true;
+                        voiceFramesCount++;
                         if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null; }
                     } else if (hasSpoken && !silenceTimer) {
                         silenceTimer = setTimeout(() => stopDirectAudio(), 1150);
-                    } else if (!hasSpoken && (Date.now() - startTime > 6000)) {
+                    } else if (!hasSpoken && (Date.now() - startTime > 5500)) {
                         inConversation = false;
                         stopDirectAudio();
                     }
@@ -789,6 +817,14 @@ HTML_PAGE = """
                     return;
                 }
 
+                if (data.ignore_background) {
+                    // Hintergrundgeräusch erkannt -> leise bleiben und weiter zuhören
+                    setState(null);
+                    if (inConversation) setTimeout(() => startDirectAudio(), 300);
+                    else if (wakeEnabled) setTimeout(() => startWakeListener(), 500);
+                    return;
+                }
+
                 if (data.end_conversation) inConversation = false;
                 if (data.new_memory) userMemory.push(data.new_memory.trim());
                 if (data.delete_memory) userMemory = userMemory.filter(x => !x.toLowerCase().includes(data.delete_memory.toLowerCase()));
@@ -801,7 +837,6 @@ HTML_PAGE = """
                 chatHistory.push({ role: "neo", text: data.reply });
                 localStorage.setItem('neo_history', JSON.stringify(chatHistory.slice(-10)));
 
-                // Nur Action-Buttons anzeigen (kein Transkript-Text auf dem Bildschirm!)
                 if (data.copy_text && data.copy_text.trim() !== "") {
                     const cBtn = document.createElement('button');
                     cBtn.className = "action-pill";
@@ -915,29 +950,34 @@ SYSTEM_PROMPT = """Du bist NEO, der hochintelligente, ruhige KI-Assistent von Si
 Aktueller Modus: {mode} | Aktuelle Zeit: {local_time}
 Antworte IMMER auf perfektem Deutsch, höflich, ohne Sternchen/Markdown, und nenne den Nutzer 'Sir'.
 
-WICHTIGE REGELN FÜR KALENDER & ERKLÄRUNGEN:
-1. KALENDER & TERMINE (SEHR WICHTIG):
-   - Wenn Sir nach seinem Kalender, Terminen, Objektbesichtigungen oder seinem Tagesplan fragt: Nutze die bereitgestellten 'Kalender-Termine' und ERKLÄRE ihm die Termine klar, vollständig und verständlich in 3 bis 5 Sätzen (nenne Datum, genaue Uhrzeit, Titel des Termins und Ort/Objekt). Kürze Kalender-Erklärungen NICHT ab!
-2. ALLGEMEINE ANTWORTEN:
+WICHTIGE REGELN FÜR STIMMEN-FOKUS & KALENDER:
+1. NUR DIREKTE STIMME BEACHTEN (SEHR WICHTIG):
+   - Konzentriere dich ausschließlich auf die lauteste, nahe Hauptstimme (Sir), die direkt mit dir spricht.
+   - Ignoriere leise Stimmen im Hintergrund, andere Personen im Raum, Fernseher, Radio oder Telefongeräusche!
+   - Wenn im Audio KEINE klare direkte Anfrage an dich zu hören ist (nur Raumgeräusche oder Hintergrundgespräche), antworte mit `"ignore_background": true` und leerem `"reply": ""`.
+2. KALENDER & TERMINE:
+   - Wenn Sir nach seinem Kalender, Terminen, Objektbesichtigungen oder seinem Tagesplan fragt: Nutze die bereitgestellten 'Kalender-Termine' und ERKLÄRE ihm die Termine klar, vollständig und verständlich in 3 bis 5 Sätzen (nenne Datum, genaue Uhrzeit, Titel des Termins und Ort/Objekt).
+3. ALLGEMEINE ANTWORTEN:
    - Bei normalen Befehlen antworte präzise in 1-2 Sätzen.
-3. WHATSAPP (ANDROID NATIVE INTENT — NIEMALS web.whatsapp.com!):
+4. WHATSAPP (ANDROID NATIVE INTENT — NIEMALS web.whatsapp.com!):
    - Nummer bekannt: "https://wa.me/49176...?text=URL_ENCODED"
    - Nummer NICHT bekannt:
      * Modus ARBEIT: "intent://send?text=URL_ENCODED#Intent;scheme=whatsapp;package=com.whatsapp.w4b;end"
      * Modus PRIVAT: "intent://send?text=URL_ENCODED#Intent;scheme=whatsapp;package=com.whatsapp;end"
-4. MAPS & APPS:
+5. MAPS & APPS:
    - Maps: "https://www.google.com/maps/search/?api=1&query=URL_ENCODED"
    - Social Media Post: Text in 'copy_text', action_url auf Instagram/TikTok/LinkedIn/Facebook.
-5. LISTEN:
+6. LISTEN:
    - 'new_memory' / 'delete_memory': Objekt-Codes, Notizen, Nummern
    - 'new_material' / 'delete_material': Material/Einkauf
    - 'new_task' / 'delete_task': Aufgaben
-6. GESPRÄCH ENDE:
+7. GESPRÄCH ENDE:
    - Bei "Danke", "Stopp", "Fertig", "Das war's": setze "end_conversation": true.
 
 Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt (ohne Markdown-Codeblöcke):
 {{
   "reply": "Deine vollständige gesprochene Antwort an Sir",
+  "ignore_background": false,
   "copy_text": "",
   "new_memory": "",
   "delete_memory": "",
@@ -1004,7 +1044,7 @@ def chat():
             contents.append(msg or "Analysiere dieses Bild und erkläre es kurz.")
         elif "audio" in data:
             contents.append(types.Part.from_bytes(data=base64.b64decode(data["audio"]), mime_type=data.get("mime_type", "audio/webm")))
-            contents.append("Höre zu und antworte direkt auf Deutsch. Wenn Sir nach dem Kalender oder Terminen fragt, erkläre sie ausführlich anhand der Kalender-Termine.")
+            contents.append("Fokussiere dich NUR auf die direkte Hauptstimme von Sir und ignoriere leise Hintergrundstimmen im Raum oder vom Fernseher/Telefon.")
         else:
             contents.append(msg)
 
@@ -1027,6 +1067,9 @@ def chat():
         )
 
         result = extract_json(response.text)
+        if result.get("ignore_background"):
+            return jsonify({"ignore_background": True})
+
         reply = result.get("reply", "Zu Befehl, Sir.")
         audio_b64 = asyncio.run(make_voice(reply))
 
