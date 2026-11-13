@@ -3,7 +3,6 @@ import json
 import base64
 import asyncio
 import urllib.request
-import urllib.parse
 from datetime import datetime
 from flask import Flask, request, jsonify, render_template_string, Response
 from google import genai
@@ -13,12 +12,12 @@ import edge_tts
 app = Flask(__name__)
 
 MANIFEST_JSON = {
-    "name": "NEO AI",
+    "name": "NEO",
     "short_name": "NEO",
     "start_url": "/",
     "display": "standalone",
-    "background_color": "#020408",
-    "theme_color": "#020408",
+    "background_color": "#000000",
+    "theme_color": "#000000",
     "icons": [
         {
             "src": "/icon.svg",
@@ -30,18 +29,10 @@ MANIFEST_JSON = {
 }
 
 ICON_SVG = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <defs>
-    <radialGradient id="neoGlow" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#00F5D4" stop-opacity="0.45"/>
-      <stop offset="70%" stop-color="#00BBF9" stop-opacity="0.12"/>
-      <stop offset="100%" stop-color="#020408" stop-opacity="0"/>
-    </radialGradient>
-  </defs>
-  <rect width="512" height="512" rx="120" fill="#020408"/>
-  <circle cx="256" cy="256" r="210" fill="url(#neoGlow)"/>
-  <circle cx="256" cy="256" r="155" fill="none" stroke="#00F5D4" stroke-width="6" stroke-dasharray="14 14"/>
-  <circle cx="256" cy="256" r="115" fill="none" stroke="#00BBF9" stroke-width="4" stroke-opacity="0.6"/>
-  <text x="256" y="282" font-family="sans-serif" font-size="84" font-weight="800" fill="#00F5D4" text-anchor="middle">N</text>
+  <rect width="512" height="512" rx="120" fill="#000000"/>
+  <circle cx="256" cy="256" r="160" fill="none" stroke="#00F5D4" stroke-width="6" stroke-dasharray="10 14"/>
+  <circle cx="256" cy="256" r="120" fill="none" stroke="#00BBF9" stroke-width="3" stroke-opacity="0.7"/>
+  <circle cx="256" cy="256" r="8" fill="#00F5D4"/>
 </svg>"""
 
 HTML_PAGE = """
@@ -52,34 +43,28 @@ HTML_PAGE = """
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#020408">
+    <meta name="theme-color" content="#000000">
     <link rel="manifest" href="/manifest.json">
     <link rel="icon" type="image/svg+xml" href="/icon.svg">
-    <title>NEO AI</title>
+    <title>NEO</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
 
         :root {
             --accent: #00F5D4;
-            --accent-2: #00BBF9;
-            --glow: rgba(0, 245, 212, 0.35);
-            --bg-dark: #020408;
-            --glass: rgba(10, 16, 28, 0.65);
-            --glass-border: rgba(255, 255, 255, 0.08);
             --text-main: #F8FAFC;
-            --text-muted: #94A3B8;
+            --text-muted: rgba(248, 250, 252, 0.45);
         }
 
-        body.listening { --accent: #00FF88; --accent-2: #00F5D4; --glow: rgba(0, 255, 136, 0.55); }
-        body.thinking { --accent: #F59E0B; --accent-2: #FB7185; --glow: rgba(245, 158, 11, 0.55); }
-        body.speaking { --accent: #38BDF8; --accent-2: #818CF8; --glow: rgba(56, 189, 248, 0.55); }
+        body.listening { --accent: #00FF88; }
+        body.thinking { --accent: #F59E0B; }
+        body.speaking { --accent: #38BDF8; }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
         body {
             margin: 0;
-            background-color: var(--bg-dark);
-            background-image: radial-gradient(circle at 50% 24%, var(--glow) 0%, transparent 55%);
+            background-color: #000000;
             color: var(--text-main);
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             display: flex;
@@ -87,71 +72,59 @@ HTML_PAGE = """
             align-items: center;
             justify-content: space-between;
             height: 100dvh;
-            padding: 12px 14px 16px;
+            padding: 20px 18px 24px;
             overflow: hidden;
-            transition: background 0.4s ease;
         }
 
-        .top-bar {
+        /* Minimalist Top Status Header */
+        .top-minimal {
             width: 100%;
-            max-width: 480px;
+            max-width: 440px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: var(--glass);
-            border: 1px solid var(--glass-border);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            padding: 7px 9px;
-            border-radius: 20px;
-            gap: 5px;
+            z-index: 5;
         }
 
-        .pill-group {
+        .status-dot-wrap {
             display: flex;
-            gap: 5px;
             align-items: center;
-            overflow-x: auto;
-            scrollbar-width: none;
-        }
-        .pill-group::-webkit-scrollbar { display: none; }
-
-        .pill {
-            font-size: 10.5px;
+            gap: 8px;
+            font-size: 11px;
+            letter-spacing: 2.5px;
+            text-transform: uppercase;
+            color: var(--text-muted);
             font-weight: 600;
-            padding: 5px 9px;
-            border-radius: 14px;
-            border: 1px solid var(--glass-border);
-            background: rgba(255, 255, 255, 0.04);
-            color: var(--text-main);
-            cursor: pointer;
-            white-space: nowrap;
-            transition: all 0.2s ease;
         }
-        .pill:active { transform: scale(0.95); }
 
-        .pill.work-active {
-            background: rgba(245, 158, 11, 0.18);
-            border-color: rgba(245, 158, 11, 0.45);
-            color: #FCD34D;
-        }
-        .pill.privat-active {
-            background: rgba(0, 245, 212, 0.16);
-            border-color: rgba(0, 245, 212, 0.45);
-            color: #5EEAD4;
-        }
-        .pill.wake-on {
+        .status-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
             background: var(--accent);
-            color: #020408;
-            border-color: var(--accent);
-            box-shadow: 0 0 14px var(--glow);
+            box-shadow: 0 0 10px var(--accent);
+            transition: background 0.3s;
         }
 
-        .sphere-stage {
+        .mode-tag {
+            font-size: 10.5px;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 5px 11px;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+
+        /* Center 3D Hologram Sphere */
+        .hologram-center {
             position: relative;
-            width: 215px;
-            height: 215px;
+            flex: 1;
+            width: 100%;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
             cursor: pointer;
@@ -159,301 +132,315 @@ HTML_PAGE = """
         }
 
         #particleCanvas {
-            width: 215px;
-            height: 215px;
+            width: 310px;
+            height: 310px;
+            max-width: 82vw;
+            max-height: 82vw;
             display: block;
         }
 
-        .neo-overlay {
-            position: absolute;
-            pointer-events: none;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-        }
-
-        .neo-overlay h1 {
-            margin: 0;
-            font-size: 20px;
-            font-weight: 800;
-            letter-spacing: 5px;
-            color: #FFFFFF;
-            text-shadow: 0 0 18px var(--accent);
-        }
-
-        .neo-overlay span {
-            font-size: 9px;
-            font-weight: 600;
-            letter-spacing: 2px;
-            color: var(--accent);
-            margin-top: 4px;
-            text-transform: uppercase;
-        }
-
-        .sub-hint {
-            font-size: 11px;
-            color: var(--text-muted);
-            margin-top: -4px;
-            font-weight: 500;
-        }
-
-        .response-card {
-            flex: 1;
+        /* Clean Subtitle Caption (Like Video) */
+        .caption-area {
             width: 100%;
-            max-width: 480px;
-            margin: 8px 0;
-            padding: 16px;
-            background: var(--glass);
-            border: 1px solid var(--glass-border);
-            border-radius: 22px;
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+            max-width: 420px;
+            min-height: 76px;
+            max-height: 150px;
             overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
             text-align: center;
             font-size: 15px;
+            font-weight: 300;
             line-height: 1.55;
-            color: var(--text-main);
-        }
-
-        .list-card-item {
-            width: 100%;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.07);
-            padding: 8px 12px;
-            border-radius: 13px;
-            margin-bottom: 6px;
-            font-size: 13.5px;
-            text-align: left;
-        }
-        .check-btn {
-            background: rgba(0, 245, 212, 0.18);
-            color: var(--accent);
-            border: 1px solid rgba(0, 245, 212, 0.4);
-            border-radius: 10px;
-            padding: 4px 10px;
-            font-size: 12px;
-            font-weight: 700;
-            cursor: pointer;
-            margin-left: 10px;
+            color: rgba(255, 255, 255, 0.88);
+            padding: 0 10px;
+            margin-bottom: 10px;
+            z-index: 5;
         }
 
         .btn-row {
             display: flex;
             gap: 8px;
-            flex-wrap: wrap;
             justify-content: center;
-            margin-top: 12px;
-        }
-        .primary-action {
-            padding: 10px 18px;
-            border-radius: 16px;
-            background: linear-gradient(135deg, var(--accent), var(--accent-2));
-            color: #020408;
-            font-weight: 700;
-            text-decoration: none;
-            font-size: 13.5px;
-            border: none;
-            cursor: pointer;
-            box-shadow: 0 4px 16px var(--glow);
-        }
-        .secondary-action {
-            padding: 10px 15px;
-            border-radius: 16px;
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            color: #F8FAFC;
-            font-weight: 600;
-            font-size: 13.5px;
-            cursor: pointer;
+            margin-top: 10px;
         }
 
-        .chips-row {
-            display: flex;
-            gap: 7px;
-            width: 100%;
-            max-width: 480px;
-            overflow-x: auto;
-            padding-bottom: 8px;
-            scrollbar-width: none;
-        }
-        .chips-row::-webkit-scrollbar { display: none; }
-        .chip {
-            white-space: nowrap;
-            padding: 7px 12px;
-            border-radius: 15px;
-            border: 1px solid var(--glass-border);
-            background: var(--glass);
-            color: var(--text-main);
-            font-size: 11.5px;
-            font-weight: 500;
-            cursor: pointer;
-        }
-
-        .input-dock {
-            display: flex;
-            gap: 7px;
-            width: 100%;
-            max-width: 480px;
-            align-items: center;
-            background: var(--glass);
-            border: 1px solid var(--glass-border);
-            backdrop-filter: blur(20px);
-            padding: 6px;
-            border-radius: 26px;
-        }
-        .icon-btn {
-            width: 39px;
-            height: 39px;
-            border-radius: 50%;
-            border: none;
-            background: rgba(255, 255, 255, 0.07);
-            color: var(--text-main);
-            font-size: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            flex-shrink: 0;
-        }
-        input[type="text"] {
-            flex: 1;
-            padding: 9px 8px;
-            border: none;
-            background: transparent;
-            color: var(--text-main);
-            font-size: 15px;
-            font-family: inherit;
-            outline: none;
-            min-width: 0;
-        }
-        input::placeholder { color: var(--text-muted); }
-        .send-pill {
-            padding: 10px 16px;
+        .action-pill {
+            padding: 8px 16px;
             border-radius: 20px;
-            border: none;
-            background: linear-gradient(135deg, var(--accent), var(--accent-2));
-            color: #020408;
-            font-weight: 700;
-            font-size: 13px;
+            background: rgba(0, 245, 212, 0.14);
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            font-size: 12.5px;
+            font-weight: 600;
+            text-decoration: none;
             cursor: pointer;
-            flex-shrink: 0;
+        }
+
+        /* Minimal Floating Bottom Controls */
+        .bottom-controls {
+            width: 100%;
+            max-width: 440px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 5;
+        }
+
+        .circle-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.75);
+            font-size: 17px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        .circle-btn.active {
+            border-color: var(--accent);
+            color: var(--accent);
+            box-shadow: 0 0 14px rgba(0, 245, 212, 0.25);
+        }
+
+        /* Slide-Up Glass Drawer for Lists, Text & Tools */
+        .drawer {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.88);
+            backdrop-filter: blur(22px);
+            -webkit-backdrop-filter: blur(22px);
+            z-index: 20;
+            display: none;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 20px 18px 24px;
+        }
+        .drawer.open { display: flex; }
+
+        .drawer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin: 14px 0;
+            overflow-x: auto;
+        }
+        .tab {
+            padding: 7px 13px;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.06);
+            color: #CBD5E1;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .tab.active {
+            background: var(--accent);
+            color: #000000;
+        }
+
+        .drawer-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 6px 0;
+        }
+
+        .list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 11px 14px;
+            border-radius: 14px;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .check-btn {
+            background: rgba(0, 245, 212, 0.18);
+            color: var(--accent);
+            border: none;
+            border-radius: 10px;
+            padding: 5px 10px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .quick-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin-bottom: 14px;
+        }
+        .q-btn {
+            padding: 11px;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: #F8FAFC;
+            font-size: 12.5px;
+            text-align: left;
+            cursor: pointer;
+        }
+
+        .text-dock {
+            display: flex;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.07);
+            padding: 6px 8px;
+            border-radius: 24px;
+        }
+        .text-dock input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 15px;
+            padding: 8px;
+            outline: none;
+        }
+        .text-dock button {
+            background: var(--accent);
+            color: #000000;
+            border: none;
+            border-radius: 18px;
+            padding: 8px 16px;
+            font-weight: 700;
+            cursor: pointer;
         }
     </style>
 </head>
 <body>
-    <div class="top-bar">
-        <div class="pill work-active" id="modeBtn" onclick="toggleMode()">🏢 Arbeit</div>
-        <div class="pill-group">
-            <div class="pill wake-on" id="wakeBtn" onclick="toggleWakeWord()">🎙️ Hey Neo</div>
-            <div class="pill" onclick="showList('memory')" id="memCount">Notizen · 0</div>
-            <div class="pill" onclick="showList('materials')" id="matCount">Material · 0</div>
-            <div class="pill" onclick="showList('tasks')" id="taskCount">Tasks · 0</div>
+    <div class="top-minimal">
+        <div class="status-dot-wrap">
+            <div class="status-dot"></div>
+            <span id="stateLabel">NEO • STANDBY</span>
         </div>
+        <div class="mode-tag" id="modeBtn" onclick="toggleMode()">ARBEIT</div>
     </div>
 
-    <div style="display:flex; flex-direction:column; align-items:center;">
-        <div class="sphere-stage" onclick="toggleRecord()">
-            <canvas id="particleCanvas" width="430" height="430"></canvas>
-            <div class="neo-overlay">
-                <h1>NEO</h1>
-                <span id="stateLabel">Wartet auf Neo</span>
+    <div class="hologram-center" onclick="toggleRecord()">
+        <canvas id="particleCanvas" width="620" height="620"></canvas>
+    </div>
+
+    <div class="caption-area" id="status">Sagen Sie „Hey Neo“ oder berühren Sie die Sphäre.</div>
+
+    <div class="bottom-controls">
+        <button class="circle-btn active" id="wakeBtn" onclick="toggleWakeWord()" title="Hey Neo">🎙️</button>
+        <button class="circle-btn" onclick="document.getElementById('camInput').click()" title="Kamera">📷</button>
+        <button class="circle-btn" onclick="openDrawer()" title="Menü & Listen">☰</button>
+        <input type="file" id="camInput" accept="image/*" capture="environment" style="display:none" onchange="handleImage(event)">
+    </div>
+
+    <!-- Clean Drawer for Lists, GPS & Text Input -->
+    <div class="drawer" id="drawer">
+        <div>
+            <div class="drawer-header">
+                <span style="font-weight:700; letter-spacing:2px; font-size:13px;">NEO SYSTEM</span>
+                <button class="circle-btn" style="width:36px;height:36px;" onclick="closeDrawer()">✕</button>
+            </div>
+            <div class="tabs">
+                <div class="tab active" id="tab-tools" onclick="switchTab('tools')">Aktionen</div>
+                <div class="tab" id="tab-memory" onclick="switchTab('memory')">Notizen (<span id="c-mem">0</span>)</div>
+                <div class="tab" id="tab-materials" onclick="switchTab('materials')">Material (<span id="c-mat">0</span>)</div>
+                <div class="tab" id="tab-tasks" onclick="switchTab('tasks')">Tasks (<span id="c-task">0</span>)</div>
             </div>
         </div>
-        <div class="sub-hint" id="hint">Sagen Sie einfach „Hey Neo“ zum Starten</div>
-    </div>
 
-    <div class="response-card" id="status">Hands-Free & Live-Web aktiv, Sir. Sagen Sie einfach „Hey Neo“ und stellen Sie Ihre Frage.</div>
+        <div class="drawer-body" id="drawerBody"></div>
 
-    <div class="chips-row">
-        <div class="chip" onclick="quickCmd('Was steht heute an? Gib mir meinen Statusbericht mit Kalender, E-Mails, Aufgaben und Material.')">📋 Statusbericht</div>
-        <div class="chip" onclick="quickCmd('Wie wird das Wetter heute und morgen in Hamburg?')">🌤️ Wetter</div>
-        <div class="chip" onclick="saveParking()">🅿️ Parkplatz</div>
-        <div class="chip" onclick="findParking()">🚗 Auto finden</div>
-        <div class="chip" onclick="quickCmd('Welche Termine habe ich heute und morgen?')">📅 Termine</div>
-        <div class="chip" onclick="quickCmd('Lies meine ungelesenen E-Mails vor.')">📧 E-Mails</div>
-    </div>
-
-    <div class="input-dock">
-        <button class="icon-btn" onclick="document.getElementById('camInput').click()" title="Kamera">📷</button>
-        <input type="file" id="camInput" accept="image/*" capture="environment" style="display:none" onchange="handleImage(event)">
-        <input type="text" id="msg" placeholder="Befehl, Objekt-Code oder Suche..." onkeypress="if(event.key==='Enter') sendText()">
-        <button class="send-pill" onclick="sendText()">Senden</button>
+        <div class="text-dock">
+            <input type="text" id="msg" placeholder="Befehl oder Notiz schreiben..." onkeypress="if(event.key==='Enter'){closeDrawer();sendText();}">
+            <button onclick="closeDrawer();sendText();">Send</button>
+        </div>
     </div>
 
     <audio id="player" playsinline></audio>
 
     <script>
-        /* --- 3D Particle Sphere Engine --- */
+        /* --- High-Density Organic 3D Particle Sphere (Like APEX Video) --- */
         const canvas = document.getElementById('particleCanvas');
         const ctx = canvas.getContext('2d');
         const particles = [];
-        const NUM_PARTICLES = 420;
-        let spherePulse = 0;
+        const NUM_PARTICLES = 680;
+        let audioEnergy = 0;
         let currentColor = { r: 0, g: 245, b: 212 };
 
         for (let i = 0; i < NUM_PARTICLES; i++) {
             const phi = Math.acos(-1 + (2 * i) / NUM_PARTICLES);
             const theta = Math.sqrt(NUM_PARTICLES * Math.PI) * phi;
             particles.push({
-                x: Math.cos(theta) * Math.sin(phi),
-                y: Math.sin(theta) * Math.sin(phi),
-                z: Math.cos(phi),
-                size: Math.random() * 1.6 + 1.1
+                bx: Math.cos(theta) * Math.sin(phi),
+                by: Math.sin(theta) * Math.sin(phi),
+                bz: Math.cos(phi),
+                phase: Math.random() * Math.PI * 2,
+                size: Math.random() * 1.5 + 0.9
             });
         }
 
-        let angleY = 0;
-        let angleX = 0;
+        let rotY = 0;
+        let rotX = 0;
         let currentState = 'idle';
 
         function renderSphere() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             const cx = canvas.width / 2;
             const cy = canvas.height / 2;
+            const t = Date.now() * 0.002;
 
-            let speed = 0.006;
-            if (currentState === 'listening') { speed = 0.022; currentColor = { r: 0, g: 255, b: 136 }; }
-            else if (currentState === 'thinking') { speed = 0.038; currentColor = { r: 245, g: 158, b: 11 }; }
-            else if (currentState === 'speaking') {
-                speed = 0.016;
-                currentColor = { r: 56, g: 189, b: 248 };
-                spherePulse = Math.sin(Date.now() * 0.015) * 14 + 10;
+            let speed = 0.0045;
+            let waveAmp = 4;
+
+            if (currentState === 'listening') {
+                speed = 0.014;
+                currentColor = { r: 0, g: 255, b: 145 };
+                waveAmp = 6 + audioEnergy * 0.65;
+            } else if (currentState === 'thinking') {
+                speed = 0.032;
+                currentColor = { r: 245, g: 165, b: 20 };
+                waveAmp = 12;
+            } else if (currentState === 'speaking') {
+                speed = 0.012;
+                currentColor = { r: 45, g: 212, b: 255 };
+                waveAmp = 8 + Math.abs(Math.sin(t * 4.5)) * 18;
             } else {
                 currentColor = { r: 0, g: 245, b: 212 };
-                spherePulse *= 0.88;
+                audioEnergy *= 0.85;
             }
 
-            angleY += speed;
-            angleX += speed * 0.4;
+            rotY += speed;
+            rotX += speed * 0.35;
 
-            const baseRadius = 142 + spherePulse;
-            const cosY = Math.cos(angleY), sinY = Math.sin(angleY);
-            const cosX = Math.cos(angleX), sinX = Math.sin(angleX);
+            const cosY = Math.cos(rotY), sinY = Math.sin(rotY);
+            const cosX = Math.cos(rotX), sinX = Math.sin(rotX);
+            const baseR = 195;
 
             for (let i = 0; i < particles.length; i++) {
                 const p = particles[i];
-                let x1 = p.x * cosY - p.z * sinY;
-                let z1 = p.z * cosY + p.x * sinY;
-                let y2 = p.y * cosX - z1 * sinX;
-                let z2 = z1 * cosX + p.y * sinX;
+                const ripple = Math.sin(t * 2 + p.phase + p.by * 3) * waveAmp;
+                const r = baseR + ripple;
 
-                const scale = 320 / (320 + z2 * baseRadius);
-                const px = cx + x1 * baseRadius * scale;
-                const py = cy + y2 * baseRadius * scale;
-                const alpha = Math.max(0.15, (z2 + 1.3) / 2.3);
+                let x1 = p.bx * cosY - p.bz * sinY;
+                let z1 = p.bz * cosY + p.bx * sinY;
+                let y2 = p.by * cosX - z1 * sinX;
+                let z2 = z1 * cosX + p.by * sinX;
+
+                const perspective = 460 / (460 + z2 * r);
+                const px = cx + x1 * r * perspective;
+                const py = cy + y2 * r * perspective;
+                const alpha = Math.max(0.12, (z2 + 1.25) / 2.25);
 
                 ctx.beginPath();
-                ctx.arc(px, py, p.size * scale, 0, Math.PI * 2);
+                ctx.arc(px, py, p.size * perspective, 0, Math.PI * 2);
                 ctx.fillStyle = `rgba(${currentColor.r}, ${currentColor.g}, ${currentColor.b}, ${alpha.toFixed(2)})`;
                 ctx.fill();
             }
@@ -514,15 +501,12 @@ HTML_PAGE = """
 
         document.body.addEventListener('touchstart', function initOnce() {
             unlockAudio();
-            if (wakeEnabled && !wakeRec && !isRecording) {
-                startWakeListener();
-            }
+            if (wakeEnabled && !wakeRec && !isRecording) startWakeListener();
             document.body.removeEventListener('touchstart', initOnce);
         }, { once: true });
 
         window.addEventListener('load', () => {
-            const btn = document.getElementById('wakeBtn');
-            btn.classList.add('wake-on');
+            updateBadges();
             setState(null);
             startWakeListener();
         });
@@ -533,58 +517,97 @@ HTML_PAGE = """
             localStorage.setItem('neo_tasks', JSON.stringify(userTasks));
             localStorage.setItem('neo_mode', workMode);
 
-            document.getElementById('memCount').innerText = "Notizen · " + userMemory.length;
-            document.getElementById('matCount').innerText = "Material · " + userMaterials.length;
-            document.getElementById('taskCount').innerText = "Tasks · " + userTasks.length;
-
-            const modeBtn = document.getElementById('modeBtn');
-            if (workMode === 'ARBEIT') {
-                modeBtn.innerText = "🏢 Arbeit";
-                modeBtn.className = "pill work-active";
-            } else {
-                modeBtn.innerText = "🏠 Privat";
-                modeBtn.className = "pill privat-active";
-            }
+            document.getElementById('c-mem').innerText = userMemory.length;
+            document.getElementById('c-mat').innerText = userMaterials.length;
+            document.getElementById('c-task').innerText = userTasks.length;
+            document.getElementById('modeBtn').innerText = workMode;
         }
-        updateBadges();
 
         function toggleMode() {
             workMode = (workMode === 'ARBEIT') ? 'PRIVAT' : 'ARBEIT';
             updateBadges();
             statusEl.innerText = workMode === 'ARBEIT'
-                ? "Arbeitsmodus aktiv, Sir (Objektbetreuung & WhatsApp Business)."
+                ? "Arbeitsmodus aktiv, Sir."
                 : "Privatmodus aktiv, Sir.";
         }
 
         function setState(state) {
             currentState = state || 'idle';
             document.body.classList.remove('listening', 'thinking', 'speaking');
-            if (state === 'listening') { document.body.classList.add('listening'); stateLabel.innerText = "Hört zu"; }
-            else if (state === 'thinking') { document.body.classList.add('thinking'); stateLabel.innerText = "Analysiert"; }
-            else if (state === 'speaking') { document.body.classList.add('speaking'); stateLabel.innerText = "Spricht"; }
-            else { stateLabel.innerText = wakeEnabled ? "Wartet auf Neo" : "Bereit"; }
+            if (state === 'listening') { document.body.classList.add('listening'); stateLabel.innerText = "NEO • HÖRT ZU"; }
+            else if (state === 'thinking') { document.body.classList.add('thinking'); stateLabel.innerText = "NEO • ANALYSIERT"; }
+            else if (state === 'speaking') { document.body.classList.add('speaking'); stateLabel.innerText = "NEO • SPRICHT"; }
+            else { stateLabel.innerText = wakeEnabled ? "NEO • BEREIT" : "NEO • PAUSIERT"; }
         }
 
-        /* --- Wake Word ("Hey Neo" / "Neo") --- */
+        /* --- Drawer Menu --- */
+        let activeTab = 'tools';
+        function openDrawer() {
+            document.getElementById('drawer').classList.add('open');
+            switchTab(activeTab);
+        }
+        function closeDrawer() {
+            document.getElementById('drawer').classList.remove('open');
+        }
+        function switchTab(tab) {
+            activeTab = tab;
+            document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+            document.getElementById('tab-' + tab).classList.add('active');
+            const body = document.getElementById('drawerBody');
+
+            if (tab === 'tools') {
+                body.innerHTML = `
+                    <div class="quick-grid">
+                        <div class="q-btn" onclick="closeDrawer();quickCmd('Was steht heute an? Gib mir meinen Statusbericht mit Kalender, E-Mails, Aufgaben und Material.')">📋 Statusbericht</div>
+                        <div class="q-btn" onclick="closeDrawer();quickCmd('Wie wird das Wetter heute und morgen in Hamburg?')">🌤️ Wetter Hamburg</div>
+                        <div class="q-btn" onclick="closeDrawer();saveParking()">🅿️ Parkplatz merken</div>
+                        <div class="q-btn" onclick="closeDrawer();findParking()">🚗 Auto finden</div>
+                        <div class="q-btn" onclick="closeDrawer();quickCmd('Welche Termine habe ich heute und morgen?')">📅 Termine</div>
+                        <div class="q-btn" onclick="closeDrawer();quickCmd('Lies meine ungelesenen E-Mails vor.')">📧 E-Mails</div>
+                    </div>`;
+                return;
+            }
+
+            let list = userMemory;
+            if (tab === 'materials') list = userMaterials;
+            if (tab === 'tasks') list = userTasks;
+
+            if (list.length === 0) {
+                body.innerHTML = `<div style="color:#94A3B8; text-align:center; margin-top:30px;">Keine Einträge vorhanden, Sir.</div>`;
+                return;
+            }
+            body.innerHTML = list.map((item, idx) =>
+                `<div class="list-item"><span>${idx + 1}. ${item}</span><button class="check-btn" onclick="deleteItem('${tab}', ${idx})">✓</button></div>`
+            ).join('');
+        }
+
+        function deleteItem(type, idx) {
+            if (type === 'memory') userMemory.splice(idx, 1);
+            if (type === 'materials') userMaterials.splice(idx, 1);
+            if (type === 'tasks') userTasks.splice(idx, 1);
+            updateBadges();
+            switchTab(type);
+        }
+
+        /* --- Wake Word ("Hey Neo") --- */
         function toggleWakeWord() {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (!SpeechRecognition) {
-                statusEl.innerText = "Wake-Word wird auf diesem Browser nicht unterstützt, Sir. Bitte auf die Sphäre tippen.";
+                statusEl.innerText = "Bitte berühren Sie die Sphäre zum Sprechen, Sir.";
                 return;
             }
             wakeEnabled = !wakeEnabled;
-            const btn = document.getElementById('wakeBtn');
-            btn.classList.toggle('wake-on', wakeEnabled);
+            document.getElementById('wakeBtn').classList.toggle('active', wakeEnabled);
 
             if (wakeEnabled) {
                 unlockAudio();
                 startWakeListener();
                 setState(null);
-                statusEl.innerText = "Hands-Free aktiv, Sir. Sagen Sie einfach „Hey Neo“.";
+                statusEl.innerText = "Sagen Sie einfach „Hey Neo“, Sir.";
             } else {
                 if (wakeRec) { try { wakeRec.stop(); } catch(e){} wakeRec = null; }
                 setState(null);
-                statusEl.innerText = "Hands-Free pausiert, Sir.";
+                statusEl.innerText = "Sprachaktivierung pausiert.";
             }
         }
 
@@ -592,7 +615,6 @@ HTML_PAGE = """
             if (!wakeEnabled || isRecording) return;
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (!SpeechRecognition) return;
-
             if (wakeRec) { try { wakeRec.stop(); } catch(e){} }
 
             wakeRec = new SpeechRecognition();
@@ -603,12 +625,7 @@ HTML_PAGE = """
             wakeRec.onresult = (event) => {
                 for (let i = event.resultIndex; i < event.results.length; i++) {
                     const transcript = event.results[i][0].transcript.toLowerCase().trim();
-                    if (
-                        transcript.includes('neo') ||
-                        transcript.includes('nio') ||
-                        transcript.includes('heineo') ||
-                        transcript.includes('hey neo')
-                    ) {
+                    if (transcript.includes('neo') || transcript.includes('nio') || transcript.includes('heineo')) {
                         try { wakeRec.stop(); } catch(e){}
                         wakeRec = null;
                         playSciFiTone('wake');
@@ -620,74 +637,32 @@ HTML_PAGE = """
 
             wakeRec.onerror = () => {
                 wakeRec = null;
-                if (wakeEnabled && !isRecording) {
-                    setTimeout(() => startWakeListener(), 800);
-                }
+                if (wakeEnabled && !isRecording) setTimeout(() => startWakeListener(), 800);
             };
 
             wakeRec.onend = () => {
                 wakeRec = null;
-                if (wakeEnabled && !isRecording && currentState === 'idle') {
-                    setTimeout(() => startWakeListener(), 350);
-                }
+                if (wakeEnabled && !isRecording && currentState === 'idle') setTimeout(() => startWakeListener(), 350);
             };
 
-            try {
-                wakeRec.start();
-                stateLabel.innerText = "Wartet auf Neo";
-            } catch(e) {
-                wakeRec = null;
-            }
-        }
-
-        function deleteItem(type, idx) {
-            if (type === 'memory') userMemory.splice(idx, 1);
-            if (type === 'materials') userMaterials.splice(idx, 1);
-            if (type === 'tasks') userTasks.splice(idx, 1);
-            updateBadges();
-            showList(type);
-        }
-
-        function showList(type) {
-            let list = userMemory;
-            let title = "Objekt-Codes & Notizen";
-            if (type === 'materials') { list = userMaterials; title = "Material- & Einkaufsliste"; }
-            if (type === 'tasks') { list = userTasks; title = "Aufgabenliste (Tasks)"; }
-
-            if (list.length === 0) {
-                statusEl.innerText = `Ihre Liste "${title}" ist aktuell leer, Sir.`;
-                return;
-            }
-            statusEl.innerHTML = `<div style='width:100%;'><div style='margin-bottom:10px;font-weight:700;color:var(--accent);'>${title}</div>` +
-                list.map((m, i) => `<div class="list-card-item"><span>${i+1}. ${m}</span><button class="check-btn" onclick="deleteItem('${type}', ${i})">✓</button></div>`).join("") +
-                "</div>";
+            try { wakeRec.start(); } catch(e) { wakeRec = null; }
         }
 
         function saveParking() {
-            if (!navigator.geolocation) {
-                statusEl.innerText = "GPS wird auf diesem Gerät nicht unterstützt, Sir.";
-                return;
-            }
-            statusEl.innerText = "Ermittle genaue GPS-Position des Fahrzeugs...";
+            if (!navigator.geolocation) { statusEl.innerText = "GPS nicht verfügbar, Sir."; return; }
+            statusEl.innerText = "Speichere GPS-Position...";
             navigator.geolocation.getCurrentPosition(pos => {
-                const lat = pos.coords.latitude;
-                const lng = pos.coords.longitude;
                 const time = new Date().toLocaleTimeString('de-DE', {hour:'2-digit', minute:'2-digit'});
-                localStorage.setItem('neo_parking', JSON.stringify({lat, lng, time}));
+                localStorage.setItem('neo_parking', JSON.stringify({lat: pos.coords.latitude, lng: pos.coords.longitude, time}));
                 statusEl.innerText = `Parkplatz um ${time} Uhr gespeichert, Sir.`;
-            }, () => {
-                statusEl.innerText = "Standortzugriff verweigert, Sir.";
-            });
+            }, () => { statusEl.innerText = "Standortzugriff verweigert, Sir."; });
         }
 
         function findParking() {
             const p = JSON.parse(localStorage.getItem('neo_parking') || 'null');
-            if (!p) {
-                statusEl.innerText = "Es ist aktuell kein Parkplatz gespeichert, Sir.";
-                return;
-            }
+            if (!p) { statusEl.innerText = "Kein Parkplatz gespeichert, Sir."; return; }
             const url = `https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}&travelmode=walking`;
-            statusEl.innerHTML = `<div>Fahrzeug wurde um ${p.time} Uhr hier geparkt, Sir.</div><div class="btn-row"><a href="${url}" class="primary-action">Route zum Auto starten</a></div>`;
+            statusEl.innerHTML = `<div>Geparkt um ${p.time} Uhr, Sir.</div><div class="btn-row"><a href="${url}" class="action-pill">Route zum Auto</a></div>`;
             setTimeout(() => { window.location.href = url; }, 700);
         }
 
@@ -705,13 +680,11 @@ HTML_PAGE = """
         function stopRecording() {
             if (!isRecording) return;
             isRecording = false;
-            spherePulse = 0;
+            audioEnergy = 0;
             if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null; }
             if (animFrame) { cancelAnimationFrame(animFrame); animFrame = null; }
             if (audioCtx) { audioCtx.close().catch(() => {}); audioCtx = null; }
-            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-                mediaRecorder.stop();
-            }
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
         }
 
         async function toggleRecord() {
@@ -735,7 +708,7 @@ HTML_PAGE = """
                     const blob = new Blob(audioChunks, { type: mimeType });
                     if (blob.size < 1000) {
                         setState(null);
-                        statusEl.innerText = "Ich bin hier, Sir. Wie kann ich helfen?";
+                        statusEl.innerText = "Ich bin hier, Sir.";
                         if (wakeEnabled) startWakeListener();
                         return;
                     }
@@ -764,8 +737,7 @@ HTML_PAGE = """
                     let sum = 0;
                     for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
                     const avg = sum / dataArray.length;
-
-                    spherePulse = Math.min(avg * 0.75, 32);
+                    audioEnergy = avg;
 
                     if (avg > 14) {
                         hasSpoken = true;
@@ -786,12 +758,11 @@ HTML_PAGE = """
 
         async function sendAudio(blob, mimeType) {
             setState('thinking');
-            statusEl.innerText = "Verarbeite Anfrage, Sir...";
+            statusEl.innerText = "Verarbeite...";
             const reader = new FileReader();
             reader.readAsDataURL(blob);
             reader.onloadend = async () => {
-                const base64Audio = reader.result.split(',')[1];
-                await callBackend({ audio: base64Audio, mime_type: mimeType });
+                await callBackend({ audio: reader.result.split(',')[1], mime_type: mimeType });
             };
         }
 
@@ -800,8 +771,7 @@ HTML_PAGE = """
             if (!file) return;
             unlockAudio();
             setState('thinking');
-            statusEl.innerText = "Analysiere Bild mit NEO Vision, Sir...";
-
+            statusEl.innerText = "Analysiere Bild...";
             const note = document.getElementById('msg').value.trim();
             document.getElementById('msg').value = '';
 
@@ -810,15 +780,13 @@ HTML_PAGE = """
                 const img = new Image();
                 img.onload = async function() {
                     const canvas = document.createElement('canvas');
-                    const maxW = 1024;
-                    const scale = Math.min(1, maxW / img.width);
+                    const scale = Math.min(1, 1024 / img.width);
                     canvas.width = img.width * scale;
                     canvas.height = img.height * scale;
                     canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-                    const b64 = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
                     await callBackend({
-                        image: b64,
-                        message: note || "Analysiere dieses Bild (Objektkontrolle, Rechnung, Brief oder Problem) und fasse es kurz zusammen."
+                        image: canvas.toDataURL('image/jpeg', 0.8).split(',')[1],
+                        message: note || "Analysiere dieses Bild und fasse es kurz zusammen."
                     });
                 };
                 img.src = e.target.result;
@@ -830,7 +798,7 @@ HTML_PAGE = """
         function quickCmd(cmd) {
             unlockAudio();
             setState('thinking');
-            statusEl.innerText = "Verarbeite Befehl, Sir...";
+            statusEl.innerText = "Verarbeite...";
             callBackend({ message: cmd });
         }
 
@@ -841,7 +809,7 @@ HTML_PAGE = """
             if (!text) return;
             input.value = '';
             setState('thinking');
-            statusEl.innerText = "Verarbeite Befehl, Sir...";
+            statusEl.innerText = "Verarbeite...";
             await callBackend({ message: text });
         }
 
@@ -869,21 +837,12 @@ HTML_PAGE = """
                     return;
                 }
 
-                if (data.new_memory) { userMemory.push(data.new_memory.trim()); }
-                if (data.delete_memory) {
-                    const t = data.delete_memory.toLowerCase();
-                    userMemory = userMemory.filter(x => !x.toLowerCase().includes(t));
-                }
-                if (data.new_material) { userMaterials.push(data.new_material.trim()); }
-                if (data.delete_material) {
-                    const t = data.delete_material.toLowerCase();
-                    userMaterials = userMaterials.filter(x => !x.toLowerCase().includes(t));
-                }
-                if (data.new_task) { userTasks.push(data.new_task.trim()); }
-                if (data.delete_task) {
-                    const t = data.delete_task.toLowerCase();
-                    userTasks = userTasks.filter(x => !x.toLowerCase().includes(t));
-                }
+                if (data.new_memory) userMemory.push(data.new_memory.trim());
+                if (data.delete_memory) userMemory = userMemory.filter(x => !x.toLowerCase().includes(data.delete_memory.toLowerCase()));
+                if (data.new_material) userMaterials.push(data.new_material.trim());
+                if (data.delete_material) userMaterials = userMaterials.filter(x => !x.toLowerCase().includes(data.delete_material.toLowerCase()));
+                if (data.new_task) userTasks.push(data.new_task.trim());
+                if (data.delete_task) userTasks = userTasks.filter(x => !x.toLowerCase().includes(data.delete_task.toLowerCase()));
                 updateBadges();
 
                 if (data.user_said) chatHistory.push({ role: "user", text: data.user_said });
@@ -900,7 +859,7 @@ HTML_PAGE = """
 
                 if (data.copy_text && data.copy_text.trim() !== "") {
                     const cBtn = document.createElement('button');
-                    cBtn.className = "secondary-action";
+                    cBtn.className = "action-pill";
                     cBtn.innerText = "📋 Kopieren";
                     cBtn.onclick = () => {
                         navigator.clipboard.writeText(data.copy_text);
@@ -912,15 +871,11 @@ HTML_PAGE = """
                 if (data.action_url) {
                     const aBtn = document.createElement('a');
                     aBtn.href = data.action_url;
-                    aBtn.className = "primary-action";
+                    aBtn.className = "action-pill";
                     aBtn.innerText = data.action_label || "Öffnen";
-                    if (data.copy_text) {
-                        aBtn.onclick = () => { navigator.clipboard.writeText(data.copy_text).catch(()=>{}); };
-                    }
+                    if (data.copy_text) aBtn.onclick = () => navigator.clipboard.writeText(data.copy_text).catch(()=>{});
                     btnRow.appendChild(aBtn);
-                    if (!data.copy_text) {
-                        setTimeout(() => { window.location.href = data.action_url; }, 750);
-                    }
+                    if (!data.copy_text) setTimeout(() => { window.location.href = data.action_url; }, 750);
                 }
 
                 if (btnRow.children.length > 0) statusEl.appendChild(btnRow);
