@@ -139,7 +139,7 @@ HTML_PAGE = """
             display: block;
         }
 
-        /* Clean Subtitle Caption (Like Video) */
+        /* Clean Subtitle Caption */
         .caption-area {
             width: 100%;
             max-width: 420px;
@@ -323,7 +323,7 @@ HTML_PAGE = """
     <div class="top-minimal">
         <div class="status-dot-wrap">
             <div class="status-dot"></div>
-            <span id="stateLabel">NEO • STANDBY</span>
+            <span id="stateLabel">NEO • BEREIT</span>
         </div>
         <div class="mode-tag" id="modeBtn" onclick="toggleMode()">ARBEIT</div>
     </div>
@@ -367,7 +367,7 @@ HTML_PAGE = """
     <audio id="player" playsinline></audio>
 
     <script>
-        /* --- High-Density Organic 3D Particle Sphere (Like APEX Video) --- */
+        /* --- High-Density Organic 3D Particle Sphere --- */
         const canvas = document.getElementById('particleCanvas');
         const ctx = canvas.getContext('2d');
         const particles = [];
@@ -674,7 +674,9 @@ HTML_PAGE = """
         player.onplay = () => setState('speaking');
         player.onended = () => {
             setState(null);
-            if (wakeEnabled) startWakeListener();
+            if (wakeEnabled) {
+                setTimeout(() => startWakeListener(), 1200);
+            }
         };
 
         function stopRecording() {
@@ -709,7 +711,7 @@ HTML_PAGE = """
                     if (blob.size < 1000) {
                         setState(null);
                         statusEl.innerText = "Ich bin hier, Sir.";
-                        if (wakeEnabled) startWakeListener();
+                        if (wakeEnabled) setTimeout(() => startWakeListener(), 800);
                         return;
                     }
                     playSciFiTone('process');
@@ -833,7 +835,7 @@ HTML_PAGE = """
 
                 if (data.error) {
                     statusEl.innerText = data.error;
-                    if (wakeEnabled) startWakeListener();
+                    if (wakeEnabled) setTimeout(() => startWakeListener(), 1200);
                     return;
                 }
 
@@ -882,14 +884,16 @@ HTML_PAGE = """
 
                 if (data.audio) {
                     player.src = "data:audio/mp3;base64," + data.audio;
-                    player.play().catch(() => { if (wakeEnabled) startWakeListener(); });
+                    player.play().catch(() => {
+                        if (wakeEnabled) setTimeout(() => startWakeListener(), 1200);
+                    });
                 } else if (wakeEnabled) {
-                    startWakeListener();
+                    setTimeout(() => startWakeListener(), 1200);
                 }
             } catch (err) {
                 setState(null);
                 statusEl.innerText = "Verbindungsfehler, Sir.";
-                if (wakeEnabled) startWakeListener();
+                if (wakeEnabled) setTimeout(() => startWakeListener(), 1200);
             }
         }
     </script>
@@ -983,7 +987,7 @@ Antworte ausschließlich als JSON:
 """
 
 async def make_voice(text):
-    clean_text = text.replace("*", "").replace("#", "")
+    clean_text = text.replace("*", "").replace("#", "").replace("...", ".").strip()
     communicate = edge_tts.Communicate(clean_text, "de-DE-FlorianMultilingualNeural")
     audio_bytes = b""
     async for chunk in communicate.stream():
