@@ -108,7 +108,7 @@ def chat():
         user_msg = request.json.get("message", "")
         client = genai.Client(api_key=api_key)
         response = client.models.generate_content(
-            model="gemini-2.5-flash",
+            model="gemini-3.8-flash",
             contents=user_msg,
             config=types.GenerateContentConfig(
                 system_instruction="Du bist J.A.R.V.I.S., ein hochintelligenter, höflicher KI-Assistent. Antworte immer kurz, präzise auf Deutsch und nenne den Nutzer 'Sir'."
