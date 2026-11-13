@@ -2,6 +2,9 @@ import os
 import json
 import base64
 import asyncio
+import urllib.request
+import urllib.parse
+from datetime import datetime
 from flask import Flask, request, jsonify, render_template_string, Response
 from google import genai
 from google.genai import types
@@ -66,7 +69,7 @@ HTML_PAGE = """
             margin: 0;
             background-color: var(--bg);
             background-image: 
-                radial-gradient(circle at 50% 32%, rgba(0, 240, 255, 0.12) 0%, transparent 55%),
+                radial-gradient(circle at 50% 30%, rgba(0, 240, 255, 0.12) 0%, transparent 55%),
                 linear-gradient(rgba(0, 240, 255, 0.04) 1px, transparent 1px),
                 linear-gradient(90deg, rgba(0, 240, 255, 0.04) 1px, transparent 1px);
             background-size: 100% 100%, 32px 32px, 32px 32px;
@@ -77,11 +80,9 @@ HTML_PAGE = """
             align-items: center;
             justify-content: space-between;
             height: 100dvh;
-            padding: 18px 16px 20px;
+            padding: 16px 16px 18px;
             overflow: hidden;
         }
-
-        /* HUD Header */
         .hud-top {
             width: 100%;
             max-width: 480px;
@@ -91,7 +92,7 @@ HTML_PAGE = """
             font-size: 11px;
             letter-spacing: 2px;
             text-transform: uppercase;
-            opacity: 0.8;
+            opacity: 0.85;
             border-bottom: 1px solid rgba(0, 240, 255, 0.2);
             padding-bottom: 8px;
         }
@@ -104,53 +105,55 @@ HTML_PAGE = """
             box-shadow: 0 0 8px var(--primary);
             margin-right: 6px;
         }
-
-        /* Holographic Arc Reactor Core */
+        .mem-badge {
+            font-size: 10px;
+            padding: 2px 8px;
+            border: 1px solid rgba(0, 240, 255, 0.4);
+            border-radius: 10px;
+            cursor: pointer;
+        }
         .core-wrapper {
             position: relative;
-            width: 240px;
-            height: 240px;
+            width: 215px;
+            height: 215px;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
             user-select: none;
-            margin-top: 10px;
+            margin-top: 6px;
         }
         .ring-outer {
             position: absolute;
-            width: 235px;
-            height: 235px;
+            width: 210px;
+            height: 210px;
             border-radius: 50%;
             border: 2px dashed rgba(0, 240, 255, 0.45);
             animation: spinRight 24s linear infinite;
-            transition: border-color 0.3s;
         }
         .ring-mid {
             position: absolute;
-            width: 205px;
-            height: 205px;
+            width: 184px;
+            height: 184px;
             border-radius: 50%;
             border: 4px solid transparent;
             border-top-color: var(--primary);
             border-bottom-color: var(--primary);
             box-shadow: 0 0 25px var(--glow);
             animation: spinLeft 10s linear infinite;
-            transition: all 0.3s;
         }
         .ring-inner {
             position: absolute;
-            width: 175px;
-            height: 175px;
+            width: 156px;
+            height: 156px;
             border-radius: 50%;
             border: 2px dotted rgba(0, 240, 255, 0.75);
             animation: spinRight 16s linear infinite;
-            transition: border-color 0.3s;
         }
         .core-center {
             position: relative;
-            width: 146px;
-            height: 146px;
+            width: 130px;
+            height: 130px;
             border-radius: 50%;
             background: radial-gradient(circle, rgba(0, 240, 255, 0.22) 0%, rgba(3, 7, 18, 0.92) 75%);
             border: 2px solid var(--primary);
@@ -164,24 +167,21 @@ HTML_PAGE = """
         }
         .core-center h1 {
             margin: 0;
-            font-size: 23px;
+            font-size: 20px;
             font-weight: 800;
             letter-spacing: 4px;
             text-shadow: 0 0 12px var(--primary);
         }
         .core-center span {
-            font-size: 8.5px;
-            letter-spacing: 2.5px;
+            font-size: 8px;
+            letter-spacing: 2px;
             opacity: 0.85;
             margin-top: 4px;
         }
-
-        /* States: Listening (Green) & Thinking (Orange) & Speaking (Cyan Pulse) */
         body.listening { --primary: #00FF88; --glow: rgba(0, 255, 136, 0.55); }
         body.listening .ring-mid { animation-duration: 3s; }
         body.thinking { --primary: #FF9500; --glow: rgba(255, 149, 0, 0.55); }
         body.thinking .ring-mid { animation-duration: 1.5s; }
-        body.thinking .ring-inner { animation-duration: 2s; }
         body.speaking .core-center { animation: pulseSpeak 0.9s ease-in-out infinite alternate; }
 
         @keyframes spinRight { 100% { transform: rotate(360deg); } }
@@ -190,40 +190,34 @@ HTML_PAGE = """
             0% { transform: scale(1); box-shadow: 0 0 25px var(--glow); }
             100% { transform: scale(1.07); box-shadow: 0 0 50px var(--glow); }
         }
-
-        /* Sound Equalizer Bars */
         .visualizer {
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 4px;
-            height: 24px;
-            margin-top: 8px;
+            height: 22px;
+            margin-top: 6px;
         }
         .bar {
             width: 3.5px;
-            height: 6px;
+            height: 5px;
             background: var(--primary);
             border-radius: 3px;
             box-shadow: 0 0 8px var(--primary);
             transition: height 0.08s ease;
         }
-
         .hint {
             font-size: 11px;
-            letter-spacing: 1px;
             opacity: 0.7;
-            margin-top: 4px;
+            margin-top: 3px;
             text-align: center;
         }
-
-        /* HUD Response Panel */
         .hud-panel {
             flex: 1;
             width: 100%;
             max-width: 460px;
-            margin: 14px 0;
-            padding: 16px;
+            margin: 12px 0;
+            padding: 15px;
             background: rgba(11, 19, 36, 0.65);
             border: 1px solid rgba(0, 240, 255, 0.25);
             border-left: 3px solid var(--primary);
@@ -236,27 +230,42 @@ HTML_PAGE = """
             align-items: center;
             justify-content: center;
             text-align: center;
-            font-size: 16px;
+            font-size: 15.5px;
             line-height: 1.55;
             color: #E0F7FA;
-            box-shadow: inset 0 0 20px rgba(0, 240, 255, 0.06);
         }
-
         .action-btn {
-            margin-top: 14px;
-            padding: 12px 24px;
+            margin-top: 12px;
+            padding: 11px 22px;
             border-radius: 25px;
             background: #00FF88;
             color: #030712;
             font-weight: 800;
             text-decoration: none;
             font-size: 14px;
-            letter-spacing: 0.5px;
             display: inline-block;
             box-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
         }
-
-        /* Input Area */
+        .quick-apps {
+            display: flex;
+            gap: 8px;
+            width: 100%;
+            max-width: 460px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+            scrollbar-width: none;
+        }
+        .quick-apps::-webkit-scrollbar { display: none; }
+        .chip {
+            white-space: nowrap;
+            padding: 6px 12px;
+            border-radius: 16px;
+            border: 1px solid rgba(0, 240, 255, 0.35);
+            background: rgba(11, 19, 36, 0.8);
+            color: #00F0FF;
+            font-size: 12px;
+            cursor: pointer;
+        }
         .input-box {
             display: flex;
             gap: 8px;
@@ -265,7 +274,7 @@ HTML_PAGE = """
         }
         input {
             flex: 1;
-            padding: 14px 18px;
+            padding: 13px 16px;
             border-radius: 25px;
             border: 1px solid rgba(0, 240, 255, 0.45);
             background: rgba(11, 19, 36, 0.85);
@@ -273,19 +282,14 @@ HTML_PAGE = """
             font-size: 16px;
             outline: none;
         }
-        input:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 12px var(--glow);
-        }
-        button {
-            padding: 14px 22px;
+        button.send-btn {
+            padding: 13px 20px;
             border-radius: 25px;
             border: none;
             background: var(--primary);
             color: #030712;
             font-weight: 800;
             font-size: 14px;
-            letter-spacing: 1px;
             cursor: pointer;
             box-shadow: 0 0 15px var(--glow);
         }
@@ -293,22 +297,22 @@ HTML_PAGE = """
 </head>
 <body>
     <div class="hud-top">
-        <div><span class="status-dot"></span>SYSTEM ONLINE</div>
-        <div id="modeLabel">STANDBY</div>
+        <div><span class="status-dot"></span>JARVIS CONNECTED</div>
+        <div class="mem-badge" onclick="showMemory()" id="memCount">GEDÄCHTNIS: 0</div>
     </div>
 
     <div style="display:flex; flex-direction:column; align-items:center;">
-        <div class="core-wrapper" id="coreWrapper" onclick="toggleRecord()">
+        <div class="core-wrapper" onclick="toggleRecord()">
             <div class="ring-outer"></div>
             <div class="ring-mid"></div>
             <div class="ring-inner"></div>
             <div class="core-center" id="coreCenter">
                 <h1>JARVIS</h1>
-                <span>MARK IX HUD</span>
+                <span>MARK IX PRO</span>
             </div>
         </div>
 
-        <div class="visualizer" id="visualizer">
+        <div class="visualizer">
             <div class="bar"></div><div class="bar"></div><div class="bar"></div>
             <div class="bar"></div><div class="bar"></div><div class="bar"></div>
             <div class="bar"></div><div class="bar"></div><div class="bar"></div>
@@ -316,11 +320,19 @@ HTML_PAGE = """
         <div class="hint" id="hint">Tippen & sprechen • Sendet automatisch</div>
     </div>
 
-    <div class="hud-panel" id="status">Bereit für Ihre Befehle, Sir.</div>
+    <div class="hud-panel" id="status">Alle Systeme verbunden, Sir. Gmail, Kalender, Kontakte und Apps sind einsatzbereit.</div>
+
+    <div class="quick-apps">
+        <div class="chip" onclick="quickCmd('Wie sieht mein Kalender heute und morgen aus?')">📅 Termine</div>
+        <div class="chip" onclick="quickCmd('Lies meine ungelesenen E-Mails vor.')">📧 E-Mails</div>
+        <div class="chip" onclick="quickCmd('Gib mir mein komplettes Tagesbriefing.')">📋 Briefing</div>
+        <div class="chip" onclick="quickCmd('Öffne WhatsApp')">💬 WhatsApp</div>
+        <div class="chip" onclick="quickCmd('Öffne Google Maps')">🗺️ Maps</div>
+    </div>
 
     <div class="input-box">
-        <input type="text" id="msg" placeholder="Befehl eingeben..." onkeypress="if(event.key==='Enter') sendText()">
-        <button onclick="sendText()">SEND</button>
+        <input type="text" id="msg" placeholder="Befehl an JARVIS..." onkeypress="if(event.key==='Enter') sendText()">
+        <button class="send-btn" onclick="sendText()">SEND</button>
     </div>
 
     <audio id="player" playsinline></audio>
@@ -328,7 +340,7 @@ HTML_PAGE = """
     <script>
         const statusEl = document.getElementById('status');
         const hintEl = document.getElementById('hint');
-        const modeLabel = document.getElementById('modeLabel');
+        const memCountEl = document.getElementById('memCount');
         const coreCenter = document.getElementById('coreCenter');
         const bars = document.querySelectorAll('.bar');
         const player = document.getElementById('player');
@@ -341,20 +353,35 @@ HTML_PAGE = """
         let silenceTimer = null;
         let animFrame = null;
 
+        let userMemory = JSON.parse(localStorage.getItem('jarvis_memory') || '[]');
+        let chatHistory = JSON.parse(localStorage.getItem('jarvis_history') || '[]');
+
+        function updateMemBadge() {
+            memCountEl.innerText = "GEDÄCHTNIS: " + userMemory.length;
+        }
+        updateMemBadge();
+
+        function showMemory() {
+            if (userMemory.length === 0) {
+                statusEl.innerText = "Ihr privates Gedächtnis ist noch leer, Sir.";
+            } else {
+                statusEl.innerHTML = "<strong>Gespeicherte Notizen:</strong><br><br>" + userMemory.map((m, i) => (i+1) + ". " + m).join("<br>");
+            }
+        }
+
         function setBars(level) {
             bars.forEach((bar, i) => {
                 const factor = Math.sin((i + 1) * 0.7) * 0.5 + 0.7;
-                const h = Math.max(5, Math.min(24, level * factor));
+                const h = Math.max(5, Math.min(22, level * factor));
                 bar.style.height = h + 'px';
             });
         }
 
-        function setState(state, label) {
+        function setState(state) {
             document.body.classList.remove('listening', 'thinking', 'speaking');
             coreCenter.style.transform = '';
-            setBars(6);
+            setBars(5);
             if (state) document.body.classList.add(state);
-            if (label) modeLabel.innerText = label;
         }
 
         function unlockAudio() {
@@ -362,8 +389,8 @@ HTML_PAGE = """
             player.play().catch(() => {});
         }
 
-        player.onplay = () => setState('speaking', 'VOICE OUTPUT');
-        player.onended = () => setState(null, 'STANDBY');
+        player.onplay = () => setState('speaking');
+        player.onended = () => setState(null);
 
         function stopRecording() {
             if (!isRecording) return;
@@ -378,35 +405,24 @@ HTML_PAGE = """
 
         async function toggleRecord() {
             unlockAudio();
-
-            if (isRecording) {
-                stopRecording();
-                return;
-            }
+            if (isRecording) { stopRecording(); return; }
 
             try {
                 activeStream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 audioChunks = [];
-
                 let options = {};
-                if (MediaRecorder.isTypeSupported('audio/webm')) {
-                    options = { mimeType: 'audio/webm' };
-                } else if (MediaRecorder.isTypeSupported('audio/mp4')) {
-                    options = { mimeType: 'audio/mp4' };
-                }
+                if (MediaRecorder.isTypeSupported('audio/webm')) options = { mimeType: 'audio/webm' };
+                else if (MediaRecorder.isTypeSupported('audio/mp4')) options = { mimeType: 'audio/mp4' };
 
                 mediaRecorder = new MediaRecorder(activeStream, options);
-
-                mediaRecorder.ondataavailable = (e) => {
-                    if (e.data && e.data.size > 0) audioChunks.push(e.data);
-                };
+                mediaRecorder.ondataavailable = (e) => { if (e.data && e.data.size > 0) audioChunks.push(e.data); };
 
                 mediaRecorder.onstop = async () => {
                     activeStream.getTracks().forEach(t => t.stop());
                     const mimeType = mediaRecorder.mimeType || 'audio/webm';
                     const blob = new Blob(audioChunks, { type: mimeType });
                     if (blob.size < 1000) {
-                        setState(null, 'STANDBY');
+                        setState(null);
                         statusEl.innerText = "Nichts gehört, Sir. Bitte erneut tippen.";
                         hintEl.innerText = "Tippen & sprechen • Sendet automatisch";
                         return;
@@ -416,7 +432,7 @@ HTML_PAGE = """
 
                 mediaRecorder.start();
                 isRecording = true;
-                setState('listening', 'LISTENING');
+                setState('listening');
                 statusEl.innerText = "Ich höre zu, Sir...";
                 hintEl.innerText = "Sprechen Sie jetzt — sendet nach kurzer Pause";
 
@@ -439,33 +455,29 @@ HTML_PAGE = """
 
                     const scale = 1 + Math.min(avg / 220, 0.14);
                     coreCenter.style.transform = `scale(${scale.toFixed(2)})`;
-                    setBars(6 + avg * 0.6);
+                    setBars(5 + avg * 0.6);
 
                     if (avg > 14) {
                         hasSpoken = true;
                         if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null; }
                     } else if (hasSpoken && !silenceTimer) {
-                        silenceTimer = setTimeout(() => {
-                            stopRecording();
-                        }, 1500);
+                        silenceTimer = setTimeout(() => stopRecording(), 1500);
                     } else if (!hasSpoken && (Date.now() - startTime > 7000)) {
                         stopRecording();
                     }
                     animFrame = requestAnimationFrame(monitorVolume);
                 }
                 monitorVolume();
-
             } catch (err) {
-                setState(null, 'ERROR');
-                statusEl.innerText = "Mikrofon-Zugriff erforderlich. Bitte in den Browser-Einstellungen erlauben, Sir.";
+                setState(null);
+                statusEl.innerText = "Mikrofon-Zugriff erforderlich, Sir.";
             }
         }
 
         async function sendAudio(blob, mimeType) {
-            setState('thinking', 'PROCESSING');
-            statusEl.innerText = "Analysiere Sprache, Sir...";
-            hintEl.innerText = "KI-Analyse läuft...";
-
+            setState('thinking');
+            statusEl.innerText = "Verarbeite Anfrage, Sir...";
+            hintEl.innerText = "Verbinde mit Diensten...";
             const reader = new FileReader();
             reader.readAsDataURL(blob);
             reader.onloadend = async () => {
@@ -474,18 +486,30 @@ HTML_PAGE = """
             };
         }
 
+        function quickCmd(cmd) {
+            unlockAudio();
+            setState('thinking');
+            statusEl.innerText = "Verarbeite Befehl, Sir...";
+            callBackend({ message: cmd });
+        }
+
         async function sendText() {
             unlockAudio();
             const input = document.getElementById('msg');
             const text = input.value.trim();
             if (!text) return;
             input.value = '';
-            setState('thinking', 'PROCESSING');
+            setState('thinking');
             statusEl.innerText = "Verarbeite Befehl, Sir...";
             await callBackend({ message: text });
         }
 
         async function callBackend(payload) {
+            payload.memory = userMemory;
+            payload.history = chatHistory.slice(-6);
+            payload.local_time = new Date().toISOString();
+            payload.local_time_str = new Date().toLocaleString('de-DE');
+
             try {
                 const res = await fetch('/chat', {
                     method: 'POST',
@@ -493,13 +517,25 @@ HTML_PAGE = """
                     body: JSON.stringify(payload)
                 });
                 const data = await res.json();
-                setState(null, 'STANDBY');
+                setState(null);
                 hintEl.innerText = "Tippen & sprechen • Sendet automatisch";
 
                 if (data.error) {
                     statusEl.innerText = data.error;
                     return;
                 }
+
+                if (data.new_memory && data.new_memory.trim() !== "") {
+                    userMemory.push(data.new_memory.trim());
+                    localStorage.setItem('jarvis_memory', JSON.stringify(userMemory));
+                    updateMemBadge();
+                }
+
+                if (data.user_said) {
+                    chatHistory.push({ role: "user", text: data.user_said });
+                }
+                chatHistory.push({ role: "jarvis", text: data.reply });
+                localStorage.setItem('jarvis_history', JSON.stringify(chatHistory.slice(-10)));
 
                 statusEl.innerHTML = "";
                 const textDiv = document.createElement('div');
@@ -509,11 +545,10 @@ HTML_PAGE = """
                 if (data.action_url) {
                     const btn = document.createElement('a');
                     btn.href = data.action_url;
-                    btn.target = "_blank";
                     btn.className = "action-btn";
                     btn.innerText = data.action_label || "App öffnen";
                     statusEl.appendChild(btn);
-                    setTimeout(() => { window.location.href = data.action_url; }, 600);
+                    setTimeout(() => { window.location.href = data.action_url; }, 700);
                 }
 
                 if (data.audio) {
@@ -521,7 +556,7 @@ HTML_PAGE = """
                     player.play().catch(() => {});
                 }
             } catch (err) {
-                setState(null, 'OFFLINE');
+                setState(null);
                 statusEl.innerText = "Verbindungsfehler, Sir.";
             }
         }
@@ -530,23 +565,75 @@ HTML_PAGE = """
 </html>
 """
 
-SYSTEM_PROMPT = """Du bist J.A.R.V.I.S., der persönliche KI-Assistent des Nutzers.
-Du verstehst perfektes Hochdeutsch sowie umgangssprachliches Deutsch zu 100%.
-Antworte IMMER auf Deutsch, höflich, präzise (maximal 2-3 Sätze, ohne Sternchen oder Markdown) und nenne den Nutzer 'Sir'.
+def call_google_bridge(payload):
+    bridge_url = os.environ.get("GOOGLE_BRIDGE_URL", "").strip()
+    if not bridge_url:
+        return {"status": "error", "message": "GOOGLE_BRIDGE_URL fehlt in Render"}
+    try:
+        req = urllib.request.Request(
+            bridge_url,
+            data=json.dumps(payload).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+            method="POST"
+        )
+        with urllib.request.urlopen(req, timeout=12) as resp:
+            return json.loads(resp.read().decode("utf-8"))
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
 
-Du hast direkten Zugriff auf Smartphone-Apps über URL-Aktionen. Wenn der Nutzer eine App öffnen, jemanden anrufen, eine Nachricht senden, navigieren oder etwas suchen möchte, gib zusätzlich eine passende 'action_url' und ein kurzes 'action_label' zurück:
-- Telefonanruf: "tel:+49..." (oder "tel:" wenn keine Nummer genannt wurde)
-- WhatsApp Nachricht: "https://wa.me/?text=..." (URL-kodierter Text) oder "https://wa.me/49..."
-- SMS: "sms:?body=..."
-- Navigation / Google Maps: "https://www.google.com/maps/search/?api=1&query=..."
-- YouTube Suche/Öffnen: "https://www.youtube.com/results?search_query=..."
+PLANNER_PROMPT = """Du bist das Routing-System von J.A.R.V.I.S.
+Analysiere die Anfrage des Nutzers (Audio oder Text) und entscheide, ob Daten aus Google (Kalender, Gmail, Kontakte) benötigt werden oder eine Aktion ausgeführt werden soll.
+Aktuelle ISO-Zeit des Nutzers: {iso_time} (Lokal: {local_time})
+
+Verfügbare Google-Aktionen (tool_action):
+- "none": Keine Google-Daten nötig (normale Frage, App öffnen ohne Kontakt-Suche, Notiz merken)
+- "get_calendar": Nutzer fragt nach Terminen, Kalender, Tagesplan oder Briefing
+- "add_calendar": Nutzer möchte einen Termin in den Kalender eintragen (benötigt start_iso im Format YYYY-MM-DDTHH:MM:SS, title, duration_minutes)
+- "get_emails": Nutzer fragt nach E-Mails, Posteingang oder Briefing
+- "send_email": Nutzer möchte eine E-Mail senden (benötigt to, subject, body)
+- "find_contact": Nutzer möchte jemanden anrufen, eine WhatsApp-Nachricht an eine Person senden oder deren Nummer/E-Mail wissen (benötigt contact_name)
+
+Antworte NUR als JSON:
+{{
+  "user_said": "Was der Nutzer auf Deutsch gesagt hat",
+  "tool_action": "none | get_calendar | add_calendar | get_emails | send_email | find_contact",
+  "params": {{
+    "contact_name": "",
+    "title": "",
+    "start_iso": "",
+    "duration_minutes": 60,
+    "location": "",
+    "to": "",
+    "subject": "",
+    "body": ""
+  }}
+}}
+"""
+
+FINAL_PROMPT = """Du bist J.A.R.V.I.S., der hochintelligente, persönliche KI-Assistent von Sir.
+Antworte IMMER auf perfektem Deutsch, höflich, präzise (maximal 2-3 Sätze, ohne Sternchen oder Markdown) und nenne den Nutzer 'Sir'.
+
+Nutze die übergebenen Google-Ergebnisse (Kalender, E-Mails, gefundene Kontakte) und das private Gedächtnis.
+Wenn ein Kontakt gefunden wurde und Sir eine WhatsApp senden oder anrufen wollte:
+- Formatiere die Telefonnummer international ohne Leerzeichen oder '+' für WhatsApp (z.B. aus 0176 123456 mache 49176123456) und setze action_url auf: "https://wa.me/49176123456?text=..."
+- Oder für Anruf: "tel:+49176123456"
+
+Weitere App-Aktionen (action_url):
+- WhatsApp allgemein: "https://wa.me/?text=..."
+- Google Maps: "https://www.google.com/maps/search/?api=1&query=..."
+- YouTube: "https://www.youtube.com/results?search_query=..."
 - Google Suche: "https://www.google.com/search?q=..."
-- E-Mail schreiben: "mailto:?subject=...&body=..."
-- Spotify Suche: "https://open.spotify.com/search/..."
+- Spotify: "https://open.spotify.com/search/..."
 
-Wenn keine App geöffnet werden soll, lasse 'action_url' und 'action_label' leer ("").
-Antworte ausschließlich im folgenden JSON-Format:
-{"reply": "Deine gesprochene Antwort an Sir", "action_url": "", "action_label": ""}
+Wenn Sir sagt "Merke dir...", schreibe die Info kurz in 'new_memory'.
+
+Antworte ausschließlich als JSON:
+{{
+  "reply": "Deine gesprochene Antwort an Sir",
+  "new_memory": "",
+  "action_url": "",
+  "action_label": ""
+}}
 """
 
 async def make_voice(text):
@@ -578,35 +665,94 @@ def chat():
             return jsonify({"error": "GEMINI_API_KEY fehlt in Render!"}), 500
 
         data = request.json or {}
+        memory = data.get("memory", [])
+        history = data.get("history", [])
+        iso_time = data.get("local_time", datetime.now().isoformat())
+        local_time_str = data.get("local_time_str", datetime.now().strftime("%d.%m.%Y %H:%M"))
+
         client = genai.Client(api_key=api_key)
 
+        # Hapi 1: Kupto komandën dhe vendos nëse duhen të dhëna nga Google
+        planner_sys = PLANNER_PROMPT.format(iso_time=iso_time, local_time=local_time_str)
         if "audio" in data:
             audio_bytes = base64.b64decode(data["audio"])
             mime_type = data.get("mime_type", "audio/webm").split(";")[0]
-            contents = [
+            step1_contents = [
                 types.Part.from_bytes(data=audio_bytes, mime_type=mime_type),
-                "Höre dir diese Sprachnachricht auf Deutsch genau an und führe den Befehl aus."
+                "Analysiere diese deutsche Sprachnachricht."
             ]
         else:
-            contents = data.get("message", "")
+            step1_contents = [data.get("message", "")]
 
-        response = client.models.generate_content(
+        step1_res = client.models.generate_content(
             model="gemini-3.8-flash",
-            contents=contents,
+            contents=step1_contents,
             config=types.GenerateContentConfig(
-                system_instruction=SYSTEM_PROMPT,
+                system_instruction=planner_sys,
+                response_mime_type="application/json"
+            )
+        )
+        plan = json.loads(step1_res.text)
+        user_said = plan.get("user_said", data.get("message", ""))
+        tool_action = plan.get("tool_action", "none")
+        params = plan.get("params", {})
+
+        # Hapi 2: Ekzekuto lidhjen me Google Bridge nëse kërkohet
+        tool_result = {}
+        if tool_action == "get_calendar":
+            tool_result = call_google_bridge({"action": "get_calendar"})
+        elif tool_action == "add_calendar":
+            tool_result = call_google_bridge({
+                "action": "add_calendar",
+                "title": params.get("title", "Termin"),
+                "start_iso": params.get("start_iso"),
+                "duration_minutes": params.get("duration_minutes", 60),
+                "location": params.get("location", "")
+            })
+        elif tool_action == "get_emails":
+            tool_result = call_google_bridge({"action": "get_emails"})
+        elif tool_action == "send_email":
+            tool_result = call_google_bridge({
+                "action": "send_email",
+                "to": params.get("to"),
+                "subject": params.get("subject", "Nachricht von JARVIS"),
+                "body": params.get("body", "")
+            })
+        elif tool_action == "find_contact":
+            tool_result = call_google_bridge({
+                "action": "find_contact",
+                "name": params.get("contact_name", "")
+            })
+
+        # Hapi 3: Gjenero përgjigjen përfundimtare të JARVIS
+        final_context = (
+            f"Aktuelle Zeit: {local_time_str}\n"
+            f"Nutzer-Anfrage: {user_said}\n"
+            f"Privates Gedächtnis: {json.dumps(memory, ensure_ascii=False)}\n"
+            f"Gesprächsverlauf: {json.dumps(history, ensure_ascii=False)}\n"
+            f"Google-Daten-Ergebnis ({tool_action}): {json.dumps(tool_result, ensure_ascii=False)}"
+        )
+
+        step2_res = client.models.generate_content(
+            model="gemini-3.8-flash",
+            contents=final_context,
+            config=types.GenerateContentConfig(
+                system_instruction=FINAL_PROMPT,
                 response_mime_type="application/json"
             )
         )
 
-        result = json.loads(response.text)
+        result = json.loads(step2_res.text)
         reply = result.get("reply", "Zu Befehl, Sir.")
+        new_memory = result.get("new_memory", "")
         action_url = result.get("action_url", "")
         action_label = result.get("action_label", "")
 
         audio_b64 = asyncio.run(make_voice(reply))
         return jsonify({
+            "user_said": user_said,
             "reply": reply,
+            "new_memory": new_memory,
             "action_url": action_url,
             "action_label": action_label,
             "audio": audio_b64
