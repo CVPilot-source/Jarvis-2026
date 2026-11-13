@@ -1,4 +1,5 @@
 import os
+import re
 import json
 import base64
 import asyncio
@@ -145,6 +146,10 @@ HTML_PAGE = """
             align-items: center;
             margin-bottom: 12px;
             z-index: 5;
+            text-align: center;
+            font-size: 12.5px;
+            color: #FB7185;
+            padding: 0 12px;
         }
 
         .action-pill {
@@ -446,7 +451,7 @@ HTML_PAGE = """
             } catch (e) {}
         }
 
-        /* --- Direct Audio-to-Audio Engine (No Transcription Overhead!) --- */
+        /* --- Direct Audio-to-Audio Engine --- */
         const actionBar = document.getElementById('actionBar');
         const stateLabel = document.getElementById('stateLabel');
         const player = document.getElementById('player');
@@ -535,7 +540,6 @@ HTML_PAGE = """
                         wakeRec = null;
                         inConversation = true;
                         playTone(540, 960);
-                        // Kurze 150ms Freigabe für Android Mikrofon-Hardware
                         setTimeout(() => startDirectAudio(), 150);
                         return;
                     }
@@ -585,8 +589,7 @@ HTML_PAGE = """
             try {
                 activeStream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 audioChunks = [];
-                // Niedrige Bitrate (16kbps) = winzige Audiodatei (~12KB) = blitzschneller Upload!
-                let options = { audioBitsPerSecond: 16000 };
+                let options = {};
                 if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) options.mimeType = 'audio/webm;codecs=opus';
                 else if (MediaRecorder.isTypeSupported('audio/webm')) options.mimeType = 'audio/webm';
                 else if (MediaRecorder.isTypeSupported('audio/mp4')) options.mimeType = 'audio/mp4';
@@ -640,7 +643,6 @@ HTML_PAGE = """
                         hasSpoken = true;
                         if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null; }
                     } else if (hasSpoken && !silenceTimer) {
-                        // Schnelle 1.1s Pause nach dem Sprechen für sofortige Antwort!
                         silenceTimer = setTimeout(() => stopDirectAudio(), 1100);
                     } else if (!hasSpoken && (Date.now() - startTime > 5500)) {
                         inConversation = false;
@@ -659,9 +661,9 @@ HTML_PAGE = """
         player.onended = () => {
             setState(null);
             if (inConversation) {
-                setTimeout(() => startDirectAudio(), 550);
+                setTimeout(() => startDirectAudio(), 650);
             } else if (wakeEnabled) {
-                setTimeout(() => startWakeListener(), 800);
+                setTimeout(() => startWakeListener(), 900);
             }
         };
 
@@ -755,6 +757,7 @@ HTML_PAGE = """
         }
 
         async function sendToNeo(payload) {
+            actionBar.innerText = "";
             payload.mode = workMode;
             payload.memory = userMemory;
             payload.materials = userMaterials;
@@ -774,7 +777,8 @@ HTML_PAGE = """
                 if (data.error) {
                     inConversation = false;
                     stateLabel.innerText = "FEHLER";
-                    if (wakeEnabled) setTimeout(() => startWakeListener(), 800);
+                    actionBar.innerText = data.error;
+                    if (wakeEnabled) setTimeout(() => startWakeListener(), 1000);
                     return;
                 }
 
@@ -814,14 +818,15 @@ HTML_PAGE = """
                     player.src = "data:audio/mp3;base64," + data.audio;
                     player.play().catch(() => { if (wakeEnabled) startWakeListener(); });
                 } else if (inConversation) {
-                    setTimeout(() => startDirectAudio(), 550);
+                    setTimeout(() => startDirectAudio(), 650);
                 } else if (wakeEnabled) {
-                    setTimeout(() => startWakeListener(), 800);
+                    setTimeout(() => startWakeListener(), 900);
                 }
             } catch (err) {
                 inConversation = false;
                 setState(null);
-                if (wakeEnabled) setTimeout(() => startWakeListener(), 800);
+                actionBar.innerText = "Verbindungsfehler, Sir.";
+                if (wakeEnabled) setTimeout(() => startWakeListener(), 1000);
             }
         }
 
@@ -875,7 +880,7 @@ REGELN:
 4. GESPRÄCH ENDE:
    - Bei "Danke", "Stopp", "Fertig", "Das war's": setze "end_conversation": true.
 
-Antworte NUR als JSON:
+Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt (ohne Markdown-Codeblöcke):
 {{
   "reply": "Kurze gesprochene Antwort an Sir",
   "copy_text": "",
@@ -890,6 +895,13 @@ Antworte NUR als JSON:
   "end_conversation": false
 }}
 """
+
+def extract_json(raw_text):
+    clean = raw_text.strip()
+    match = re.search(r'\{.*\}', clean, re.DOTALL)
+    if match:
+        return json.loads(match.group(0))
+    return {"reply": clean}
 
 async def make_voice(text):
     clean_text = text.replace("*", "").replace("#", "").replace("...", ".").strip()
@@ -917,7 +929,7 @@ def chat():
     try:
         api_key = os.environ.get("GEMINI_API_KEY", "").strip()
         if not api_key:
-            return jsonify({"error": "GEMINI_API_KEY fehlt!"}), 500
+            return jsonify({"error": "GEMINI_API_KEY fehlt in Render!"}), 500
 
         data = request.json or {}
         mode = data.get("mode", "ARBEIT")
@@ -949,12 +961,11 @@ def chat():
             contents=contents,
             config=types.GenerateContentConfig(
                 system_instruction=SYSTEM_PROMPT.format(mode=mode, local_time=local_time_str),
-                tools=[{"google_search": {}}],
-                response_mime_type="application/json"
+                tools=[{"google_search": {}}]
             )
         )
 
-        result = json.loads(response.text)
+        result = extract_json(response.text)
         reply = result.get("reply", "Zu Befehl, Sir.")
         audio_b64 = asyncio.run(make_voice(reply))
 
