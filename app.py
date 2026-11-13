@@ -4,7 +4,7 @@ import json
 import base64
 import asyncio
 import urllib.request
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask import Flask, request, jsonify, render_template_string, Response
 from google import genai
 from google.genai import types
@@ -131,44 +131,30 @@ HTML_PAGE = """
         }
 
         #particleCanvas {
-            width: 310px;
-            height: 310px;
-            max-width: 82vw;
-            max-height: 82vw;
+            width: 330px;
+            height: 330px;
+            max-width: 86vw;
+            max-height: 86vw;
             display: block;
         }
 
-        .caption-area {
-            width: 100%;
-            max-width: 420px;
-            min-height: 60px;
-            max-height: 145px;
-            overflow-y: auto;
-            text-align: center;
-            font-size: 14.5px;
-            font-weight: 300;
-            line-height: 1.55;
-            color: rgba(255, 255, 255, 0.88);
-            padding: 0 10px;
-            margin-bottom: 10px;
-            z-index: 5;
-        }
-
         .action-bar {
+            min-height: 44px;
             display: flex;
             gap: 10px;
             justify-content: center;
             align-items: center;
-            margin-top: 8px;
+            margin-bottom: 12px;
+            z-index: 5;
         }
 
         .action-pill {
-            padding: 8px 16px;
+            padding: 9px 18px;
             border-radius: 20px;
             background: rgba(0, 245, 212, 0.14);
             border: 1px solid var(--accent);
             color: var(--accent);
-            font-size: 12.5px;
+            font-size: 13px;
             font-weight: 600;
             text-decoration: none;
             cursor: pointer;
@@ -326,10 +312,10 @@ HTML_PAGE = """
     </div>
 
     <div class="hologram-center" onclick="toggleDirectRecord()">
-        <canvas id="particleCanvas" width="620" height="620"></canvas>
+        <canvas id="particleCanvas" width="660" height="660"></canvas>
     </div>
 
-    <div class="caption-area" id="captionArea"></div>
+    <div class="action-bar" id="actionBar"></div>
 
     <div class="bottom-controls">
         <button class="circle-btn active" id="wakeBtn" onclick="toggleWakeWord()" title="Hey Neo">🎙️</button>
@@ -367,7 +353,7 @@ HTML_PAGE = """
         const canvas = document.getElementById('particleCanvas');
         const ctx = canvas.getContext('2d');
         const particles = [];
-        const NUM_PARTICLES = 600;
+        const NUM_PARTICLES = 620;
         let audioEnergy = 0;
         let currentColor = { r: 0, g: 245, b: 212 };
 
@@ -418,7 +404,7 @@ HTML_PAGE = """
 
             const cosY = Math.cos(rotY), sinY = Math.sin(rotY);
             const cosX = Math.cos(rotX), sinX = Math.sin(rotX);
-            const baseR = 195;
+            const baseR = 205;
 
             for (let i = 0; i < particles.length; i++) {
                 const p = particles[i];
@@ -461,8 +447,8 @@ HTML_PAGE = """
             } catch (e) {}
         }
 
-        /* --- Core Audio & State Management (Zero Audio Interruption!) --- */
-        const captionArea = document.getElementById('captionArea');
+        /* --- Pure Voice-Only Engine (No Transcripts on Screen!) --- */
+        const actionBar = document.getElementById('actionBar');
         const stateLabel = document.getElementById('stateLabel');
         const player = document.getElementById('player');
 
@@ -533,7 +519,6 @@ HTML_PAGE = """
         }
 
         function startWakeListener() {
-            // Niemals Mikrofon starten während NEO spricht oder bereits aufnimmt!
             if (!wakeEnabled || isRecording || inConversation || isSpeaking || currentState !== 'idle') return;
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (!SpeechRecognition) return;
@@ -670,7 +655,6 @@ HTML_PAGE = """
             }
         }
 
-        // Volle Audio-Wiedergabe garantieren ohne Unterbrechung!
         player.onplay = () => {
             isSpeaking = true;
             stopWakeListener();
@@ -706,10 +690,9 @@ HTML_PAGE = """
             if (tab === 'tools') {
                 body.innerHTML = `
                     <div class="quick-grid">
-                        <div class="q-btn" onclick="closeDrawer();quickCmd('Erkläre mir ausführlich meine Termine im Kalender für heute und morgen.')">📅 Kalender erklären</div>
+                        <div class="q-btn" onclick="closeDrawer();quickCmd('Erkläre mir ausführlich meine Termine im Kalender für heute und die nächsten Tage.')">📅 Kalender erklären</div>
                         <div class="q-btn" onclick="closeDrawer();quickCmd('Gib mir meinen Statusbericht für heute mit Kalender und Aufgaben.')">📋 Statusbericht</div>
                         <div class="q-btn" onclick="closeDrawer();quickCmd('Wie wird das Wetter heute in Hamburg?')">🌤️ Wetter Hamburg</div>
-                        <div class="q-btn" onclick="closeDrawer();quickCmd('Lies meine ungelesenen E-Mails vor.')">📧 E-Mails</div>
                         <div class="q-btn" onclick="closeDrawer();saveParking()">🅿️ Parkplatz merken</div>
                         <div class="q-btn" onclick="closeDrawer();findParking()">🚗 Auto finden</div>
                     </div>`;
@@ -734,13 +717,13 @@ HTML_PAGE = """
             navigator.geolocation.getCurrentPosition(pos => {
                 const time = new Date().toLocaleTimeString('de-DE', {hour:'2-digit', minute:'2-digit'});
                 localStorage.setItem('neo_parking', JSON.stringify({lat: pos.coords.latitude, lng: pos.coords.longitude, time}));
-                captionArea.innerText = `Parkplatz um ${time} Uhr gespeichert, Sir.`;
+                stateLabel.innerText = "PARKPLATZ GESPEICHERT";
             });
         }
 
         function findParking() {
             const p = JSON.parse(localStorage.getItem('neo_parking') || 'null');
-            if (!p) { captionArea.innerText = "Kein Parkplatz gespeichert, Sir."; return; }
+            if (!p) return;
             window.location.href = `https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}&travelmode=walking`;
         }
 
@@ -782,7 +765,7 @@ HTML_PAGE = """
 
         async function sendToNeo(payload) {
             stopWakeListener();
-            captionArea.innerHTML = "";
+            actionBar.innerHTML = "";
             payload.mode = workMode;
             payload.memory = userMemory;
             payload.materials = userMaterials;
@@ -802,7 +785,6 @@ HTML_PAGE = """
                     inConversation = false;
                     setState(null);
                     stateLabel.innerText = "FEHLER";
-                    captionArea.innerText = data.error;
                     if (wakeEnabled) setTimeout(() => startWakeListener(), 1000);
                     return;
                 }
@@ -819,20 +801,13 @@ HTML_PAGE = """
                 chatHistory.push({ role: "neo", text: data.reply });
                 localStorage.setItem('neo_history', JSON.stringify(chatHistory.slice(-10)));
 
-                // Zeige Antworttext sauber an
-                const textDiv = document.createElement('div');
-                textDiv.innerText = data.reply;
-                captionArea.appendChild(textDiv);
-
-                const btnRow = document.createElement('div');
-                btnRow.className = "action-bar";
-
+                // Nur Action-Buttons anzeigen (kein Transkript-Text auf dem Bildschirm!)
                 if (data.copy_text && data.copy_text.trim() !== "") {
                     const cBtn = document.createElement('button');
                     cBtn.className = "action-pill";
                     cBtn.innerText = "📋 Kopieren";
                     cBtn.onclick = () => { navigator.clipboard.writeText(data.copy_text); cBtn.innerText = "✓ Kopiert"; };
-                    btnRow.appendChild(cBtn);
+                    actionBar.appendChild(cBtn);
                 }
 
                 if (data.action_url) {
@@ -842,11 +817,9 @@ HTML_PAGE = """
                     aBtn.className = "action-pill";
                     aBtn.innerText = data.action_label || "Öffnen";
                     if (data.copy_text) aBtn.onclick = () => navigator.clipboard.writeText(data.copy_text).catch(()=>{});
-                    btnRow.appendChild(aBtn);
+                    actionBar.appendChild(aBtn);
                     if (!data.copy_text) setTimeout(() => { window.location.href = data.action_url; }, 600);
                 }
-
-                if (btnRow.children.length > 0) captionArea.appendChild(btnRow);
 
                 if (data.audio) {
                     isSpeaking = true;
@@ -869,7 +842,6 @@ HTML_PAGE = """
                 inConversation = false;
                 isSpeaking = false;
                 setState(null);
-                captionArea.innerText = "Verbindungsfehler, Sir.";
                 if (wakeEnabled) setTimeout(() => startWakeListener(), 1000);
             }
         }
@@ -878,7 +850,6 @@ HTML_PAGE = """
             const params = new URLSearchParams(window.location.search);
             if (params.get('listen') === '1') {
                 inConversation = true;
-                // Begrüßung beim Öffnen der App vollständig abspielen und danach direkt zuhören!
                 sendToNeo({ message: "Begrüße Sir kurz beim Öffnen der App und frage, wie du helfen kannst." });
             } else {
                 startWakeListener();
@@ -889,21 +860,56 @@ HTML_PAGE = """
 </html>
 """
 
-def call_google_bridge(payload):
-    bridge_url = os.environ.get("GOOGLE_BRIDGE_URL", "").strip()
-    if not bridge_url:
-        return {"status": "skipped"}
+def format_ical_dt(raw_dt):
     try:
-        req = urllib.request.Request(
-            bridge_url,
-            data=json.dumps(payload).encode("utf-8"),
-            headers={"Content-Type": "application/json"},
-            method="POST"
-        )
-        with urllib.request.urlopen(req, timeout=6) as resp:
-            return json.loads(resp.read().decode("utf-8"))
+        clean = raw_dt.replace("Z", "")
+        if "T" in clean:
+            dt = datetime.strptime(clean[:15], "%Y%m%dT%H%M%S")
+            if raw_dt.endswith("Z"):
+                dt = dt + timedelta(hours=1)
+            return dt, dt.strftime("%d.%m.%Y um %H:%M Uhr")
+        else:
+            dt = datetime.strptime(clean[:8], "%Y%m%d")
+            return dt, dt.strftime("%d.%m.%Y (Ganztägig)")
+    except Exception:
+        return None, raw_dt
+
+def get_ical_events():
+    ical_url = os.environ.get("ICAL_URL", "").strip()
+    if not ical_url:
+        return "Kein ICAL_URL in Render hinterlegt."
+    try:
+        req = urllib.request.urlopen(ical_url, timeout=6)
+        raw = req.read().decode("utf-8", errors="ignore")
+        raw = re.sub(r"\r?\n[ \t]", "", raw)
+        now = datetime.now() - timedelta(hours=12)
+        upcoming = []
+
+        for block in raw.split("BEGIN:VEVENT")[1:]:
+            title_m = re.search(r"SUMMARY:(.*)", block)
+            dt_m = re.search(r"DTSTART[^:]*:(\d{8}(?:T\d{6}Z?)?)", block)
+            loc_m = re.search(r"LOCATION:(.*)", block)
+            desc_m = re.search(r"DESCRIPTION:(.*)", block)
+
+            if title_m and dt_m:
+                dt_obj, dt_str = format_ical_dt(dt_m.group(1).strip())
+                if dt_obj and dt_obj >= now:
+                    title = title_m.group(1).strip().replace("\\,", ",")
+                    loc = loc_m.group(1).strip().replace("\\,", ",") if loc_m else ""
+                    desc = desc_m.group(1).strip().replace("\\n", " ")[:100] if desc_m else ""
+                    entry = f"- {dt_str}: {title}"
+                    if loc:
+                        entry += f" (Ort: {loc})"
+                    if desc:
+                        entry += f" [Info: {desc}]"
+                    upcoming.append((dt_obj, entry))
+
+        upcoming.sort(key=lambda x: x[0])
+        if not upcoming:
+            return "Keine anstehenden Termine in den nächsten Tagen gefunden."
+        return "\n".join([x[1] for x in upcoming[:15]])
     except Exception as e:
-        return {"status": "error", "message": str(e)}
+        return f"Kalender-Abruf Fehler: {str(e)}"
 
 SYSTEM_PROMPT = """Du bist NEO, der hochintelligente, ruhige KI-Assistent von Sir (Kundenbetreuer in einer Gebäudereinigung in Hamburg).
 Aktueller Modus: {mode} | Aktuelle Zeit: {local_time}
@@ -911,8 +917,7 @@ Antworte IMMER auf perfektem Deutsch, höflich, ohne Sternchen/Markdown, und nen
 
 WICHTIGE REGELN FÜR KALENDER & ERKLÄRUNGEN:
 1. KALENDER & TERMINE (SEHR WICHTIG):
-   - Wenn Sir nach seinem Kalender, Terminen, Objektbesichtigungen oder seinem Tagesplan fragt: Nutze die bereitgestellten 'Kalender-Daten' und ERKLÄRE ihm die Termine klar, vollständig und strukturiert in 3 bis 5 Sätzen (nenne Uhrzeit, Titel des Termins, Ort/Objekt und worum es geht). Kürze Kalender-Erklärungen NICHT zu stark ab!
-   - Wenn im Kalender keine Termine stehen oder die Google-Bridge noch nicht verbunden ist, erkläre Sir das freundlich und nenne stattdessen seine offenen Aufgaben (Tasks) und Notizen.
+   - Wenn Sir nach seinem Kalender, Terminen, Objektbesichtigungen oder seinem Tagesplan fragt: Nutze die bereitgestellten 'Kalender-Termine' und ERKLÄRE ihm die Termine klar, vollständig und verständlich in 3 bis 5 Sätzen (nenne Datum, genaue Uhrzeit, Titel des Termins und Ort/Objekt). Kürze Kalender-Erklärungen NICHT ab!
 2. ALLGEMEINE ANTWORTEN:
    - Bei normalen Befehlen antworte präzise in 1-2 Sätzen.
 3. WHATSAPP (ANDROID NATIVE INTENT — NIEMALS web.whatsapp.com!):
@@ -986,13 +991,10 @@ def chat():
         msg = data.get("message", "")
         local_time_str = data.get("local_time_str", datetime.now().strftime("%d.%m.%Y %H:%M"))
 
-        # Kalender & E-Mails abrufen (bei Audio immer vorsorglich mitladen, falls Sir nach Terminen fragt!)
-        google_data = {}
+        calendar_info = ""
         lower_msg = msg.lower()
         if "audio" in data or any(w in lower_msg for w in ["kalender", "termin", "heute", "morgen", "woche", "statusbericht", "plan", "besichtigung"]):
-            google_data["calendar"] = call_google_bridge({"action": "get_calendar"})
-        if "audio" in data or any(w in lower_msg for w in ["mail", "e-mail", "posteingang", "statusbericht"]):
-            google_data["emails"] = call_google_bridge({"action": "get_emails"})
+            calendar_info = get_ical_events()
 
         client = genai.Client(api_key=api_key)
         contents = []
@@ -1002,12 +1004,12 @@ def chat():
             contents.append(msg or "Analysiere dieses Bild und erkläre es kurz.")
         elif "audio" in data:
             contents.append(types.Part.from_bytes(data=base64.b64decode(data["audio"]), mime_type=data.get("mime_type", "audio/webm")))
-            contents.append("Höre zu und antworte direkt auf Deutsch. Wenn Sir nach dem Kalender oder Terminen fragt, erkläre sie ausführlich.")
+            contents.append("Höre zu und antworte direkt auf Deutsch. Wenn Sir nach dem Kalender oder Terminen fragt, erkläre sie ausführlich anhand der Kalender-Termine.")
         else:
             contents.append(msg)
 
         context_str = (
-            f"Kalender- und E-Mail-Daten: {json.dumps(google_data, ensure_ascii=False)} | "
+            f"Kalender-Termine:\n{calendar_info}\n"
             f"Notizen: {json.dumps(data.get('memory', []), ensure_ascii=False)} | "
             f"Material: {json.dumps(data.get('materials', []), ensure_ascii=False)} | "
             f"Tasks: {json.dumps(data.get('tasks', []), ensure_ascii=False)} | "
