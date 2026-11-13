@@ -76,7 +76,6 @@ HTML_PAGE = """
             overflow: hidden;
         }
 
-        /* Minimalist Top Status Header */
         .top-minimal {
             width: 100%;
             max-width: 440px;
@@ -118,7 +117,6 @@ HTML_PAGE = """
             cursor: pointer;
         }
 
-        /* Center 3D Hologram Sphere */
         .hologram-center {
             position: relative;
             flex: 1;
@@ -139,7 +137,6 @@ HTML_PAGE = """
             display: block;
         }
 
-        /* Clean Subtitle Caption */
         .caption-area {
             width: 100%;
             max-width: 420px;
@@ -175,7 +172,6 @@ HTML_PAGE = """
             cursor: pointer;
         }
 
-        /* Minimal Floating Bottom Controls */
         .bottom-controls {
             width: 100%;
             max-width: 440px;
@@ -204,7 +200,6 @@ HTML_PAGE = """
             box-shadow: 0 0 14px rgba(0, 245, 212, 0.25);
         }
 
-        /* Slide-Up Glass Drawer for Lists, Text & Tools */
         .drawer {
             position: fixed;
             inset: 0;
@@ -341,7 +336,6 @@ HTML_PAGE = """
         <input type="file" id="camInput" accept="image/*" capture="environment" style="display:none" onchange="handleImage(event)">
     </div>
 
-    <!-- Clean Drawer for Lists, GPS & Text Input -->
     <div class="drawer" id="drawer">
         <div>
             <div class="drawer-header">
@@ -492,6 +486,7 @@ HTML_PAGE = """
 
         let wakeEnabled = true;
         let wakeRec = null;
+        let keepConversationOpen = false;
         let workMode = localStorage.getItem('neo_mode') || 'ARBEIT';
 
         let userMemory = JSON.parse(localStorage.getItem('neo_memory') || '[]');
@@ -507,8 +502,14 @@ HTML_PAGE = """
 
         window.addEventListener('load', () => {
             updateBadges();
-            setState(null);
-            startWakeListener();
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('listen') === '1') {
+                keepConversationOpen = true;
+                toggleRecord();
+            } else {
+                setState(null);
+                startWakeListener();
+            }
         });
 
         function updateBadges() {
@@ -605,6 +606,7 @@ HTML_PAGE = """
                 setState(null);
                 statusEl.innerText = "Sagen Sie einfach „Hey Neo“, Sir.";
             } else {
+                keepConversationOpen = false;
                 if (wakeRec) { try { wakeRec.stop(); } catch(e){} wakeRec = null; }
                 setState(null);
                 statusEl.innerText = "Sprachaktivierung pausiert.";
@@ -628,6 +630,7 @@ HTML_PAGE = """
                     if (transcript.includes('neo') || transcript.includes('nio') || transcript.includes('heineo')) {
                         try { wakeRec.stop(); } catch(e){}
                         wakeRec = null;
+                        keepConversationOpen = true;
                         playSciFiTone('wake');
                         toggleRecord();
                         return;
@@ -674,8 +677,13 @@ HTML_PAGE = """
         player.onplay = () => setState('speaking');
         player.onended = () => {
             setState(null);
-            if (wakeEnabled) {
-                setTimeout(() => startWakeListener(), 1200);
+            // Automatische Fortsetzung des Gesprächs nach der Antwort!
+            if (keepConversationOpen) {
+                setTimeout(() => {
+                    if (!isRecording) toggleRecord();
+                }, 700);
+            } else if (wakeEnabled) {
+                setTimeout(() => startWakeListener(), 1000);
             }
         };
 
@@ -691,7 +699,11 @@ HTML_PAGE = """
 
         async function toggleRecord() {
             unlockAudio();
-            if (isRecording) { stopRecording(); return; }
+            if (isRecording) {
+                keepConversationOpen = false;
+                stopRecording();
+                return;
+            }
             if (wakeRec) { try { wakeRec.stop(); } catch(e){} wakeRec = null; }
 
             try {
@@ -709,8 +721,10 @@ HTML_PAGE = """
                     const mimeType = mediaRecorder.mimeType || 'audio/webm';
                     const blob = new Blob(audioChunks, { type: mimeType });
                     if (blob.size < 1000) {
+                        // Wenn Nutzer nichts mehr sagt, Gespräch sanft beenden und wieder auf "Hey Neo" warten
+                        keepConversationOpen = false;
                         setState(null);
-                        statusEl.innerText = "Ich bin hier, Sir.";
+                        statusEl.innerText = "Sagen Sie „Hey Neo“, wenn Sie mich brauchen, Sir.";
                         if (wakeEnabled) setTimeout(() => startWakeListener(), 800);
                         return;
                     }
@@ -720,6 +734,7 @@ HTML_PAGE = """
 
                 mediaRecorder.start();
                 isRecording = true;
+                keepConversationOpen = true;
                 setState('listening');
                 statusEl.innerText = "Ich höre zu, Sir...";
 
@@ -745,14 +760,17 @@ HTML_PAGE = """
                         hasSpoken = true;
                         if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null; }
                     } else if (hasSpoken && !silenceTimer) {
-                        silenceTimer = setTimeout(() => stopRecording(), 1500);
-                    } else if (!hasSpoken && (Date.now() - startTime > 6500)) {
+                        silenceTimer = setTimeout(() => stopRecording(), 1450);
+                    } else if (!hasSpoken && (Date.now() - startTime > 6000)) {
+                        // Nach 6 Sekunden Stille Gespräch automatisch schließen
+                        keepConversationOpen = false;
                         stopRecording();
                     }
                     animFrame = requestAnimationFrame(monitorVolume);
                 }
                 monitorVolume();
             } catch (err) {
+                keepConversationOpen = false;
                 setState(null);
                 statusEl.innerText = "Mikrofon-Zugriff erforderlich, Sir.";
             }
@@ -834,9 +852,24 @@ HTML_PAGE = """
                 setState(null);
 
                 if (data.error) {
+                    keepConversationOpen = false;
                     statusEl.innerText = data.error;
-                    if (wakeEnabled) setTimeout(() => startWakeListener(), 1200);
+                    if (wakeEnabled) setTimeout(() => startWakeListener(), 1000);
                     return;
+                }
+
+                // Wenn Nutzer das Gespräch beendet ("Danke", "Stopp", "Fertig"), Loop beenden
+                const saidLower = (data.user_said || "").toLowerCase();
+                if (
+                    saidLower.includes("danke") ||
+                    saidLower.includes("stopp") ||
+                    saidLower.includes("fertig") ||
+                    saidLower.includes("das war's") ||
+                    saidLower.includes("das wars") ||
+                    saidLower.includes("schluss") ||
+                    data.end_conversation === true
+                ) {
+                    keepConversationOpen = false;
                 }
 
                 if (data.new_memory) userMemory.push(data.new_memory.trim());
@@ -871,6 +904,7 @@ HTML_PAGE = """
                 }
 
                 if (data.action_url) {
+                    keepConversationOpen = false;
                     const aBtn = document.createElement('a');
                     aBtn.href = data.action_url;
                     aBtn.className = "action-pill";
@@ -885,15 +919,18 @@ HTML_PAGE = """
                 if (data.audio) {
                     player.src = "data:audio/mp3;base64," + data.audio;
                     player.play().catch(() => {
-                        if (wakeEnabled) setTimeout(() => startWakeListener(), 1200);
+                        if (wakeEnabled) setTimeout(() => startWakeListener(), 1000);
                     });
+                } else if (keepConversationOpen) {
+                    setTimeout(() => toggleRecord(), 700);
                 } else if (wakeEnabled) {
-                    setTimeout(() => startWakeListener(), 1200);
+                    setTimeout(() => startWakeListener(), 1000);
                 }
             } catch (err) {
+                keepConversationOpen = false;
                 setState(null);
                 statusEl.innerText = "Verbindungsfehler, Sir.";
-                if (wakeEnabled) setTimeout(() => startWakeListener(), 1200);
+                if (wakeEnabled) setTimeout(() => startWakeListener(), 1000);
             }
         }
     </script>
@@ -970,6 +1007,8 @@ FÄHIGKEITEN & REGELN:
    - 'new_memory' / 'delete_memory': Objekt-Codes, Schlüsselinfos, Telefonnummern
    - 'new_material' / 'delete_material': Reinigungsmittel, Papier, Müllbeutel, Einkaufsliste
    - 'new_task' / 'delete_task': Aufgaben / To-Dos
+6. GESPRÄCH BEENDEN:
+   - Wenn Sir "Danke", "Stopp", "Fertig", "Das war's" oder "Gute Nacht" sagt, setze "end_conversation": true.
 
 Antworte ausschließlich als JSON:
 {{
@@ -982,7 +1021,8 @@ Antworte ausschließlich als JSON:
   "new_task": "",
   "delete_task": "",
   "action_url": "",
-  "action_label": ""
+  "action_label": "",
+  "end_conversation": false
 }}
 """
 
@@ -1120,6 +1160,7 @@ def chat():
             "delete_task": result.get("delete_task", ""),
             "action_url": result.get("action_url", ""),
             "action_label": result.get("action_label", ""),
+            "end_conversation": result.get("end_conversation", False),
             "audio": audio_b64
         })
     except Exception as e:
