@@ -957,7 +957,7 @@ def chat():
         contents.append(context_str)
 
         response = client.models.generate_content(
-            model="gemini-2.5-flash",
+            model="gemini-3.8-flash",
             contents=contents,
             config=types.GenerateContentConfig(
                 system_instruction=SYSTEM_PROMPT.format(mode=mode, local_time=local_time_str),
