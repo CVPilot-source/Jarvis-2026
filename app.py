@@ -356,7 +356,7 @@ HTML_PAGE = """
     <div class="top-bar">
         <div class="pill work-active" id="modeBtn" onclick="toggleMode()">🏢 Arbeit</div>
         <div class="pill-group">
-            <div class="pill" id="wakeBtn" onclick="toggleWakeWord()">🎙️ Hey Neo</div>
+            <div class="pill wake-on" id="wakeBtn" onclick="toggleWakeWord()">🎙️ Hey Neo</div>
             <div class="pill" onclick="showList('memory')" id="memCount">Notizen · 0</div>
             <div class="pill" onclick="showList('materials')" id="matCount">Material · 0</div>
             <div class="pill" onclick="showList('tasks')" id="taskCount">Tasks · 0</div>
@@ -368,13 +368,13 @@ HTML_PAGE = """
             <canvas id="particleCanvas" width="430" height="430"></canvas>
             <div class="neo-overlay">
                 <h1>NEO</h1>
-                <span id="stateLabel">Bereit</span>
+                <span id="stateLabel">Wartet auf Neo</span>
             </div>
         </div>
-        <div class="sub-hint" id="hint">Tippen oder „Hey Neo“ aktivieren</div>
+        <div class="sub-hint" id="hint">Sagen Sie einfach „Hey Neo“ zum Starten</div>
     </div>
 
-    <div class="response-card" id="status">Ich bin bereit, Sir. Sagen Sie „Hey Neo“ oder tippen Sie auf die Sphäre.</div>
+    <div class="response-card" id="status">Hands-Free aktiv, Sir. Sagen Sie einfach „Hey Neo“ und stellen Sie Ihre Frage.</div>
 
     <div class="chips-row">
         <div class="chip" onclick="quickCmd('Was steht heute an? Gib mir meinen Statusbericht mit Kalender, E-Mails, Aufgaben und Material.')">📋 Statusbericht</div>
@@ -494,7 +494,6 @@ HTML_PAGE = """
 
         /* --- App State & Storage --- */
         const statusEl = document.getElementById('status');
-        const hintEl = document.getElementById('hint');
         const stateLabel = document.getElementById('stateLabel');
         const player = document.getElementById('player');
 
@@ -506,7 +505,7 @@ HTML_PAGE = """
         let silenceTimer = null;
         let animFrame = null;
 
-        let wakeEnabled = false;
+        let wakeEnabled = true;
         let wakeRec = null;
         let workMode = localStorage.getItem('neo_mode') || 'ARBEIT';
 
@@ -514,6 +513,21 @@ HTML_PAGE = """
         let userMaterials = JSON.parse(localStorage.getItem('neo_materials') || '[]');
         let userTasks = JSON.parse(localStorage.getItem('neo_tasks') || '[]');
         let chatHistory = JSON.parse(localStorage.getItem('neo_history') || '[]');
+
+        document.body.addEventListener('touchstart', function initOnce() {
+            unlockAudio();
+            if (wakeEnabled && !wakeRec && !isRecording) {
+                startWakeListener();
+            }
+            document.body.removeEventListener('touchstart', initOnce);
+        }, { once: true });
+
+        window.addEventListener('load', () => {
+            const btn = document.getElementById('wakeBtn');
+            btn.classList.add('wake-on');
+            setState(null);
+            startWakeListener();
+        });
 
         function updateBadges() {
             localStorage.setItem('neo_memory', JSON.stringify(userMemory));
@@ -568,11 +582,11 @@ HTML_PAGE = """
                 unlockAudio();
                 startWakeListener();
                 setState(null);
-                statusEl.innerText = "Sprachaktivierung aktiv, Sir. Sagen Sie einfach „Hey Neo“.";
+                statusEl.innerText = "Hands-Free aktiv, Sir. Sagen Sie einfach „Hey Neo“.";
             } else {
                 if (wakeRec) { try { wakeRec.stop(); } catch(e){} wakeRec = null; }
                 setState(null);
-                statusEl.innerText = "Sprachaktivierung pausiert, Sir.";
+                statusEl.innerText = "Hands-Free pausiert, Sir.";
             }
         }
 
@@ -581,6 +595,8 @@ HTML_PAGE = """
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (!SpeechRecognition) return;
 
+            if (wakeRec) { try { wakeRec.stop(); } catch(e){} }
+
             wakeRec = new SpeechRecognition();
             wakeRec.lang = 'de-DE';
             wakeRec.continuous = true;
@@ -588,23 +604,42 @@ HTML_PAGE = """
 
             wakeRec.onresult = (event) => {
                 for (let i = event.resultIndex; i < event.results.length; i++) {
-                    const transcript = event.results[i][0].transcript.toLowerCase();
-                    if (transcript.includes('neo')) {
+                    const transcript = event.results[i][0].transcript.toLowerCase().trim();
+                    if (
+                        transcript.includes('neo') ||
+                        transcript.includes('nio') ||
+                        transcript.includes('heineo') ||
+                        transcript.includes('hey neo')
+                    ) {
                         try { wakeRec.stop(); } catch(e){}
+                        wakeRec = null;
                         playSciFiTone('wake');
                         toggleRecord();
-                        break;
+                        return;
                     }
                 }
             };
 
-            wakeRec.onend = () => {
-                if (wakeEnabled && !isRecording && currentState === 'idle') {
-                    setTimeout(() => startWakeListener(), 400);
+            wakeRec.onerror = () => {
+                wakeRec = null;
+                if (wakeEnabled && !isRecording) {
+                    setTimeout(() => startWakeListener(), 800);
                 }
             };
 
-            try { wakeRec.start(); } catch(e){}
+            wakeRec.onend = () => {
+                wakeRec = null;
+                if (wakeEnabled && !isRecording && currentState === 'idle') {
+                    setTimeout(() => startWakeListener(), 350);
+                }
+            };
+
+            try {
+                wakeRec.start();
+                stateLabel.innerText = "Wartet auf Neo";
+            } catch(e) {
+                wakeRec = null;
+            }
         }
 
         function deleteItem(type, idx) {
@@ -684,7 +719,7 @@ HTML_PAGE = """
         async function toggleRecord() {
             unlockAudio();
             if (isRecording) { stopRecording(); return; }
-            if (wakeRec) { try { wakeRec.stop(); } catch(e){} }
+            if (wakeRec) { try { wakeRec.stop(); } catch(e){} wakeRec = null; }
 
             try {
                 activeStream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -832,6 +867,7 @@ HTML_PAGE = """
 
                 if (data.error) {
                     statusEl.innerText = data.error;
+                    if (wakeEnabled) startWakeListener();
                     return;
                 }
 
@@ -900,6 +936,7 @@ HTML_PAGE = """
             } catch (err) {
                 setState(null);
                 statusEl.innerText = "Verbindungsfehler, Sir.";
+                if (wakeEnabled) startWakeListener();
             }
         }
     </script>
@@ -993,7 +1030,7 @@ Antworte ausschließlich als JSON:
 
 async def make_voice(text):
     clean_text = text.replace("*", "").replace("#", "")
-    communicate = edge_tts.Communicate(clean_text, "de-DE-KillianNeural")
+    communicate = edge_tts.Communicate(clean_text, "de-DE-FlorianMultilingualNeural")
     audio_bytes = b""
     async for chunk in communicate.stream():
         if chunk["type"] == "audio":
