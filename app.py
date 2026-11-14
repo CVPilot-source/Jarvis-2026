@@ -28,16 +28,16 @@ HTML_PAGE = """<!DOCTYPE html>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#030712">
     <link rel="manifest" href="/manifest.json">
-    <title>N.E.O. // HOLOGRAPHIC CORE</title>
+    <title>N.E.O. // REZNIKOV MATRIX CORE</title>
     <style>
         :root {
             --cyan: #00E5FF;
-            --cyan-glow: rgba(0, 229, 255, 0.5);
+            --cyan-glow: rgba(0, 229, 255, 0.6);
             --orange: #FF9900;
-            --orange-glow: rgba(255, 153, 0, 0.7);
+            --orange-glow: rgba(255, 140, 0, 0.85);
             --bg: #030712;
-            --panel: rgba(8, 15, 30, 0.85);
-            --border: rgba(0, 229, 255, 0.2);
+            --panel: rgba(8, 15, 30, 0.88);
+            --border: rgba(0, 229, 255, 0.25);
             --text: #F8FAFC;
             --muted: #94A3B8;
         }
@@ -51,9 +51,9 @@ HTML_PAGE = """<!DOCTYPE html>
             margin: 0; padding: 0; width: 100vw; height: 100vh; overflow: hidden;
             background-color: var(--bg);
             background-image:
-                radial-gradient(circle at 50% 46%, rgba(14, 30, 62, 0.9) 0%, rgba(3, 7, 18, 0.99) 70%),
-                linear-gradient(rgba(0, 229, 255, 0.02) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0, 229, 255, 0.02) 1px, transparent 1px);
+                radial-gradient(circle at 50% 46%, rgba(10, 25, 55, 0.95) 0%, rgba(3, 7, 18, 0.99) 75%),
+                linear-gradient(rgba(0, 229, 255, 0.025) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 229, 255, 0.025) 1px, transparent 1px);
             background-size: 100% 100%, 32px 32px, 32px 32px;
             color: var(--text);
             font-family: 'Segoe UI', -apple-system, sans-serif;
@@ -70,9 +70,9 @@ HTML_PAGE = """<!DOCTYPE html>
             display: flex; flex-direction: column; gap: 6px;
         }
         .sys-title {
-            font-size: 24px; font-weight: 900; letter-spacing: 5px; color: var(--cyan);
+            font-size: 24px; font-weight: 900; letter-spacing: 6px; color: var(--cyan);
             display: flex; align-items: center; gap: 10px;
-            text-shadow: 0 0 15px var(--cyan-glow);
+            text-shadow: 0 0 20px var(--cyan-glow);
         }
         .sys-sub { font-size: 11.5px; font-weight: 700; letter-spacing: 1.2px; color: var(--muted); }
         .hud-controls { display: flex; gap: 8px; margin-top: 4px; flex-wrap: wrap; }
@@ -81,14 +81,14 @@ HTML_PAGE = """<!DOCTYPE html>
             padding: 6px 12px; border-radius: 7px; font-size: 11.5px; font-weight: 700;
             cursor: pointer; transition: 0.15s;
         }
-        .hud-btn:hover { border-color: var(--cyan); color: var(--cyan); box-shadow: 0 0 10px var(--cyan-glow); }
+        .hud-btn:hover { border-color: var(--cyan); color: var(--cyan); box-shadow: 0 0 12px var(--cyan-glow); }
 
         /* TOP RIGHT STREAM PANEL */
         .hud-tr {
             position: fixed; top: 20px; right: 24px; width: 380px; max-width: 44vw;
             background: var(--panel); border: 1px solid var(--border); border-top: 2px solid var(--orange);
             border-radius: 12px; padding: 12px 16px; z-index: 10;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.65);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.7);
         }
         .tr-head {
             display: flex; justify-content: space-between; font-size: 10.5px;
@@ -102,15 +102,15 @@ HTML_PAGE = """<!DOCTYPE html>
         /* CENTER STAGE */
         .core-trigger {
             position: fixed; top: 48%; left: 50%; transform: translate(-50%, -50%);
-            width: 320px; height: 360px; border-radius: 50%; z-index: 8;
+            width: 340px; height: 380px; border-radius: 50%; z-index: 8;
             cursor: pointer; display: flex; flex-direction: column;
             align-items: center; justify-content: flex-end; text-align: center;
-            padding-bottom: 10px;
+            padding-bottom: 5px;
         }
         .core-sub {
             font-size: 11px; font-weight: 800; letter-spacing: 2.5px;
             color: #FFF; text-shadow: 0 0 12px var(--cyan);
-            background: rgba(3, 7, 18, 0.85); padding: 4px 14px; border-radius: 99px;
+            background: rgba(3, 7, 18, 0.9); padding: 5px 16px; border-radius: 99px;
             border: 1px solid var(--border);
         }
 
@@ -256,7 +256,7 @@ HTML_PAGE = """<!DOCTYPE html>
             nodesLayer.appendChild(el);
         });
 
-        // --- 2. ORGANIC WIREFRAME BUST CANVAS ENGINE (REZNIKOV STYLE) ---
+        // --- 2. ADVANCED PARTICLE MATRIX BUST (REZNIKOV PHOTO STYLE) ---
         const canvas = document.getElementById('neuralCanvas');
         const ctx = canvas.getContext('2d');
         let W = window.innerWidth, H = window.innerHeight;
@@ -267,73 +267,81 @@ HTML_PAGE = """<!DOCTYPE html>
         let coreStateMode = 'idle', timeStep = 0;
         const packets = NODES.map((_, idx) => ({ progress: (idx * 0.15) % 1, speed: 0.004 + (idx % 3) * 0.0012 }));
 
-        const dust = Array.from({length: 90}, () => ({
-            x: (Math.random() - 0.5) * 120,
-            y: -130 - Math.random() * 90,
-            size: Math.random() * 2 + 0.6,
-            speed: Math.random() * 0.7 + 0.3
-        }));
-
-        function drawOrganicBust(cx, cy, pulseBoost) {
-            timeStep += 0.035 * pulseBoost;
-
-            // Intense orange/amber face core aura
-            const faceGlow = ctx.createRadialGradient(cx, cy - 25, 10, cx, cy - 25, 95);
-            faceGlow.addColorStop(0, 'rgba(255, 140, 0, 0.75)');
-            faceGlow.addColorStop(0.5, 'rgba(0, 229, 255, 0.25)');
-            faceGlow.addColorStop(1, 'rgba(3, 7, 18, 0)');
-            ctx.fillStyle = faceGlow;
-            ctx.beginPath(); ctx.arc(cx, cy - 25, 95, 0, Math.PI * 2); ctx.fill();
-
-            // Organic wireframe rings (Head, Neck, Shoulders)
-            const totalRings = 38;
-            for (let i = 0; i < totalRings; i++) {
-                const p = i / (totalRings - 1); // 0 (top) to 1 (bottom)
-                const y = cy - 110 + p * 230;
-
-                let radiusX = 0;
-                if (p < 0.35) {
-                    const headP = p / 0.35;
-                    radiusX = Math.sin(headP * Math.PI) * 52;
-                } else if (p < 0.5) {
-                    const neckP = (p - 0.35) / 0.15;
-                    radiusX = 22 + (1 - neckP) * 10;
-                } else {
-                    const shoulderP = (p - 0.5) / 0.5;
-                    radiusX = 30 + Math.pow(shoulderP, 1.8) * 115;
-                }
-
-                ctx.beginPath();
-                const segs = 40;
-                for (let s = 0; s <= segs; s++) {
-                    const angle = (s / segs) * Math.PI * 2;
-                    const distortion = Math.sin(timeStep * 1.5 + i * 0.3 + s * 0.5) * (coreStateMode !== 'idle' ? 3.5 : 1.2);
-                    const x = cx + Math.cos(angle) * radiusX;
-                    const zOffset = Math.sin(angle) * (radiusX * 0.3) + distortion;
-
-                    if (s === 0) ctx.moveTo(x, y + zOffset * 0.2);
-                    else ctx.lineTo(x, y + zOffset * 0.2);
-                }
-
-                const alpha = 0.2 + Math.sin(p * Math.PI) * 0.65;
-                ctx.strokeStyle = (p < 0.4 && i % 2 === 0) ? `rgba(255, 140, 0, ${alpha * 0.95})` : `rgba(0, 229, 255, ${alpha})`;
-                ctx.lineWidth = (p > 0.45) ? 1.5 : 1;
-                ctx.stroke();
+        // Generate dense matrix particles forming head, face, shoulders & crown
+        const matrixParticles = [];
+        const rows = 55;
+        for (let i = 0; i < rows; i++) {
+            const p = i / (rows - 1); // 0 (top crown) to 1 (shoulders bottom)
+            const yOffset = -130 + p * 260;
+            const cols = Math.floor(25 + Math.sin(p * Math.PI) * 25);
+            
+            for (let c = 0; c < cols; c++) {
+                const xNorm = (c / (cols - 1)) - 0.5; // -0.5 to 0.5
+                matrixParticles.push({
+                    row: i,
+                    p: p,
+                    baseXNorm: xNorm,
+                    yOffset: yOffset,
+                    angle: Math.random() * Math.PI * 2,
+                    speed: Math.random() * 0.04 + 0.02
+                });
             }
+        }
 
-            // Upward particle dust cloud at crown
-            dust.forEach(d => {
-                d.y -= d.speed * pulseBoost * 1.2;
-                if (d.y < -160) {
-                    d.y = -90;
-                    d.x = (Math.random() - 0.5) * 80;
+        function drawReznikovMatrixBust(cx, cy, pulseBoost) {
+            timeStep += 0.025 * pulseBoost;
+
+            // 1. Intense glowing orange core in the face/head zone
+            const coreGlow = ctx.createRadialGradient(cx, cy - 25, 5, cx, cy - 25, 110);
+            coreGlow.addColorStop(0, 'rgba(255, 140, 0, 0.9)');
+            coreGlow.addColorStop(0.4, 'rgba(255, 100, 0, 0.4)');
+            coreGlow.addColorStop(0.8, 'rgba(0, 229, 255, 0.15)');
+            coreGlow.addColorStop(1, 'rgba(3, 7, 18, 0)');
+            ctx.fillStyle = coreGlow;
+            ctx.beginPath(); ctx.arc(cx, cy - 25, 110, 0, Math.PI * 2); ctx.fill();
+
+            // 2. Render particle matrix points with glow & lines
+            ctx.shadowBlur = 8;
+            matrixParticles.forEach(pt => {
+                pt.angle += pt.speed * pulseBoost;
+
+                let widthScale = 0;
+                if (pt.p < 0.3) {
+                    // Head shape
+                    widthScale = Math.sin(pt.p * 3.3 * Math.PI) * 62;
+                } else if (pt.p < 0.45) {
+                    // Neck
+                    widthScale = 22 + (0.45 - pt.p) * 25;
+                } else {
+                    // Shoulders sweeping out
+                    const shP = (pt.p - 0.45) / 0.55;
+                    widthScale = 30 + Math.pow(shP, 1.6) * 140;
                 }
-                const alpha = Math.max(0, 1 - Math.abs(d.y + 120) / 60);
-                ctx.fillStyle = `rgba(0, 229, 255, ${alpha})`;
+
+                const wave = Math.sin(timeStep + pt.row * 0.2 + pt.angle) * (coreStateMode !== 'idle' ? 4 : 1.8);
+                const x = cx + pt.baseXNorm * widthScale * 2 + wave;
+                const y = cy + pt.yOffset;
+
+                // Color mapping: Orange/Gold near center face, Cyan on outer edges and shoulders
+                let color = 'rgba(0, 229, 255, 0.7)';
+                let size = 1.4;
+
+                const distFromCenterFace = Math.hypot(x - cx, y - (cy - 25));
+                if (distFromCenterFace < 55 && pt.p > 0.1 && pt.p < 0.4) {
+                    color = 'rgba(255, 140, 0, 0.95)';
+                    size = 2.2;
+                } else if (pt.row % 3 === 0) {
+                    color = 'rgba(0, 229, 255, 0.85)';
+                    size = 1.8;
+                }
+
+                ctx.shadowColor = color.includes('255') ? '#FF9900' : '#00E5FF';
+                ctx.fillStyle = color;
                 ctx.beginPath();
-                ctx.arc(cx + d.x, cy - 110 + d.y, d.size, 0, Math.PI * 2);
+                ctx.arc(x, y, size, 0, Math.PI * 2);
                 ctx.fill();
             });
+            ctx.shadowBlur = 0; // Reset
         }
 
         function drawNeuralNetwork() {
@@ -345,7 +353,7 @@ HTML_PAGE = """<!DOCTYPE html>
             else if (coreStateMode === 'thinking') { mainColor = '0, 229, 255'; pulseBoost = 2.4; }
             else if (coreStateMode === 'speaking') { mainColor = '168, 85, 247'; pulseBoost = 1.8; }
 
-            drawOrganicBust(cx, cy, pulseBoost);
+            drawReznikovMatrixBust(cx, cy, pulseBoost);
 
             NODES.forEach((n, idx) => {
                 const nx = W * n.rx, ny = H * n.ry;
@@ -774,7 +782,7 @@ def chat():
 
         parts = []
         if "image" in data:
-            parts.append(types.Part.from_bytes(data=base64.b64decode(data["image"]), mime_type="image/jpeg"))
+            parts.append(types.Part.from_bytes(data=base64.b64decode(data["image"], mime_type="image/jpeg")))
             parts.append(data.get("message", "Mängelbericht erstellen."))
         elif "audio" in data:
             parts.append(types.Part.from_bytes(data=base64.b64decode(data["audio"]), mime_type=data.get("mime_type", "audio/webm")))
