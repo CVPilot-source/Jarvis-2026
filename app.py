@@ -15,36 +15,35 @@ app = Flask(__name__)
 ICAL_CACHE = {"ts": 0, "events": []}
 
 ICON_SVG = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="115" fill="#020617"/>
-  <circle cx="256" cy="256" r="155" fill="none" stroke="#00E5FF" stroke-width="6" stroke-dasharray="30 15"/>
-  <circle cx="256" cy="256" r="110" fill="none" stroke="#FF9900" stroke-width="4" stroke-dasharray="15 10"/>
-  <circle cx="256" cy="256" r="20" fill="#FF9900"/>
+  <rect width="512" height="512" rx="115" fill="#030712"/>
+  <circle cx="256" cy="256" r="155" fill="none" stroke="#00E5FF" stroke-width="8" stroke-dasharray="16 10"/>
+  <circle cx="256" cy="256" r="110" fill="none" stroke="#FF9900" stroke-width="5"/>
+  <circle cx="256" cy="256" r="24" fill="#FF9900"/>
 </svg>"""
 
 HTML_PAGE = """<!DOCTYPE html>
-<html lang="sq">
+<html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#020617">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#030712">
     <link rel="manifest" href="/manifest.json">
-    <title>NEO // HOLOGRAPHIC VOICE CORE</title>
+    <title>N.E.O. // HOLOGRAPHIC REACTOR CORE</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
-
         :root {
             --cyan: #00E5FF;
+            --cyan-glow: rgba(0, 229, 255, 0.4);
             --orange: #FF9900;
-            --bg: #020617;
-            --panel: rgba(3, 10, 26, 0.75);
+            --orange-glow: rgba(255, 153, 0, 0.6);
+            --bg: #030712;
+            --panel: rgba(8, 15, 30, 0.82);
+            --border: rgba(0, 229, 255, 0.18);
             --text: #F8FAFC;
-            --muted: #64748B;
+            --muted: #94A3B8;
         }
-
-        body.listening { --cyan: #10B981; }
-        body.thinking  { --cyan: #00E5FF; }
-        body.speaking  { --cyan: #A855F7; }
+        body.listening { --cyan: #10B981; --cyan-glow: rgba(16, 185, 129, 0.5); }
+        body.thinking  { --cyan: #00E5FF; --cyan-glow: rgba(0, 229, 255, 0.6); }
+        body.speaking  { --cyan: #A855F7; --cyan-glow: rgba(168, 85, 247, 0.6); }
 
         * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
 
@@ -52,350 +51,594 @@ HTML_PAGE = """<!DOCTYPE html>
             margin: 0; padding: 0; width: 100vw; height: 100vh; overflow: hidden;
             background-color: var(--bg);
             background-image:
-                radial-gradient(circle at 50% 45%, rgba(0, 229, 255, 0.08) 0%, transparent 65%),
+                radial-gradient(circle at 50% 46%, rgba(14, 30, 62, 0.82) 0%, rgba(3, 7, 18, 0.98) 70%),
                 linear-gradient(rgba(0, 229, 255, 0.03) 1px, transparent 1px),
                 linear-gradient(90deg, rgba(0, 229, 255, 0.03) 1px, transparent 1px);
             background-size: 100% 100%, 32px 32px, 32px 32px;
             color: var(--text);
-            font-family: 'Rajdhani', sans-serif;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            align-items: center;
-            padding: 24px 16px;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
         }
 
-        /* TOP HEADER */
-        .header {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 4px;
-            z-index: 10;
-        }
-        .title {
-            font-size: 28px;
-            font-weight: 700;
-            letter-spacing: 8px;
-            color: var(--text);
-            text-shadow: 0 0 16px rgba(0, 229, 255, 0.4);
-            margin: 0;
-        }
-        .status-badge {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            background: var(--panel);
-            border: 1px solid rgba(0, 229, 255, 0.25);
-            padding: 3px 12px;
-            border-radius: 999px;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 10px;
-            letter-spacing: 2px;
-            color: var(--cyan);
-            text-transform: uppercase;
-        }
-        .status-dot {
-            width: 6px; height: 6px;
-            border-radius: 50%;
-            background: var(--cyan);
-            box-shadow: 0 0 8px var(--cyan);
-            animation: pulseDot 2s infinite;
-        }
-        @keyframes pulseDot {
-            0% { opacity: 0.4; }
-            50% { opacity: 1; transform: scale(1.2); }
-            100% { opacity: 0.4; }
+        #neuralCanvas {
+            position: fixed; inset: 0; width: 100vw; height: 100vh;
+            z-index: 1; pointer-events: none;
         }
 
-        /* CENTER HOLOGRAPHIC BUST CONTAINER */
-        .hologram-stage {
-            position: relative;
-            width: 280px;
-            height: 280px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            z-index: 5;
+        /* TOP LEFT HUD */
+        .hud-tl {
+            position: fixed; top: 20px; left: 24px; z-index: 10;
+            display: flex; flex-direction: column; gap: 6px;
         }
-        .holo-glow {
-            position: absolute;
-            inset: 0;
-            border-radius: 50%;
-            background: radial-gradient(circle, rgba(0,229,255,0.15) 0%, rgba(255,153,0,0.05) 50%, transparent 75%);
-            animation: pulseGlow 4s ease-in-out infinite alternate;
+        .sys-title {
+            font-size: 22px; font-weight: 900; letter-spacing: 4px; color: var(--cyan);
+            display: flex; align-items: center; gap: 10px;
+            text-shadow: 0 0 15px var(--cyan-glow);
         }
-        @keyframes pulseGlow {
-            0% { transform: scale(0.9); opacity: 0.6; }
-            100% { transform: scale(1.15); opacity: 1; }
+        .sys-sub { font-size: 11.5px; font-weight: 700; letter-spacing: 1.2px; color: var(--muted); }
+        .hud-controls { display: flex; gap: 8px; margin-top: 4px; flex-wrap: wrap; }
+        .hud-btn {
+            background: var(--panel); border: 1px solid var(--border); color: var(--text);
+            padding: 6px 12px; border-radius: 7px; font-size: 11.5px; font-weight: 700;
+            cursor: pointer; transition: 0.15s;
         }
-        .holo-svg {
-            width: 100%;
-            height: 100%;
-            filter: drop-shadow(0 0 12px rgba(0, 229, 255, 0.4));
-            animation: floatHolo 5s ease-in-out infinite;
+        .hud-btn:hover { border-color: var(--cyan); color: var(--cyan); box-shadow: 0 0 10px var(--cyan-glow); }
+
+        /* TOP RIGHT STREAM PANEL */
+        .hud-tr {
+            position: fixed; top: 20px; right: 24px; width: 380px; max-width: 44vw;
+            background: var(--panel); border: 1px solid var(--border); border-top: 2px solid var(--orange);
+            border-radius: 12px; padding: 12px 16px; z-index: 10;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.65);
         }
-        @keyframes floatHolo {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-8px); }
+        .tr-head {
+            display: flex; justify-content: space-between; font-size: 10.5px;
+            font-weight: 800; letter-spacing: 1.2px; color: var(--orange); margin-bottom: 6px;
+        }
+        .tr-body {
+            font-size: 13.5px; line-height: 1.45; color: #F1F5F9;
+            max-height: 150px; overflow-y: auto; user-select: text;
         }
 
-        /* PROMPT & SUBTEXT */
-        .prompt-container {
-            text-align: center;
-            z-index: 10;
-            margin-bottom: 12px;
+        /* CENTER HOLOGRAPHIC BUST REACTOR */
+        .core-trigger {
+            position: fixed; top: 48%; left: 50%; transform: translate(-50%, -50%);
+            width: 280px; height: 280px; border-radius: 50%; z-index: 8;
+            cursor: pointer; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; text-align: center;
         }
-        .wake-text {
-            font-size: 18px;
-            font-weight: 600;
-            letter-spacing: 2px;
-            color: var(--text);
-            margin: 0 0 4px 0;
-            text-shadow: 0 0 10px rgba(0,229,255,0.3);
+        .holo-bust {
+            width: 100%; height: 100%;
+            fill: none; stroke-width: 1.5;
+            filter: drop-shadow(0 0 10px var(--cyan-glow));
+            animation: pulseCore 4s ease-in-out infinite alternate;
         }
-        .listening-subtext {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 12px;
-            letter-spacing: 1.5px;
-            color: var(--muted);
-            text-transform: uppercase;
+        @keyframes pulseCore {
+            0% { opacity: 0.8; transform: scale(0.95); filter: drop-shadow(0 0 8px var(--cyan-glow)); }
+            100% { opacity: 1; transform: scale(1); filter: drop-shadow(0 0 12px var(--cyan-glow)); }
+        }
+        .core-sub {
+            position: absolute; bottom: -10px;
+            font-size: 11px; font-weight: 800; letter-spacing: 2.5px;
+            color: #FFF; text-shadow: 0 0 12px #FFF;
         }
 
-        /* BOTTOM MIC INDICATOR */
-        .mic-dock {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px;
-            z-index: 10;
-            margin-bottom: 10px;
+        /* NODES */
+        .node-item {
+            position: fixed; transform: translate(-50%, -50%); z-index: 7;
+            display: flex; align-items: center; gap: 9px;
+            background: var(--panel); border: 1px solid var(--border);
+            padding: 8px 15px; border-radius: 999px; cursor: pointer;
+            transition: transform 0.15s, border-color 0.2s, box-shadow 0.2s;
+            white-space: nowrap; box-shadow: 0 6px 18px rgba(0,0,0,0.5);
         }
-        .mic-btn {
-            width: 64px; height: 64px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, rgba(0,229,255,0.15), rgba(255,153,0,0.15));
-            border: 1.5px solid var(--cyan);
-            color: var(--text);
-            font-size: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            box-shadow: 0 0 20px rgba(0, 229, 255, 0.25);
-            transition: transform 0.2s, border-color 0.2s;
+        .node-item:hover, .node-item.active-node {
+            border-color: var(--cyan);
+            box-shadow: 0 0 20px var(--cyan-glow);
+            transform: translate(-50%, -50%) scale(1.07);
         }
-        .mic-btn:active { transform: scale(0.92); }
-        body.listening .mic-btn {
-            border-color: #10B981;
-            box-shadow: 0 0 30px rgba(16, 185, 129, 0.5);
-            animation: micPulse 1s infinite;
+        .node-dot {
+            width: 9px; height: 9px; border-radius: 50%;
+            background: var(--orange); box-shadow: 0 0 8px var(--orange);
         }
-        @keyframes micPulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.06); }
-            100% { transform: scale(1); }
+        .node-title { font-size: 12.5px; font-weight: 700; color: #F8FAFC; }
+
+        /* POPUP WINDOW */
+        .holo-modal {
+            position: fixed; top: 48%; left: 50%; transform: translate(-50%, -50%);
+            width: 480px; max-width: 92vw; background: rgba(7, 13, 27, 0.97);
+            border: 1px solid var(--cyan); box-shadow: 0 0 45px rgba(0, 0, 0, 0.85);
+            border-radius: 14px; padding: 18px; z-index: 30;
+            display: none; flex-direction: column; gap: 12px;
+        }
+        .holo-modal.open { display: flex; }
+        .holo-head {
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid var(--border); padding-bottom: 8px;
+            font-size: 12.5px; font-weight: 800; letter-spacing: 1.5px; color: var(--cyan);
+        }
+        .holo-content { max-height: 280px; overflow-y: auto; font-size: 13.5px; }
+        .holo-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 8px 11px; background: rgba(0, 229, 255, 0.07);
+            border-left: 3px solid var(--orange); border-radius: 7px; margin-bottom: 7px;
+        }
+
+        /* BOTTOM ACTION STRIP */
+        .bottom-dock {
+            position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%);
+            width: 600px; max-width: 94vw; z-index: 12;
+            display: flex; flex-direction: column; gap: 8px; align-items: center;
+        }
+        .act-strip { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+        .gold-pill {
+            background: var(--orange); color: #030712; border: none; border-radius: 999px;
+            padding: 8px 18px; font-size: 12px; font-weight: 800; text-decoration: none;
+            cursor: pointer; box-shadow: 0 0 16px var(--orange-glow);
+        }
+
+        @media (max-width: 768px) {
+            .hud-tr { top: auto; bottom: 24px; right: 12px; left: 12px; width: auto; max-width: none; }
+            .node-item { padding: 6px 10px; }
+            .node-title { font-size: 11px; }
+            .core-trigger { width: 200px; height: 200px; }
         }
     </style>
 </head>
 <body>
-    <!-- TOP HEADER -->
-    <div class="header">
-        <h1 class="title">N E O</h1>
-        <div class="status-badge">
-            <span class="status-dot"></span>
-            <span id="statusText">AKTIV</span>
+    <canvas id="neuralCanvas"></canvas>
+
+    <!-- TOP LEFT -->
+    <div class="hud-tl">
+        <div class="sys-title">N E O <span style="font-size:11px; color:var(--orange); letter-spacing:2px;">HOLOGRAPHIC OS</span></div>
+        <div class="sys-sub" id="sysMeta">HAMBURG • 24/7 AKTIV</div>
+        <div class="hud-controls">
+            <button type="button" class="hud-btn" id="wBtn" onclick="toggleWake()" style="border-color:#10B981; color:#10B981;">● HEY NEO: 24/7 AKTIV</button>
+            <button type="button" class="hud-btn" id="mBtn" onclick="toggleMode()">MODUS: ARBEIT</button>
+            <button type="button" class="hud-btn" onclick="openHolo('calendar')">KALENDER</button>
+            <button type="button" class="hud-btn" onclick="openHolo('codes')">CODES (<span id="nCount">0</span>)</button>
         </div>
     </div>
 
-    <!-- CENTER HOLOGRAPHIC BUST (SVG) -->
-    <div class="hologram-stage" onclick="toggleListening()" title="Kliko për të folur">
-        <div class="holo-glow"></div>
-        <svg class="holo-svg" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
-            <!-- Rrjetë rrethore sfondi -->
-            <circle cx="150" cy="150" r="120" fill="none" stroke="rgba(0,229,255,0.12)" stroke-width="1" stroke-dasharray="6 6"/>
-            <circle cx="150" cy="150" r="95" fill="none" stroke="rgba(255,153,0,0.15)" stroke-width="1"/>
-            
-            <!-- Silueta e bustit holografik pa fytyrë (Linja dhe pika cyan & portokalli) -->
-            <g stroke="rgba(0,229,255,0.6)" stroke-width="1.5" fill="none" stroke-linecap="round">
-                <!-- Vala e supeve dhe gjoksit -->
-                <path d="M70,240 Q110,210 150,210 Q190,210 230,240" opacity="0.8"/>
-                <path d="M90,255 Q150,225 210,255" stroke="rgba(255,153,0,0.7)" stroke-width="1"/>
-                
-                <!-- Qafa -->
-                <path d="M130,210 L130,170" />
-                <path d="M170,210 L170,170" />
-                
-                <!-- Konturi i kokës (faceless bust) -->
-                <path d="M120,170 Q115,130 125,95 Q135,70 150,65 Q165,70 175,95 Q185,130 180,170" />
-                
-                <!-- Unaza e energjisë në kokë -->
-                <ellipse cx="150" cy="80" rx="22" ry="7" stroke="rgba(255,153,0,0.8)" stroke-width="1.2"/>
-            </g>
+    <!-- TOP RIGHT OUTPUT -->
+    <div class="hud-tr">
+        <div class="tr-head">
+            <span>VOICE STREAM // 24/7</span>
+            <span id="streamStatus">LAUSCHT ("HEY NEO")</span>
+        </div>
+        <div class="tr-body" id="replyBox">Spreche einfach jederzeit me mit mir: Sage „Hey Neo“ gefolgt von deinem Befehl. Kein Tippen nötig!</div>
+    </div>
 
-            <!-- Pikat e dritës neural (hologram nodes) -->
-            <g fill="#00E5FF">
-                <circle cx="150" cy="65" r="3" />
-                <circle cx="125" cy="100" r="2" />
-                <circle cx="175" cy="100" r="2" />
-                <circle cx="150" cy="135" r="2.5" fill="#FF9900" />
-                <circle cx="130" cy="170" r="2" />
-                <circle cx="170" cy="170" r="2" />
-                <circle cx="150" cy="210" r="3" fill="#FF9900" />
-                <circle cx="110" cy="225" r="2" />
-                <circle cx="190" cy="225" r="2" />
+    <!-- CENTER REACTOR - REZNIKOV STYLE HOLOGRAM -->
+    <div class="core-trigger" onclick="manualListenTrigger()">
+        <svg class="holo-bust" viewBox="0 0 300 300">
+            <!-- Baze e rrjetes -->
+            <defs>
+                <linearGradient id="gradCore" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" style="stop-color:var(--cyan);stop-opacity:1" />
+                    <stop offset="50%" style="stop-color:var(--orange);stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:var(--cyan);stop-opacity:1" />
+                </linearGradient>
+            </defs>
+            <!-- Shtresa e jashtme e linjave cyan (fibra te ftohta) -->
+            <g stroke="var(--cyan)" opacity="0.7">
+                <path d="M50,200 Q100,150 150,150 Q200,150 250,200" />
+                <path d="M60,215 Q100,175 150,175 Q200,175 240,215" />
+                <path d="M70,230 Q100,200 150,200 Q200,200 230,230" />
+                <path d="M80,245 Q100,225 150,225 Q200,225 220,245" />
             </g>
-
-            <!-- Lidhje shtesë fije drite -->
-            <path d="M150,135 L125,100 M150,135 L175,100 M150,135 L150,65 M150,210 L130,170 M150,210 L170,170" stroke="rgba(0,229,255,0.25)" stroke-width="1"/>
+            <!-- Shtresa e mesme (lidhjet e qafes) -->
+            <g stroke="var(--cyan)" opacity="0.9">
+                <path d="M130,150 L130,100" />
+                <path d="M170,150 L170,100" />
+                <path d="M140,125 Q150,130 160,125" />
+            </g>
+            <!-- Shtresa e kokes (unaza energjie) -->
+            <g stroke="url(#gradCore)" stroke-width="2" opacity="0.9">
+                <ellipse cx="150" cy="80" rx="25" ry="10" />
+                <path d="M125,80 Q135,50 150,45 Q165,50 175,80" fill="none" />
+                <!-- Pika ne kulm -->
+                <circle cx="150" cy="45" r="3" fill="var(--orange)" stroke="none"/>
+            </g>
+            <!-- Qendra e nxehte (portokalli) e pulsuar -->
+            <circle cx="150" cy="185" r="18" fill="var(--orange)" opacity="0.6" filter="blur(8px)">
+                <animate attributeName="r" values="18;22;18" dur="2s" repeatCount="indefinite" />
+                <animate attributeName="opacity" values="0.6;0.8;0.6" dur="2s" repeatCount="indefinite" />
+            </circle>
+            <circle cx="150" cy="185" r="8" fill="#FFF" opacity="0.9" filter="blur(2px)"/>
         </svg>
+        <div class="core-sub" id="coreState">SAY "HEY NEO"</div>
     </div>
 
-    <!-- PROMPT TEXT -->
-    <div class="prompt-container">
-        <p class="wake-text">Thuaj: „Hej Neo“</p>
-        <span class="listening-subtext" id="subStatus">Po të dëgjoj…</span>
+    <!-- NODES -->
+    <div id="nodesLayer"></div>
+
+    <!-- HOLOGRAPHIC MODAL -->
+    <div class="holo-modal" id="holoModal">
+        <div class="holo-head">
+            <span id="holoTitle">DATEN</span>
+            <button type="button" class="hud-btn" onclick="closeHolo()">✕ Schließen</button>
+        </div>
+        <div class="holo-content" id="holoBody"></div>
     </div>
 
-    <!-- BOTTOM MIC ICON -->
-    <div class="mic-dock">
-        <div class="mic-btn" onclick="toggleListening()">🎙️</div>
+    <!-- BOTTOM ACTION STRIP -->
+    <div class="bottom-dock">
+        <div class="act-strip" id="actBar"></div>
     </div>
 
+    <input type="file" id="cam" accept="image/*" style="display:none" onchange="handleImg(event)">
     <audio id="player" playsinline></audio>
 
     <script>
-        let isRec = false, isSpk = false, inConv = false;
-        let rec = null, stream = null, chunks = [], wakeRec = null;
-        const player = document.getElementById('player');
-        const subStatus = document.getElementById('subStatus');
+        const isMobile = /Android|iPhone|iPad/i.test(navigator.userAgent);
 
-        function setVisualState(state) {
-            document.body.className = state || '';
-            if (state === 'listening') {
-                subStatus.innerText = "Dëgjoj komandën tuaj...";
-            } else if (state === 'thinking') {
-                subStatus.innerText = "Duke analizuar...";
-            } else if (state === 'speaking') {
-                subStatus.innerText = "NEO po flet...";
+        function beep(f1, f2) {
+            try {
+                const ac = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ac.createOscillator();
+                const g = ac.createGain();
+                osc.connect(g); g.connect(ac.destination);
+                osc.frequency.setValueAtTime(f1, ac.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(f2, ac.currentTime + 0.12);
+                g.gain.setValueAtTime(0.14, ac.currentTime);
+                g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.14);
+                osc.start(); osc.stop(ac.currentTime + 0.15);
+            } catch(e){}
+        }
+
+        // --- 1. NODES ---
+        const NODES = [
+            { id: 'brief',    label: '☀️ Morning Brief',   rx: 0.21, ry: 0.24, action: () => quickCmd('Gib mir mein komplettes Morning Briefing mit Terminen heute und wichtigen Objekt-Codes.') },
+            { id: 'calendar', label: '📅 Kalender Sync',   rx: 0.14, ry: 0.43, action: () => openHolo('calendar') },
+            { id: 'navi',     label: '🧭 Auto-Briefing',   rx: 0.20, ry: 0.63, action: () => quickCmd('Ich fahre los zum nächsten Termin. Gib mir das Briefing mit Codes und starte Navigation.') },
+            { id: 'codes',    label: '🔐 Objekt-Codes',    rx: 0.31, ry: 0.75, action: () => openHolo('codes') },
+            { id: 'offer',    label: '📐 Angebot Rechner', rx: 0.79, ry: 0.24, action: () => openHolo('calc') },
+            { id: 'camera',   label: '📸 Mängel-Foto',     rx: 0.86, ry: 0.43, action: () => document.getElementById('cam').click() },
+            { id: 'telegram', label: '✈️ Autorisierung',   rx: 0.69, ry: 0.75, action: () => sendTg() }
+        ];
+
+        const nodesLayer = document.getElementById('nodesLayer');
+        NODES.forEach(n => {
+            const el = document.createElement('div');
+            el.className = 'node-item';
+            el.id = 'node-' + n.id;
+            el.style.left = (n.rx * 100) + '%';
+            el.style.top = (n.ry * 100) + '%';
+            el.innerHTML = `<span class="node-dot"></span><span class="node-title">${n.label}</span>`;
+            el.onclick = () => {
+                document.querySelectorAll('.node-item').forEach(e => e.classList.remove('active-node'));
+                el.classList.add('active-node');
+                n.action();
+            };
+            nodesLayer.appendChild(el);
+        });
+
+        // --- 2. CANVAS ANIMATION ---
+        const canvas = document.getElementById('neuralCanvas');
+        const ctx = canvas.getContext('2d');
+        let W = window.innerWidth, H = window.innerHeight;
+        function resizeCanvas() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        let coreStateMode = 'idle', angle1 = 0, angle2 = 0;
+        const packets = NODES.map((_, idx) => ({ progress: (idx * 0.15) % 1, speed: 0.004 + (idx % 3) * 0.0012 }));
+
+        function drawNeuralNetwork() {
+            ctx.clearRect(0, 0, W, H);
+            const cx = W * 0.5, cy = H * 0.48;
+
+            let mainColor = '0, 229, 255', secColor = '255, 153, 0', rotSpeed = 0.005, pulseBoost = 1;
+            if (coreStateMode === 'listening') { mainColor = '16, 185, 129'; rotSpeed = 0.012; pulseBoost = 1.8; }
+            else if (coreStateMode === 'thinking') { mainColor = '0, 229, 255'; rotSpeed = 0.020; pulseBoost = 2.5; }
+            else if (coreStateMode === 'speaking') { mainColor = '168, 85, 247'; rotSpeed = 0.010; pulseBoost = 2.0; }
+
+            angle1 += rotSpeed; angle2 -= rotSpeed * 0.7;
+
+            NODES.forEach((n, idx) => {
+                const nx = W * n.rx, ny = H * n.ry;
+                const midX = (cx + nx) * 0.5, midY = (cy + ny) * 0.5 + (idx % 2 === 0 ? -20 : 20);
+
+                ctx.beginPath();
+                ctx.moveTo(cx, cy);
+                ctx.quadraticCurveTo(midX, midY, nx, ny);
+                ctx.strokeStyle = `rgba(${secColor}, 0.18)`;
+                ctx.lineWidth = 1.2;
+                ctx.stroke();
+
+                const p = packets[idx];
+                p.progress += p.speed * pulseBoost;
+                if (p.progress > 1) p.progress = 0;
+                const t = p.progress;
+                const px = (1 - t) * (1 - t) * cx + 2 * (1 - t) * t * midX + t * t * nx;
+                const py = (1 - t) * (1 - t) * cy + 2 * (1 - t) * t * midY + t * t * ny;
+
+                ctx.beginPath();
+                ctx.arc(px, py, 2.5, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(${mainColor}, 0.9)` ;
+                ctx.fill();
+            });
+
+            ctx.save(); ctx.translate(cx, cy); ctx.rotate(angle1);
+            ctx.strokeStyle = `rgba(${secColor}, 0.4)`; ctx.lineWidth = 1.5; ctx.setLineDash([16, 8, 4, 8]);
+            ctx.beginPath(); ctx.arc(0, 0, 165, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
+
+            ctx.save(); ctx.translate(cx, cy); ctx.rotate(angle2);
+            ctx.strokeStyle = `rgba(${mainColor}, 0.7)`; ctx.lineWidth = 2.5; ctx.setLineDash([10, 10]);
+            ctx.beginPath(); ctx.arc(0, 0, 125, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
+
+            requestAnimationFrame(drawNeuralNetwork);
+        }
+        drawNeuralNetwork();
+
+        // --- 3. STATE & POPUPS ---
+        let cachedEvents = [], weatherStr = "HAMBURG";
+        function updateTelemetry() {
+            const now = new Date();
+            document.getElementById('sysMeta').innerText = `${weatherStr} • ${now.toLocaleTimeString('de-DE', {hour:'2-digit', minute:'2-digit'})} UHR`;
+        }
+        updateTelemetry(); setInterval(updateTelemetry, 15000);
+
+        fetch('https://api.open-meteo.com/v1/forecast?latitude=53.5511&longitude=9.9937&current_weather=true')
+            .then(r => r.json()).then(d => { if (d.current_weather) { weatherStr = `HAMBURG ${Math.round(d.current_weather.temperature)}°C`; updateTelemetry(); } }).catch(()=>{});
+
+        fetch('/calendar_preview').then(r => r.json()).then(d => { cachedEvents = d.events || []; }).catch(()=>{});
+
+        let mem = JSON.parse(localStorage.getItem('neo_memory') || '[]');
+        let mode = localStorage.getItem('neo_mode') || 'ARBEIT';
+        const player = document.getElementById('player');
+
+        function saveState() {
+            localStorage.setItem('neo_memory', JSON.stringify(mem));
+            localStorage.setItem('neo_mode', mode);
+            document.getElementById('mBtn').innerText = 'MODUS: ' + mode;
+            document.getElementById('nCount').innerText = mem.length;
+        }
+        saveState();
+
+        function toggleMode() { mode = mode === 'ARBEIT' ? 'PRIVAT' : 'ARBEIT'; saveState(); }
+
+        function openHolo(type) {
+            const modal = document.getElementById('holoModal');
+            const title = document.getElementById('holoTitle');
+            const body = document.getElementById('holoBody');
+            modal.classList.add('open');
+
+            if (type === 'calendar') {
+                title.innerText = 'KALENDER TERMINE';
+                body.innerHTML = cachedEvents.length
+                    ? cachedEvents.map(e => `<div class="holo-row"><div><div style="color:var(--orange);font-size:11px;font-weight:800;">${e.time}</div><div style="font-weight:700;">${e.title}</div><div style="color:var(--muted);font-size:11px;">${e.loc || ''}</div></div></div>`).join('')
+                    : '<div style="color:var(--muted);">Keine anstehenden Termine gefunden.</div>';
+            } else if (type === 'codes') {
+                title.innerText = `OBJEKT-CODES & NOTIZEN (${mem.length})`;
+                const listHtml = mem.length
+                    ? mem.map((x, i) => `<div class="holo-row"><span>${x}</span><button type="button" class="gold-pill" style="padding:3px 10px;" onclick="mem.splice(${i},1);saveState();openHolo('codes');">✓</button></div>`).join('')
+                    : '<div style="color:var(--muted);margin-bottom:10px;">Noch keine Objekt-Codes gespeichert.</div>';
+                body.innerHTML = `
+                    <div style="display:flex;gap:6px;margin-bottom:12px;">
+                        <input id="newCodeInp" type="text" placeholder="Neuen Code/Notiz eingeben..." style="flex:1;background:#030712;border:1px solid var(--border);color:#fff;padding:8px;border-radius:6px;">
+                        <button type="button" class="gold-pill" onclick="const v=document.getElementById('newCodeInp').value.trim();if(v){mem.push(v);saveState();openHolo('codes');}">+ Speichern</button>
+                    </div>` + listHtml;
+            } else if (type === 'calc') {
+                title.innerText = 'ANGEBOTS-KALKULATOR (31,50 €/Std)';
+                body.innerHTML = `
+                    <div style="display:flex;flex-direction:column;gap:10px;">
+                        <input id="cQm" type="number" placeholder="Fläche në m² (z.B. 600)" value="600" style="background:#030712;border:1px solid var(--border);color:#fff;padding:9px;border-radius:7px;">
+                        <select id="cFreq" style="background:#030712;border:1px solid var(--border);color:#fff;padding:9px;border-radius:7px;">
+                            <option value="1x pro Woche">1x pro Woche</option>
+                            <option value="2x pro Woche" selected>2x pro Woche</option>
+                            <option value="3x pro Woche">3x pro Woche</option>
+                            <option value="5x pro Woche">5x pro Woche</option>
+                        </select>
+                        <button type="button" class="gold-pill" onclick="const q=document.getElementById('cQm').value||600;const f=document.getElementById('cFreq').value;closeHolo();quickCmd('Kalkuliere ein Reinigungsangebot für '+q+' Quadratmeter Büro, '+f+', dhe erstelle den Angebotstext.');">JETZT BERECHNEN</button>
+                    </div>`;
+            }
+        }
+        function closeHolo() { document.getElementById('holoModal').classList.remove('open'); }
+
+        function setSt(s) {
+            coreStateMode = s || 'idle';
+            document.body.className = s || '';
+            const cSt = document.getElementById('coreState');
+            const sSt = document.getElementById('streamStatus');
+            if (s === 'listening') { cSt.innerText = 'ICH HÖRE ZU...'; sSt.innerText = 'SPRICH JETZT'; }
+            else if (s === 'thinking') { cSt.innerText = 'DENKT NACH...'; sSt.innerText = 'ANALYSE...'; }
+            else if (s === 'speaking') { cSt.innerText = 'NEO SPRICHT'; sSt.innerText = 'AUDIO AKTIV'; }
+            else { cSt.innerText = activeSession ? 'SPRICH WEITER...' : 'SAY "HEY NEO"'; sSt.innerText = activeSession ? 'DIALOG AKTIV' : 'LAUSCHT ("HEY NEO")'; }
+        }
+
+        // --- 4. 100% HANDS-FREE CONTINUOUS SPEECH ENGINE ---
+        let wakeOn = true;
+        let activeSession = false;
+        let isBusy = false;
+        let srInstance = null;
+
+        function toggleWake() {
+            wakeOn = !wakeOn;
+            const b = document.getElementById('wBtn');
+            if (wakeOn) {
+                b.innerText = '● HEY NEO: 24/7 AKTIV';
+                b.style.borderColor = '#10B981';
+                b.style.color = '#10B981';
+                startAlwaysListening();
             } else {
-                subStatus.innerText = "Po të dëgjoj…";
+                b.innerText = '○ HEY NEO: PAUSIERT';
+                b.style.borderColor = '';
+                b.style.color = '';
+                activeSession = false;
+                if (srInstance) { try { srInstance.onend = null; srInstance.abort(); } catch(e){} srInstance = null; }
+                setSt(null);
             }
         }
 
-        // --- WAKE WORD & CONTINUOUS LISTENING ---
-        function startWakeWord() {
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if (!SpeechRecognition) return;
-            try {
-                wakeRec = new SpeechRecognition();
-                wakeRec.lang = 'sq-AL'; // Ose 'de-DE' sipas dëshirës
-                wakeRec.continuous = true;
-                wakeRec.interimResults = true;
+        function manualListenTrigger() {
+            if (isBusy) { player.pause(); isBusy = false; }
+            activeSession = true;
+            beep(520, 920);
+            setSt('listening');
+            document.getElementById('replyBox').innerText = "🎙️ Ich höre dir direkt zu, Margil...";
+            if (!srInstance) startAlwaysListening();
+        }
 
-                wakeRec.onresult = (e) => {
-                    for (let i = e.resultIndex; i < e.results.length; i++) {
-                        const t = e.results[i][0].transcript.toLowerCase();
-                        if (t.includes('hej neo') || t.includes('hey neo') || t.includes('neo')) {
-                            if (wakeRec) { try { wakeRec.abort(); } catch(err){} }
-                            inConv = true;
-                            startRecordingAudio();
+        function startAlwaysListening() {
+            if (!wakeOn || isBusy) return;
+            const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SR) return;
+            if (srInstance) {
+                try { srInstance.onend = null; srInstance.abort(); } catch(e){}
+                srInstance = null;
+            }
+
+            srInstance = new SR();
+            srInstance.lang = 'de-DE';
+            srInstance.continuous = true;
+            srInstance.interimResults = true;
+
+            srInstance.onresult = (event) => {
+                if (isBusy) return;
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    const raw = event.results[i][0].transcript.trim();
+                    const low = raw.toLowerCase();
+
+                    if (!event.results[i].isFinal) {
+                        if (activeSession || low.includes('neo') || low.includes('nio')) {
+                            setSt('listening');
+                            document.getElementById('replyBox').innerText = "🎙️ " + raw + " ...";
+                        }
+                        continue;
+                    }
+
+                    const wakeMatch = low.match(/\b(hey neo|hey nio|hallo neo|ok neo|neo)\b/);
+                    if (wakeMatch) {
+                        const idx = low.indexOf(wakeMatch[0]) + wakeMatch[0].length;
+                        const commandAfterWake = raw.slice(idx).replace(/^[,.\s]+/, '').trim();
+
+                        if (commandAfterWake.length > 2) {
+                            activeSession = true;
+                            beep(640, 880);
+                            processVoiceText(commandAfterWake);
+                            return;
+                        } else {
+                            activeSession = true;
+                            beep(520, 960);
+                            setSt('listening');
+                            document.getElementById('replyBox').innerText = "🎙️ Ja, Margil? Sprich einfach weiter...";
                             return;
                         }
+                    } else if (activeSession && raw.length > 1) {
+                        beep(640, 880);
+                        processVoiceText(raw);
+                        return;
                     }
-                };
-                wakeRec.onend = () => {
-                    if (!isRec && !isSpk && !inConv) {
-                        setTimeout(startWakeWord, 800);
-                    }
-                };
-                wakeRec.start();
-            } catch(e) {}
+                }
+            };
+
+            srInstance.onend = () => {
+                srInstance = null;
+                if (wakeOn && !isBusy) setTimeout(() => startAlwaysListening(), 250);
+            };
+            srInstance.onerror = () => {
+                srInstance = null;
+                if (wakeOn && !isBusy) setTimeout(() => startAlwaysListening(), 600);
+            };
+
+            try { srInstance.start(); } catch(e) { srInstance = null; }
         }
 
-        function toggleListening() {
-            if (isSpk) { player.pause(); isSpk = false; setVisualState(null); return; }
-            if (isRec) { isRec = false; if (rec && rec.state !== 'inactive') rec.stop(); return; }
-            inConv = true;
-            startRecordingAudio();
+        function processVoiceText(spokenText) {
+            isBusy = true;
+            if (srInstance) { try { srInstance.onend = null; srInstance.abort(); } catch(e){} srInstance = null; }
+            setSt('thinking');
+            sendNeo({ message: spokenText });
         }
 
-        async function startRecordingAudio() {
-            if (isRec || isSpk) return;
-            if (wakeRec) { try { wakeRec.abort(); } catch(e){} }
-            try {
-                stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
-                chunks = [];
-                rec = new MediaRecorder(stream, { audioBitsPerSecond: 16000 });
-                rec.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
-                rec.onstop = () => {
-                    stream.getTracks().forEach(t => t.stop());
-                    const blob = new Blob(chunks, { type: rec.mimeType || 'audio/webm' });
-                    if (blob.size < 600) { inConv = false; setVisualState(null); startWakeWord(); return; }
-                    setVisualState('thinking');
-                    const reader = new FileReader();
-                    reader.readAsDataURL(blob);
-                    reader.onloadend = () => {
-                        sendToNeoBackend({ audio: reader.result.split(',')[1], mime_type: (rec.mimeType || 'audio/webm').split(';')[0] });
-                    };
-                };
-                rec.start();
-                isRec = true;
-                setVisualState('listening');
-                setTimeout(() => { if (isRec) { isRec = false; rec.stop(); } }, 6000);
-            } catch(e) {
-                inConv = false;
-                setVisualState(null);
-                startWakeWord();
-            }
-        }
-
-        player.onplay = () => { isSpk = true; setVisualState('speaking'); };
+        player.onplay = () => { isBusy = true; setSt('speaking'); };
         player.onended = () => {
-            isSpk = false;
-            setVisualState(null);
-            if (inConv) setTimeout(startRecordingAudio, 400);
-            else startWakeWord();
+            isBusy = false;
+            setSt(activeSession ? 'listening' : null);
+            if (wakeOn) setTimeout(() => startAlwaysListening(), 250);
+        };
+        player.onerror = () => {
+            isBusy = false; setSt(null);
+            if (wakeOn) setTimeout(() => startAlwaysListening(), 350);
         };
 
-        async function sendToNeoBackend(payload) {
-            payload.mode = "ARBEIT";
-            payload.memory = JSON.parse(localStorage.getItem('neo_memory') || '[]');
-            payload.local_time_str = new Date().toLocaleString('de-DE');
+        async function sendTg() {
+            document.getElementById('replyBox').innerText = "Sende Autorisierungsanfrage an Telegram...";
             try {
-                const res = await fetch('/chat', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify(payload)
-                });
+                const r = await fetch('/telegram_notify', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({text:"📞 NEO Autorisierung angefordert!"}) });
+                const d = await r.json();
+                document.getElementById('replyBox').innerText = d.ok ? "✅ Telegram-Benachrichtigung erfolgreich gesendet!" : ("⚠️ " + (d.error || "Telegram Fehler"));
+            } catch(e) { document.getElementById('replyBox').innerText = "Verbindungsfehler zu Telegram."; }
+        }
+
+        function handleImg(ev) {
+            const f = ev.target.files[0]; if (!f) return;
+            isBusy = true; setSt('thinking');
+            const r = new FileReader();
+            r.onload = e => sendNeo({ image: e.target.result.split(',')[1], message: "Erstelle einen professionellen Objekt-Mängelbericht." });
+            r.readAsDataURL(f);
+        }
+
+        function quickCmd(t) { isBusy = true; setSt('thinking'); sendNeo({ message: t }); }
+
+        async function sendNeo(payload) {
+            document.getElementById('actBar').innerHTML = '';
+            document.getElementById('replyBox').innerText = "NEO verarbeitet: „" + (payload.message || "Anfrage") + "“...";
+            payload.mode = mode;
+            payload.memory = mem;
+            payload.local_time_str = new Date().toLocaleString('de-DE');
+
+            try {
+                const res = await fetch('/chat', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
                 const d = await res.json();
-                if (d.error) { inConv = false; setVisualState(null); startWakeWord(); return; }
-                if (d.end_conversation) inConv = false;
-                if (d.new_memory) {
-                    let mem = JSON.parse(localStorage.getItem('neo_memory') || '[]');
-                    mem.push(d.new_memory);
-                    localStorage.setItem('neo_memory', JSON.stringify(mem));
+                if (d.error) {
+                    isBusy = false; setSt(null);
+                    document.getElementById('replyBox').innerText = "Fehler: " + d.error;
+                    if (wakeOn) startAlwaysListening();
+                    return;
+                }
+                if (d.end_conversation) activeSession = false;
+                if (d.new_memory) { mem.push(d.new_memory); saveState(); }
+                document.getElementById('replyBox').innerText = d.reply;
+
+                if (d.copy_text) {
+                    const b = document.createElement('button'); b.type = 'button'; b.className = 'gold-pill'; b.innerText = '📋 Text kopieren';
+                    b.onclick = () => { navigator.clipboard.writeText(d.copy_text); b.innerText = '✓ Kopiert!'; };
+                    document.getElementById('actBar').appendChild(b);
+                }
+                if (d.action_url) {
+                    let finalUrl = d.action_url;
+                    if (!isMobile && finalUrl.startsWith('intent://')) {
+                        const m = finalUrl.match(/text=([^#&]+)/);
+                        finalUrl = 'https://wa.me/?text=' + (m ? m[1] : '');
+                    }
+                    const a = document.createElement('a'); a.href = finalUrl; a.target = '_blank'; a.className = 'gold-pill'; a.innerText = d.action_label || 'Öffnen';
+                    document.getElementById('actBar').appendChild(a);
                 }
                 if (d.audio) {
                     player.src = "data:audio/mp3;base64," + d.audio;
-                    player.play().catch(() => { isSpk = false; setVisualState(null); startWakeWord(); });
+                    player.play().catch(() => {
+                        isBusy = false; setSt(null);
+                        if (wakeOn) startAlwaysListening();
+                    });
                 } else {
-                    setVisualState(null);
-                    startWakeWord();
+                    isBusy = false; setSt(null);
+                    if (wakeOn) startAlwaysListening();
                 }
             } catch(e) {
-                inConv = false;
-                setVisualState(null);
-                startWakeWord();
+                isBusy = false; setSt(null);
+                document.getElementById('replyBox').innerText = "Server-Verbindungsfehler.";
+                if (wakeOn) startAlwaysListening();
             }
         }
 
-        window.onload = startWakeWord;
+        window.addEventListener('load', () => {
+            startAlwaysListening();
+        });
     </script>
 </body>
-</html>
-"""
+</html>"""
 
 def parse_upcoming_events():
     now_ts = time.time()
@@ -426,13 +669,16 @@ def parse_upcoming_events():
                     }))
         out.sort(key=lambda x: x[0])
         ICAL_CACHE["ts"] = now_ts
-        ICAL_CACHE["events"] = [x[1] for x in out[:10]]
+        ICAL_CACHE["events"] = [x[1] for x in out[:12]]
         return ICAL_CACHE["events"]
     except Exception:
         return ICAL_CACHE["events"]
 
-SYSTEM_PROMPT = """Du bist NEO, der sprachgesteuerte KI-Assistent von Margil (Kundenbetreuer Gebäudereinigung Hamburg).
-Modus: {mode} | Zeit: {local_time}. Antworte kurz, direkt, präzise und professionell auf Deutsch (oder Albanisch falls angesprochen). Keine Karten, kein Markdown, keine Sternchen.
+SYSTEM_PROMPT = """Du bist NEO, der hochintelligente KI-Assistent von Margil (Kundenbetreuer Gebäudereinigung Hamburg).
+Modus: {mode} | Zeit: {local_time}. Antworte souverän, ruhig, kurz dhe ohne Markdown/Sternchen.
+- Morning Brief / Auto-Briefing: Nächste Termine + Codes aus Notizen + Google Maps URL in `action_url` (`action_label`: "Navigation starten").
+- Dolmetscher DE <-> SQ: Bei Übersetzung ins Albanische `voice_lang`: "sq" dhe Übersetzung në `copy_text`, sonst "de".
+- Kalkulator: Büro ~220 m²/Std, 31,50 €/Std netto (4,33 Wochen/Monat). Fertiges Angebot in `copy_text` + WhatsApp URL (`https://wa.me/?text=URL_ENCODED`, `action_label`: "WhatsApp öffnen").
 - Gespräch Ende ("Danke", "Stopp"): `end_conversation`: true.
 Antworte NUR als JSON:
 {{"reply":"","voice_lang":"de","copy_text":"","new_memory":"","action_url":"","action_label":"","end_conversation":false}}"""
@@ -446,6 +692,15 @@ async def make_voice(text, lang="de"):
         if c["type"] == "audio":
             buf += c["data"]
     return base64.b64encode(buf).decode("utf-8")
+
+def generate_with_fallback(client, parts, config):
+    for model_name in ["gemini-3.8-flash", "gemini-2.5-flash"]:
+        try:
+            return client.models.generate_content(model=model_name, contents=parts, config=config)
+        except Exception as e:
+            last_err = e
+            continue
+    raise last_err
 
 @app.route("/")
 def home():
@@ -461,17 +716,17 @@ def avatar():
 
 @app.route("/calendar_preview")
 def cal_prev():
-    return jsonify({"events": parse_upcoming_events()[:3]})
+    return jsonify({"events": parse_upcoming_events()})
 
 @app.route("/manifest.json")
 def manifest():
     return jsonify({
-        "name": "NEO",
+        "name": "NEO OS",
         "short_name": "NEO",
         "start_url": "/",
         "display": "standalone",
-        "background_color": "#020617",
-        "theme_color": "#020617",
+        "background_color": "#030712",
+        "theme_color": "#030712",
         "icons": [{"src": "/icon.svg", "sizes": "any", "type": "image/svg+xml"}]
     })
 
@@ -479,35 +734,62 @@ def manifest():
 def icon():
     return Response(ICON_SVG, mimetype="image/svg+xml")
 
+@app.route("/telegram_notify", methods=["POST"])
+def tg_notify():
+    token = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
+    chat_id = os.environ.get("TELEGRAM_CHAT_ID", "").strip()
+    if not token:
+        return jsonify({"ok": False, "error": "TELEGRAM_BOT_TOKEN fehlt in Render"})
+    if not chat_id:
+        try:
+            u = json.loads(urllib.request.urlopen(f"https://api.telegram.org/bot{token}/getUpdates", timeout=5).read().decode())
+            if u.get("result"):
+                chat_id = str(u["result"][-1]["message"]["chat"]["id"])
+        except Exception:
+            pass
+    if not chat_id:
+        return jsonify({"ok": False, "error": "Bitte sende zuerst 'Hallo' an deinen Bot në Telegram"})
+    payload = json.dumps({
+        "chat_id": chat_id,
+        "text": (request.json or {}).get("text", "🔔 NEO Autorisierung"),
+        "reply_markup": {"inline_keyboard": [[{"text": "✅ Autorisieren", "callback_data": "ok"}, {"text": "❌ Ablehnen", "callback_data": "no"}]]}
+    }).encode("utf-8")
+    req = urllib.request.Request(f"https://api.telegram.org/bot{token}/sendMessage", data=payload, headers={"Content-Type": "application/json"})
+    urllib.request.urlopen(req, timeout=5)
+    return jsonify({"ok": True})
+
 @app.route("/chat", methods=["POST"])
 def chat():
     try:
         api_key = os.environ.get("GEMINI_API_KEY", "").strip()
+        if not api_key:
+            return jsonify({"error": "GEMINI_API_KEY fehlt in Render"}), 500
         data = request.json or {}
         client = genai.Client(api_key=api_key)
         events = parse_upcoming_events()
-        cal_txt = "\n".join([f"- {e['time']}: {e['title']}" for e in events]) or "Keine Termine."
+        cal_txt = "\n".join([f"- {e['time']}: {e['title']} ({e['loc']})" for e in events]) or "Keine Termine."
 
         parts = []
-        if "audio" in data:
+        if "image" in data:
+            parts.append(types.Part.from_bytes(data=base64.b64decode(data["image"]), mime_type="image/jpeg"))
+            parts.append(data.get("message", "Mängelbericht erstellen."))
+        elif "audio" in data:
             parts.append(types.Part.from_bytes(data=base64.b64decode(data["audio"]), mime_type=data.get("mime_type", "audio/webm")))
-            parts.append("Höre dir diese Sprachnachricht von Margil an und antworte passend.")
+            parts.append("Antworte auf diese Sprachnachricht von Margil.")
         else:
-            parts.append("Bereit.")
+            parts.append(data.get("message", ""))
 
         parts.append(f"Kalender:\n{cal_txt}\nNotizen: {json.dumps(data.get('memory', []), ensure_ascii=False)}")
 
-        resp = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=parts,
-            config=types.GenerateContentConfig(
-                system_instruction=SYSTEM_PROMPT.format(mode=data.get("mode", "ARBEIT"), local_time=data.get("local_time_str", "")),
-                temperature=0.3
-            )
+        cfg = types.GenerateContentConfig(
+            system_instruction=SYSTEM_PROMPT.format(mode=data.get("mode", "ARBEIT"), local_time=data.get("local_time_str", "")),
+            temperature=0.3
         )
+        resp = generate_with_fallback(client, parts, cfg)
+
         m = re.search(r'\{.*\}', resp.text.strip(), re.DOTALL)
         res = json.loads(m.group(0)) if m else {"reply": resp.text.strip()}
-        reply = res.get("reply", "Zu Befehl.")
+        reply = res.get("reply", "Zu Befehl, Margil.")
         audio = asyncio.run(make_voice(reply, res.get("voice_lang", "de")))
         return jsonify({
             "reply": reply,
@@ -522,4 +804,4 @@ def chat():
         return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
-    app.run("0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
