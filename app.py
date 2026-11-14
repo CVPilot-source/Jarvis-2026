@@ -25,379 +25,213 @@ HTML_PAGE = """<!DOCTYPE html>
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#030712">
     <link rel="manifest" href="/manifest.json">
-    <title>NEO // NEURAL COMMAND OS</title>
+    <title>NEO // COMMAND OS</title>
     <style>
         :root {
             --gold: #F59E0B;
             --gold-glow: rgba(245, 158, 11, 0.45);
             --cyan: #38BDF8;
-            --cyan-dim: rgba(56, 189, 248, 0.16);
             --bg: #030712;
-            --panel: rgba(8, 14, 28, 0.86);
-            --border: rgba(56, 189, 248, 0.25);
+            --panel: rgba(8, 14, 28, 0.90);
+            --border: rgba(56, 189, 248, 0.28);
             --text: #F8FAFC;
             --muted: #94A3B8;
         }
-        body.listening { --gold: #10B981; --gold-glow: rgba(16, 185, 129, 0.5); }
+        body.listening { --gold: #10B981; --gold-glow: rgba(16, 185, 129, 0.55); }
         body.thinking  { --gold: #38BDF8; --gold-glow: rgba(56, 189, 248, 0.55); }
-        body.speaking  { --gold: #F59E0B; --gold-glow: rgba(245, 158, 11, 0.65); }
+        body.speaking  { --gold: #A855F7; --gold-glow: rgba(168, 85, 247, 0.60); }
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
 
         html, body {
-            margin: 0;
-            padding: 0;
-            width: 100vw;
-            height: 100dvh;
-            overflow: hidden;
+            margin: 0; padding: 0; width: 100vw; height: 100vh; overflow: hidden;
             background-color: var(--bg);
             background-image:
-                radial-gradient(circle at 50% 48%, rgba(14, 30, 62, 0.85) 0%, rgba(3, 7, 18, 0.98) 70%),
+                radial-gradient(circle at 50% 46%, rgba(14, 30, 62, 0.82) 0%, rgba(3, 7, 18, 0.98) 70%),
                 linear-gradient(rgba(56, 189, 248, 0.05) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(56, 189, 248, 0.05) 1px, transparent 1px),
-                linear-gradient(rgba(56, 189, 248, 0.02) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(56, 189, 248, 0.02) 1px, transparent 1px);
-            background-size: 100% 100%, 80px 80px, 80px 80px, 20px 20px, 20px 20px;
+                linear-gradient(90deg, rgba(56, 189, 248, 0.05) 1px, transparent 1px);
+            background-size: 100% 100%, 64px 64px, 64px 64px;
             color: var(--text);
-            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, monospace, sans-serif;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
         }
 
-        /* FULLSCREEN NEURAL CANVAS (LINES + PULSING DATA PACKETS + CORE RINGS) */
         #neuralCanvas {
-            position: fixed;
-            inset: 0;
-            width: 100vw;
-            height: 100dvh;
-            z-index: 1;
-            pointer-events: none;
+            position: fixed; inset: 0; width: 100vw; height: 100vh;
+            z-index: 1; pointer-events: none;
         }
 
-        /* TOP LEFT SYSTEM TELEMETRY (LIKE VIDEO) */
+        /* TOP LEFT HUD */
         .hud-tl {
-            position: fixed;
-            top: 16px;
-            left: 20px;
-            z-index: 10;
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
+            position: fixed; top: 18px; left: 22px; z-index: 10;
+            display: flex; flex-direction: column; gap: 6px;
         }
         .sys-title {
-            font-size: 20px;
-            font-weight: 900;
-            letter-spacing: 5px;
-            color: var(--cyan);
-            text-shadow: 0 0 14px rgba(56, 189, 248, 0.5);
-            display: flex;
-            align-items: center;
-            gap: 10px;
+            font-size: 22px; font-weight: 900; letter-spacing: 4px; color: var(--cyan);
+            display: flex; align-items: center; gap: 10px;
         }
-        .sys-sub {
-            font-size: 11px;
-            font-weight: 700;
-            letter-spacing: 1.5px;
-            color: var(--muted);
-            text-transform: uppercase;
-        }
-        .hud-controls {
-            display: flex;
-            gap: 8px;
-            margin-top: 6px;
-        }
+        .sys-sub { font-size: 11.5px; font-weight: 700; letter-spacing: 1.2px; color: var(--muted); }
+        .hud-controls { display: flex; gap: 8px; margin-top: 4px; flex-wrap: wrap; }
         .hud-btn {
-            background: var(--panel);
-            border: 1px solid var(--border);
-            color: var(--text);
-            padding: 5px 11px;
-            border-radius: 6px;
-            font-size: 11px;
-            font-weight: 700;
-            letter-spacing: 0.8px;
-            cursor: pointer;
-            backdrop-filter: blur(8px);
+            background: var(--panel); border: 1px solid var(--border); color: var(--text);
+            padding: 6px 12px; border-radius: 7px; font-size: 11.5px; font-weight: 700;
+            cursor: pointer; transition: 0.15s;
         }
-        .hud-btn:hover { border-color: var(--cyan); }
+        .hud-btn:hover { border-color: var(--gold); color: var(--gold); }
 
-        /* TOP RIGHT LIVE TRANSCRIPT / TELEMETRY PANEL (LIKE VIDEO) */
+        /* TOP RIGHT STREAM PANEL */
         .hud-tr {
-            position: fixed;
-            top: 16px;
-            right: 20px;
-            width: 310px;
-            max-width: 42vw;
-            background: var(--panel);
-            border: 1px solid var(--border);
-            border-top: 2px solid var(--cyan);
-            border-radius: 10px;
-            padding: 10px 13px;
-            z-index: 10;
-            backdrop-filter: blur(12px);
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+            position: fixed; top: 18px; right: 22px; width: 360px; max-width: 44vw;
+            background: var(--panel); border: 1px solid var(--border); border-top: 2px solid var(--gold);
+            border-radius: 12px; padding: 12px 15px; z-index: 10;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.65);
         }
         .tr-head {
-            display: flex;
-            justify-content: space-between;
-            font-size: 10px;
-            font-weight: 800;
-            letter-spacing: 1.2px;
-            color: var(--cyan);
-            margin-bottom: 5px;
-            text-transform: uppercase;
+            display: flex; justify-content: space-between; font-size: 10.5px;
+            font-weight: 800; letter-spacing: 1.2px; color: var(--gold); margin-bottom: 6px;
         }
         .tr-body {
-            font-size: 12.5px;
-            line-height: 1.42;
-            color: #E2E8F0;
-            max-height: 110px;
-            overflow-y: auto;
+            font-size: 13.5px; line-height: 1.45; color: #F1F5F9;
+            max-height: 140px; overflow-y: auto; user-select: text;
         }
 
-        /* CENTER CLICKABLE CORE HITBOX */
+        /* CENTER CORE BUTTON */
         .core-trigger {
-            position: fixed;
-            top: 48%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 170px;
-            height: 170px;
-            border-radius: 50%;
-            z-index: 8;
-            cursor: pointer;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
+            position: fixed; top: 46%; left: 50%; transform: translate(-50%, -50%);
+            width: 160px; height: 160px; border-radius: 50%; z-index: 8;
+            cursor: pointer; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; text-align: center;
         }
         .core-label {
-            font-size: 18px;
-            font-weight: 900;
-            letter-spacing: 4px;
-            color: #FFFFFF;
-            text-shadow: 0 0 12px var(--gold);
+            font-size: 20px; font-weight: 900; letter-spacing: 4px; color: #FFF;
+            text-shadow: 0 0 14px var(--gold);
         }
         .core-sub {
-            font-size: 10px;
-            font-weight: 800;
-            letter-spacing: 1.8px;
-            color: var(--gold);
-            margin-top: 4px;
-            text-transform: uppercase;
+            font-size: 10.5px; font-weight: 800; letter-spacing: 1.5px;
+            color: var(--gold); margin-top: 4px;
         }
 
-        /* FLOATING NEURAL NODES DISTRIBUTED ACROSS FULL SCREEN */
+        /* NODES */
         .node-item {
-            position: fixed;
-            transform: translate(-50%, -50%);
-            z-index: 7;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            background: rgba(8, 14, 28, 0.82);
-            border: 1px solid rgba(56, 189, 248, 0.28);
-            padding: 6px 12px;
-            border-radius: 999px;
-            cursor: pointer;
-            backdrop-filter: blur(6px);
+            position: fixed; transform: translate(-50%, -50%); z-index: 7;
+            display: flex; align-items: center; gap: 9px;
+            background: var(--panel); border: 1px solid var(--border);
+            padding: 8px 15px; border-radius: 999px; cursor: pointer;
             transition: transform 0.15s, border-color 0.2s, box-shadow 0.2s;
-            white-space: nowrap;
+            white-space: nowrap; box-shadow: 0 6px 18px rgba(0,0,0,0.5);
         }
         .node-item:hover, .node-item.active-node {
             border-color: var(--gold);
-            box-shadow: 0 0 18px var(--gold-glow);
-            transform: translate(-50%, -50%) scale(1.06);
+            box-shadow: 0 0 20px var(--gold-glow);
+            transform: translate(-50%, -50%) scale(1.07);
         }
         .node-dot {
-            width: 9px;
-            height: 9px;
-            border-radius: 50%;
-            background: var(--cyan);
-            box-shadow: 0 0 8px var(--cyan);
-            flex-shrink: 0;
+            width: 9px; height: 9px; border-radius: 50%;
+            background: var(--cyan); box-shadow: 0 0 8px var(--cyan);
         }
-        .node-item.active-node .node-dot {
-            background: var(--gold);
-            box-shadow: 0 0 10px var(--gold);
-        }
-        .node-title {
-            font-size: 11.5px;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-            color: #F1F5F9;
-        }
+        .node-item.active-node .node-dot { background: var(--gold); box-shadow: 0 0 10px var(--gold); }
+        .node-title { font-size: 12.5px; font-weight: 700; color: #F8FAFC; }
 
-        /* HOLOGRAPHIC POPUP WINDOW (APPEARS ON COMMAND LIKE VIDEO) */
+        /* POPUP WINDOW */
         .holo-modal {
-            position: fixed;
-            top: 48%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 440px;
-            max-width: 92vw;
-            background: rgba(7, 13, 27, 0.94);
-            border: 1px solid var(--cyan);
-            box-shadow: 0 0 40px rgba(56, 189, 248, 0.25);
-            border-radius: 12px;
-            padding: 16px;
-            z-index: 20;
-            display: none;
-            flex-direction: column;
-            gap: 10px;
-            backdrop-filter: blur(16px);
+            position: fixed; top: 46%; left: 50%; transform: translate(-50%, -50%);
+            width: 480px; max-width: 92vw; background: rgba(7, 13, 27, 0.97);
+            border: 1px solid var(--cyan); box-shadow: 0 0 45px rgba(0, 0, 0, 0.85);
+            border-radius: 14px; padding: 18px; z-index: 30;
+            display: none; flex-direction: column; gap: 12px;
         }
         .holo-modal.open { display: flex; }
         .holo-head {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 8px;
-            font-size: 12px;
-            font-weight: 800;
-            letter-spacing: 1.5px;
-            color: var(--cyan);
-            text-transform: uppercase;
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid var(--border); padding-bottom: 8px;
+            font-size: 12.5px; font-weight: 800; letter-spacing: 1.5px; color: var(--cyan);
         }
-        .holo-content {
-            max-height: 240px;
-            overflow-y: auto;
-            font-size: 13px;
-            line-height: 1.45;
-        }
+        .holo-content { max-height: 280px; overflow-y: auto; font-size: 13.5px; }
         .holo-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 7px 10px;
-            background: rgba(56, 189, 248, 0.06);
-            border-left: 2px solid var(--gold);
-            border-radius: 6px;
-            margin-bottom: 6px;
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 8px 11px; background: rgba(56, 189, 248, 0.07);
+            border-left: 3px solid var(--gold); border-radius: 7px; margin-bottom: 7px;
         }
 
-        /* BOTTOM COMMAND DOCK */
+        /* BOTTOM CONSOLE */
         .bottom-dock {
-            position: fixed;
-            bottom: 16px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 540px;
-            max-width: 94vw;
-            z-index: 12;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            align-items: center;
+            position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%);
+            width: 600px; max-width: 94vw; z-index: 12;
+            display: flex; flex-direction: column; gap: 8px; align-items: center;
         }
-        .act-strip {
-            display: flex;
-            gap: 8px;
-            justify-content: center;
-        }
+        .act-strip { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
         .gold-pill {
-            background: var(--gold);
-            color: #030712;
-            border: none;
-            border-radius: 999px;
-            padding: 6px 16px;
-            font-size: 12px;
-            font-weight: 800;
-            text-decoration: none;
-            cursor: pointer;
-            box-shadow: 0 0 16px var(--gold-glow);
+            background: var(--gold); color: #030712; border: none; border-radius: 999px;
+            padding: 7px 16px; font-size: 12px; font-weight: 800; text-decoration: none;
+            cursor: pointer; box-shadow: 0 0 14px var(--gold-glow);
         }
         .cmd-bar {
-            width: 100%;
-            background: var(--panel);
-            border: 1px solid var(--border);
-            border-radius: 999px;
-            padding: 6px 8px 6px 14px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            backdrop-filter: blur(12px);
+            width: 100%; background: var(--panel); border: 1px solid var(--border);
+            border-radius: 999px; padding: 6px 8px 6px 14px;
+            display: flex; align-items: center; gap: 8px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.6);
         }
         .cmd-bar input {
-            flex: 1;
-            background: transparent;
-            border: none;
-            color: #FFF;
-            font-size: 13.5px;
-            outline: none;
+            flex: 1; background: transparent; border: none; color: #FFF;
+            font-size: 14px; outline: none; user-select: text;
         }
         .mic-round {
-            width: 34px;
-            height: 34px;
-            border-radius: 50%;
-            background: rgba(245, 158, 11, 0.15);
-            border: 1px solid var(--gold);
-            color: #FFF;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            width: 36px; height: 36px; border-radius: 50%;
+            background: rgba(245, 158, 11, 0.16); border: 1px solid var(--gold);
+            color: #FFF; cursor: pointer; display: flex; align-items: center; justify-content: center;
         }
         .exec-btn {
-            background: var(--cyan);
-            color: #030712;
-            border: none;
-            border-radius: 999px;
-            padding: 7px 16px;
-            font-size: 12px;
-            font-weight: 800;
-            cursor: pointer;
+            background: var(--cyan); color: #030712; border: none; border-radius: 999px;
+            padding: 8px 18px; font-size: 12.5px; font-weight: 800; cursor: pointer;
         }
 
         @media (max-width: 768px) {
-            .hud-tr { display: none; }
-            .node-item { padding: 5px 9px; }
-            .node-title { font-size: 10.5px; }
+            .hud-tr { top: auto; bottom: 82px; right: 12px; left: 12px; width: auto; max-width: none; }
+            .node-item { padding: 6px 10px; }
+            .node-title { font-size: 11px; }
         }
     </style>
 </head>
 <body>
-    <!-- FULLSCREEN ANIMATED NEURAL NETWORK & REACTOR CORE -->
     <canvas id="neuralCanvas"></canvas>
 
-    <!-- TOP LEFT TELEMETRY -->
+    <!-- TOP LEFT -->
     <div class="hud-tl">
-        <div class="sys-title">NEO <span style="font-size:11px; color:var(--gold); letter-spacing:2px;">CORE OS</span></div>
-        <div class="sys-sub" id="sysMeta">HAMBURG • --:-- • SYNCHRONISIERT</div>
+        <div class="sys-title">NEO <span style="font-size:11px; color:var(--gold); letter-spacing:2px;">DESKTOP & MOBILE OS</span></div>
+        <div class="sys-sub" id="sysMeta">HAMBURG • SYNCHRONISIERT</div>
         <div class="hud-controls">
-            <button type="button" class="hud-btn" id="wBtn" onclick="toggleWake()">VOICE: AN</button>
+            <button type="button" class="hud-btn" id="wBtn" onclick="toggleWake()">HEY NEO: AUS (PC-MODUS)</button>
             <button type="button" class="hud-btn" id="mBtn" onclick="toggleMode()">MODUS: ARBEIT</button>
             <button type="button" class="hud-btn" onclick="openHolo('calendar')">KALENDER</button>
+            <button type="button" class="hud-btn" onclick="openHolo('codes')">CODES (<span id="nCount">0</span>)</button>
         </div>
     </div>
 
-    <!-- TOP RIGHT LIVE OUTPUT LOG (LIKE APEX) -->
+    <!-- TOP RIGHT OUTPUT -->
     <div class="hud-tr">
         <div class="tr-head">
-            <span>NEURAL STREAM</span>
-            <span id="streamStatus">STANDBY</span>
+            <span>NEO LIVE OUTPUT</span>
+            <span id="streamStatus">ONLINE</span>
         </div>
-        <div class="tr-body" id="replyBox">System online, Margil. Bereit für deine Befehle.</div>
+        <div class="tr-body" id="replyBox">Klicke auf einen Knotenpunkt, tippe unten einen Befehl ein oder klicke auf den NEO-Kern zum Sprechen.</div>
     </div>
 
-    <!-- CENTER REACTOR CORE HITBOX -->
-    <div class="core-trigger" onclick="toggleRec()">
+    <!-- CENTER REACTOR -->
+    <div class="core-trigger" onclick="toggleRec()" title="Klicken zum Sprechen">
         <div class="core-label">NEO</div>
-        <div class="core-sub" id="coreState">ONLINE</div>
+        <div class="core-sub" id="coreState">CLICK TO SPEAK</div>
     </div>
 
-    <!-- FLOATING NODES CONTAINER (POSITIONED DYNAMICALLY TO MATCH CANVAS LINES) -->
+    <!-- NODES -->
     <div id="nodesLayer"></div>
 
-    <!-- HOLOGRAPHIC POPUP PANEL (OPENED BY NODES OR VOICE) -->
+    <!-- HOLOGRAPHIC MODAL -->
     <div class="holo-modal" id="holoModal">
         <div class="holo-head">
-            <span id="holoTitle">SYSTEM DATEN</span>
-            <button type="button" class="hud-btn" onclick="closeHolo()">✕</button>
+            <span id="holoTitle">DATEN</span>
+            <button type="button" class="hud-btn" onclick="closeHolo()">✕ Schließen</button>
         </div>
         <div class="holo-content" id="holoBody"></div>
     </div>
@@ -406,26 +240,28 @@ HTML_PAGE = """<!DOCTYPE html>
     <div class="bottom-dock">
         <div class="act-strip" id="actBar"></div>
         <div class="cmd-bar">
-            <button type="button" class="mic-round" onclick="toggleRec()">🎙️</button>
-            <input type="text" id="msg" placeholder="Befehl an NEO (z.B. Morning Brief, Angebot, Übersetzung DE/SQ)..." onkeypress="if(event.key==='Enter')sendTxt()">
-            <button type="button" class="exec-btn" onclick="sendTxt()">EXEC</button>
+            <button type="button" class="mic-round" onclick="toggleRec()" title="Spracheingabe">🎙️</button>
+            <input type="text" id="msg" placeholder="Befehl eingeben und Enter drücken (z.B. Morning Brief, Angebot 600m², Übersetzung)..." onkeydown="if(event.key==='Enter')sendTxt()">
+            <button type="button" class="exec-btn" onclick="sendTxt()">SENDEN</button>
         </div>
     </div>
 
-    <input type="file" id="cam" accept="image/*" capture="environment" style="display:none" onchange="handleImg(event)">
+    <input type="file" id="cam" accept="image/*" style="display:none" onchange="handleImg(event)">
     <audio id="player" playsinline></audio>
 
     <script>
-        // --- 1. NEURAL NODE DEFINITIONS (DISTRIBUTED ACROSS WIDESCREEN LIKE VIDEO) ---
+        const isMobile = /Android|iPhone|iPad/i.test(navigator.userAgent);
+
+        // --- 1. NODES ---
         const NODES = [
-            { id: 'brief',    label: 'Morning Brief',  rx: 0.24, ry: 0.24, action: () => quickCmd('Gib mir mein komplettes Morning Briefing mit Terminen, Wetter und wichtigen Objekt-Codes.') },
-            { id: 'calendar', label: 'Calendar Sync',  rx: 0.16, ry: 0.44, action: () => openHolo('calendar') },
-            { id: 'navi',     label: 'Auto-Briefing',  rx: 0.22, ry: 0.66, action: () => quickCmd('Ich fahre los zum nächsten Termin. Gib mir das Briefing mit Codes und starte Navigation.') },
-            { id: 'codes',    label: 'Objekt-Codes',   rx: 0.34, ry: 0.78, action: () => openHolo('codes') },
-            { id: 'offer',    label: 'Angebot Rechner',rx: 0.76, ry: 0.24, action: () => quickCmd('Kalkuliere ein Reinigungsangebot für 600 Quadratmeter Büro, zweimal pro Woche, mit WhatsApp-Nachricht.') },
-            { id: 'camera',   label: 'Mängel-Vision',  rx: 0.84, ry: 0.44, action: () => document.getElementById('cam').click() },
-            { id: 'trans',    label: 'Dolmetscher DE/SQ',rx: 0.78, ry: 0.66, action: () => { document.getElementById('msg').focus(); document.getElementById('msg').placeholder = 'Text auf Deutsch oder Albanisch eingeben...'; } },
-            { id: 'telegram', label: 'Telegram Link',  rx: 0.66, ry: 0.78, action: () => sendTg() }
+            { id: 'brief',    label: '☀️ Morning Brief',   rx: 0.23, ry: 0.25, action: () => quickCmd('Gib mir mein komplettes Morning Briefing mit Terminen heute und wichtigen Objekt-Codes.') },
+            { id: 'calendar', label: '📅 Kalender Sync',   rx: 0.16, ry: 0.45, action: () => openHolo('calendar') },
+            { id: 'navi',     label: '🧭 Auto-Briefing',   rx: 0.22, ry: 0.65, action: () => quickCmd('Ich fahre los zum nächsten Termin. Gib mir das Briefing mit Codes und starte Navigation.') },
+            { id: 'codes',    label: '🔐 Objekt-Codes',    rx: 0.34, ry: 0.77, action: () => openHolo('codes') },
+            { id: 'offer',    label: '📐 Angebot Rechner', rx: 0.77, ry: 0.25, action: () => openHolo('calc') },
+            { id: 'camera',   label: '📸 Mängel-Foto',     rx: 0.84, ry: 0.45, action: () => document.getElementById('cam').click() },
+            { id: 'trans',    label: '🌐 Dolmetscher DE/SQ',rx: 0.78, ry: 0.65, action: () => { const i = document.getElementById('msg'); i.focus(); i.value = 'Übersetze ins Albanische: '; } },
+            { id: 'telegram', label: '✈️ Telegram Alert',  rx: 0.66, ry: 0.77, action: () => sendTg() }
         ];
 
         const nodesLayer = document.getElementById('nodesLayer');
@@ -437,82 +273,46 @@ HTML_PAGE = """<!DOCTYPE html>
             el.style.top = (n.ry * 100) + '%';
             el.innerHTML = `<span class="node-dot"></span><span class="node-title">${n.label}</span>`;
             el.onclick = () => {
-                highlightNode(n.id);
+                document.querySelectorAll('.node-item').forEach(e => e.classList.remove('active-node'));
+                el.classList.add('active-node');
                 n.action();
             };
             nodesLayer.appendChild(el);
         });
 
-        function highlightNode(id) {
-            document.querySelectorAll('.node-item').forEach(e => e.classList.remove('active-node'));
-            const target = document.getElementById('node-' + id);
-            if (target) target.classList.add('active-node');
-        }
-
-        // --- 2. FULLSCREEN HOLOGRAPHIC CANVAS (REACTOR RINGS + CURVED NEURAL TRACES + DATA PULSES) ---
+        // --- 2. CANVAS ANIMATION ---
         const canvas = document.getElementById('neuralCanvas');
         const ctx = canvas.getContext('2d');
         let W = window.innerWidth, H = window.innerHeight;
-        function resizeCanvas() {
-            W = canvas.width = window.innerWidth;
-            H = canvas.height = window.innerHeight;
-        }
+        function resizeCanvas() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
 
-        let coreStateMode = 'idle';
-        let angle1 = 0, angle2 = 0, pulseT = 0;
-
-        // Data packets traveling along neural lines
-        const packets = NODES.map((_, idx) => ({
-            nodeIdx: idx,
-            progress: (idx * 0.17) % 1,
-            speed: 0.004 + (idx % 3) * 0.0015
-        }));
+        let coreStateMode = 'idle', angle1 = 0, angle2 = 0, pulseT = 0;
+        const packets = NODES.map((_, idx) => ({ progress: (idx * 0.15) % 1, speed: 0.004 + (idx % 3) * 0.0012 }));
 
         function drawNeuralNetwork() {
             ctx.clearRect(0, 0, W, H);
-            const cx = W * 0.5;
-            const cy = H * 0.48;
+            const cx = W * 0.5, cy = H * 0.46;
 
-            let mainColor = '245, 158, 11'; // Amber Gold
-            let secColor = '56, 189, 248';  // Cyan
-            let rotSpeed = 0.006;
-            let pulseBoost = 1;
+            let mainColor = '245, 158, 11', secColor = '56, 189, 248', rotSpeed = 0.005, pulseBoost = 1;
+            if (coreStateMode === 'listening') { mainColor = '16, 185, 129'; rotSpeed = 0.015; pulseBoost = 2.2; }
+            else if (coreStateMode === 'thinking') { mainColor = '56, 189, 248'; rotSpeed = 0.025; pulseBoost = 3.0; }
+            else if (coreStateMode === 'speaking') { mainColor = '168, 85, 247'; rotSpeed = 0.018; pulseBoost = 2.5; }
 
-            if (coreStateMode === 'listening') {
-                mainColor = '16, 185, 129'; // Emerald
-                rotSpeed = 0.015;
-                pulseBoost = 2.2;
-            } else if (coreStateMode === 'thinking') {
-                mainColor = '56, 189, 248'; // Electric Cyan
-                rotSpeed = 0.025;
-                pulseBoost = 3.2;
-            } else if (coreStateMode === 'speaking') {
-                mainColor = '245, 158, 11'; // Intense Gold
-                rotSpeed = 0.018;
-                pulseBoost = 2.8;
-            }
+            angle1 += rotSpeed; angle2 -= rotSpeed * 0.7; pulseT += 0.05 * pulseBoost;
 
-            angle1 += rotSpeed;
-            angle2 -= rotSpeed * 0.7;
-            pulseT += 0.06 * pulseBoost;
-
-            // A. Curved Neural Traces from Center Core to Each Node
             NODES.forEach((n, idx) => {
-                const nx = W * n.rx;
-                const ny = H * n.ry;
-                const midX = (cx + nx) * 0.5;
-                const midY = (cy + ny) * 0.5 + (idx % 2 === 0 ? -28 : 28);
+                const nx = W * n.rx, ny = H * n.ry;
+                const midX = (cx + nx) * 0.5, midY = (cy + ny) * 0.5 + (idx % 2 === 0 ? -25 : 25);
 
                 ctx.beginPath();
                 ctx.moveTo(cx, cy);
                 ctx.quadraticCurveTo(midX, midY, nx, ny);
-                ctx.strokeStyle = `rgba(${secColor}, ${coreStateMode === 'idle' ? 0.22 : 0.42})`;
-                ctx.lineWidth = 1.4;
+                ctx.strokeStyle = `rgba(${secColor}, 0.25)`;
+                ctx.lineWidth = 1.5;
                 ctx.stroke();
 
-                // Traveling energy packet along the quadratic curve
                 const p = packets[idx];
                 p.progress += p.speed * pulseBoost;
                 if (p.progress > 1) p.progress = 0;
@@ -521,85 +321,51 @@ HTML_PAGE = """<!DOCTYPE html>
                 const py = (1 - t) * (1 - t) * cy + 2 * (1 - t) * t * midY + t * t * ny;
 
                 ctx.beginPath();
-                ctx.arc(px, py, 2.8, 0, Math.PI * 2);
-                ctx.fillStyle = `rgba(${mainColor}, 0.9)`;
+                ctx.arc(px, py, 3, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(${mainColor}, 0.95)`;
                 ctx.fill();
             });
 
-            // B. Multi-Ring Holographic Core (Like APEX Center Orb)
-            const baseR = 76 + (coreStateMode === 'speaking' ? Math.sin(pulseT * 2.2) * 7 : Math.sin(pulseT) * 2);
-
-            // Soft Ambient Radial Glow
-            const glow = ctx.createRadialGradient(cx, cy, 15, cx, cy, baseR + 65);
-            glow.addColorStop(0, `rgba(${mainColor}, 0.28)`);
-            glow.addColorStop(0.6, `rgba(${secColor}, 0.08)`);
+            const baseR = 72 + (coreStateMode === 'speaking' ? Math.sin(pulseT * 2) * 8 : Math.sin(pulseT) * 2);
+            const glow = ctx.createRadialGradient(cx, cy, 10, cx, cy, baseR + 60);
+            glow.addColorStop(0, `rgba(${mainColor}, 0.30)`);
             glow.addColorStop(1, 'rgba(3, 7, 18, 0)');
             ctx.fillStyle = glow;
-            ctx.beginPath();
-            ctx.arc(cx, cy, baseR + 65, 0, Math.PI * 2);
-            ctx.fill();
+            ctx.beginPath(); ctx.arc(cx, cy, baseR + 60, 0, Math.PI * 2); ctx.fill();
 
-            // Outer Segmented Cyan Ring
-            ctx.save();
-            ctx.translate(cx, cy);
-            ctx.rotate(angle1);
-            ctx.strokeStyle = `rgba(${secColor}, 0.55)`;
-            ctx.lineWidth = 2;
-            ctx.setLineDash([28, 14, 6, 14]);
-            ctx.beginPath();
-            ctx.arc(0, 0, baseR + 24, 0, Math.PI * 2);
-            ctx.stroke();
-            ctx.restore();
+            ctx.save(); ctx.translate(cx, cy); ctx.rotate(angle1);
+            ctx.strokeStyle = `rgba(${secColor}, 0.6)`; ctx.lineWidth = 2; ctx.setLineDash([24, 12, 6, 12]);
+            ctx.beginPath(); ctx.arc(0, 0, baseR + 22, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
 
-            // Middle Dashed Gold Ring
-            ctx.save();
-            ctx.translate(cx, cy);
-            ctx.rotate(angle2);
-            ctx.strokeStyle = `rgba(${mainColor}, 0.85)`;
-            ctx.lineWidth = 3;
-            ctx.setLineDash([18, 10]);
-            ctx.beginPath();
-            ctx.arc(0, 0, baseR + 8, 0, Math.PI * 2);
-            ctx.stroke();
-            ctx.restore();
+            ctx.save(); ctx.translate(cx, cy); ctx.rotate(angle2);
+            ctx.strokeStyle = `rgba(${mainColor}, 0.85)`; ctx.lineWidth = 3; ctx.setLineDash([16, 10]);
+            ctx.beginPath(); ctx.arc(0, 0, baseR + 7, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
 
-            // Solid Inner Core Ring
-            ctx.beginPath();
-            ctx.arc(cx, cy, baseR - 6, 0, Math.PI * 2);
-            ctx.fillStyle = 'rgba(5, 10, 22, 0.88)';
-            ctx.fill();
-            ctx.strokeStyle = `rgba(${mainColor}, 0.95)`;
-            ctx.lineWidth = 2.5;
-            ctx.stroke();
+            ctx.beginPath(); ctx.arc(cx, cy, baseR - 6, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(5, 10, 22, 0.92)'; ctx.fill();
+            ctx.strokeStyle = `rgba(${mainColor}, 0.95)`; ctx.lineWidth = 2.5; ctx.stroke();
 
             requestAnimationFrame(drawNeuralNetwork);
         }
         drawNeuralNetwork();
 
-        // --- 3. TELEMETRY, CALENDAR & HOLOGRAPHIC WINDOWS ---
-        let cachedEvents = [];
-        let weatherStr = "HAMBURG";
+        // --- 3. STATE & POPUPS ---
+        let cachedEvents = [], weatherStr = "HAMBURG";
         function updateTelemetry() {
             const now = new Date();
-            const t = now.toLocaleTimeString('de-DE', {hour:'2-digit', minute:'2-digit'});
-            const d = now.toLocaleDateString('de-DE', {weekday:'short', day:'2-digit', month:'2-digit'});
-            document.getElementById('sysMeta').innerText = `${weatherStr} • ${d.toUpperCase()} • ${t} UHR`;
+            document.getElementById('sysMeta').innerText = `${weatherStr} • ${now.toLocaleTimeString('de-DE', {hour:'2-digit', minute:'2-digit'})} UHR`;
         }
-        updateTelemetry();
-        setInterval(updateTelemetry, 15000);
+        updateTelemetry(); setInterval(updateTelemetry, 15000);
 
         fetch('https://api.open-meteo.com/v1/forecast?latitude=53.5511&longitude=9.9937&current_weather=true')
-            .then(r => r.json()).then(d => {
-                if (d.current_weather) { weatherStr = `HAMBURG ${Math.round(d.current_weather.temperature)}°C`; updateTelemetry(); }
-            }).catch(()=>{});
+            .then(r => r.json()).then(d => { if (d.current_weather) { weatherStr = `HAMBURG ${Math.round(d.current_weather.temperature)}°C`; updateTelemetry(); } }).catch(()=>{});
 
-        fetch('/calendar_preview').then(r => r.json()).then(d => {
-            cachedEvents = d.events || [];
-        }).catch(()=>{});
+        fetch('/calendar_preview').then(r => r.json()).then(d => { cachedEvents = d.events || []; }).catch(()=>{});
 
         let mem = JSON.parse(localStorage.getItem('neo_memory') || '[]');
         let mode = localStorage.getItem('neo_mode') || 'ARBEIT';
-        let wakeOn = true, isRec = false, isSpk = false, inConv = false;
+        let wakeOn = false; // Auf PC standardmäßig aus, damit Mikrofon nicht blockiert!
+        let isRec = false, isSpk = false, inConv = false;
         let rec = null, stream = null, chunks = [], wakeRec = null;
         const player = document.getElementById('player');
 
@@ -607,6 +373,7 @@ HTML_PAGE = """<!DOCTYPE html>
             localStorage.setItem('neo_memory', JSON.stringify(mem));
             localStorage.setItem('neo_mode', mode);
             document.getElementById('mBtn').innerText = 'MODUS: ' + mode;
+            document.getElementById('nCount').innerText = mem.length;
         }
         saveState();
 
@@ -619,15 +386,33 @@ HTML_PAGE = """<!DOCTYPE html>
             modal.classList.add('open');
 
             if (type === 'calendar') {
-                title.innerText = 'KALENDER SYNCHRONISATION';
+                title.innerText = 'KALENDER TERMINE';
                 body.innerHTML = cachedEvents.length
-                    ? cachedEvents.map(e => `<div class="holo-row"><div><div style="color:var(--gold);font-size:11px;font-weight:800;">${e.time}</div><div>${e.title}</div><div style="color:var(--muted);font-size:11px;">${e.loc || ''}</div></div></div>`).join('')
+                    ? cachedEvents.map(e => `<div class="holo-row"><div><div style="color:var(--gold);font-size:11px;font-weight:800;">${e.time}</div><div style="font-weight:700;">${e.title}</div><div style="color:var(--muted);font-size:11px;">${e.loc || ''}</div></div></div>`).join('')
                     : '<div style="color:var(--muted);">Keine anstehenden Termine gefunden.</div>';
             } else if (type === 'codes') {
                 title.innerText = `OBJEKT-CODES & NOTIZEN (${mem.length})`;
-                body.innerHTML = mem.length
+                const listHtml = mem.length
                     ? mem.map((x, i) => `<div class="holo-row"><span>${x}</span><button type="button" class="gold-pill" style="padding:3px 10px;" onclick="mem.splice(${i},1);saveState();openHolo('codes');">✓</button></div>`).join('')
-                    : '<div style="color:var(--muted);">Noch keine Objekt-Codes gespeichert.</div>';
+                    : '<div style="color:var(--muted);margin-bottom:10px;">Noch keine Objekt-Codes gespeichert.</div>';
+                body.innerHTML = `
+                    <div style="display:flex;gap:6px;margin-bottom:12px;">
+                        <input id="newCodeInp" type="text" placeholder="Neuen Code/Notiz eingeben..." style="flex:1;background:#030712;border:1px solid var(--border);color:#fff;padding:8px;border-radius:6px;">
+                        <button type="button" class="exec-btn" onclick="const v=document.getElementById('newCodeInp').value.trim();if(v){mem.push(v);saveState();openHolo('codes');}">+ Speichern</button>
+                    </div>` + listHtml;
+            } else if (type === 'calc') {
+                title.innerText = 'ANGEBOTS-KALKULATOR (31,50 €/Std)';
+                body.innerHTML = `
+                    <div style="display:flex;flex-direction:column;gap:10px;">
+                        <input id="cQm" type="number" placeholder="Fläche in m² (z.B. 600)" value="600" style="background:#030712;border:1px solid var(--border);color:#fff;padding:9px;border-radius:7px;">
+                        <select id="cFreq" style="background:#030712;border:1px solid var(--border);color:#fff;padding:9px;border-radius:7px;">
+                            <option value="1x pro Woche">1x pro Woche</option>
+                            <option value="2x pro Woche" selected>2x pro Woche</option>
+                            <option value="3x pro Woche">3x pro Woche</option>
+                            <option value="5x pro Woche">5x pro Woche</option>
+                        </select>
+                        <button type="button" class="gold-pill" onclick="const q=document.getElementById('cQm').value||600;const f=document.getElementById('cFreq').value;closeHolo();quickCmd('Kalkuliere ein Reinigungsangebot für '+q+' Quadratmeter Büro, '+f+', und erstelle den Angebotstext.');">JETZT BERECHNEN</button>
+                    </div>`;
             }
         }
         function closeHolo() { document.getElementById('holoModal').classList.remove('open'); }
@@ -637,16 +422,17 @@ HTML_PAGE = """<!DOCTYPE html>
             document.body.className = s || '';
             const cSt = document.getElementById('coreState');
             const sSt = document.getElementById('streamStatus');
-            if (s === 'listening') { cSt.innerText = 'LISTENING'; sSt.innerText = 'HÖRT ZU'; }
-            else if (s === 'thinking') { cSt.innerText = 'PROCESSING'; sSt.innerText = 'ANALYSE'; }
-            else if (s === 'speaking') { cSt.innerText = 'ACTIVE'; sSt.innerText = 'SPRICHT'; }
-            else { cSt.innerText = 'ONLINE'; sSt.innerText = 'STANDBY'; }
+            if (s === 'listening') { cSt.innerText = 'STOP (CLICK)'; sSt.innerText = 'HÖRT ZU...'; }
+            else if (s === 'thinking') { cSt.innerText = 'PROCESSING'; sSt.innerText = 'ANALYSIERT...'; }
+            else if (s === 'speaking') { cSt.innerText = 'SPEAKING'; sSt.innerText = 'SPRICHT...'; }
+            else { cSt.innerText = 'CLICK TO SPEAK'; sSt.innerText = 'ONLINE'; }
         }
 
+        // --- 4. PC & MOBILE AUDIO RECORDING ---
         function stopWake() { if (wakeRec) { try { wakeRec.onend = null; wakeRec.abort(); } catch(e){} wakeRec = null; } }
         function toggleWake() {
             wakeOn = !wakeOn;
-            document.getElementById('wBtn').innerText = wakeOn ? 'VOICE: AN' : 'VOICE: AUS';
+            document.getElementById('wBtn').innerText = wakeOn ? 'HEY NEO: AN' : 'HEY NEO: AUS';
             if (wakeOn) startWake(); else stopWake();
         }
         function startWake() {
@@ -663,7 +449,7 @@ HTML_PAGE = """<!DOCTYPE html>
                     if (t.includes('hey neo') || t.includes('neo')) { stopWake(); inConv = true; startRec(); return; }
                 }
             };
-            wakeRec.onend = () => { wakeRec = null; if (wakeOn && !isRec && !isSpk && !inConv) setTimeout(startWake, 600); };
+            wakeRec.onend = () => { wakeRec = null; if (wakeOn && !isRec && !isSpk && !inConv) setTimeout(startWake, 800); };
             try { wakeRec.start(); } catch(e){}
         }
 
@@ -677,14 +463,14 @@ HTML_PAGE = """<!DOCTYPE html>
             if (isRec || isSpk) return;
             stopWake();
             try {
-                stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
+                stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 chunks = [];
-                rec = new MediaRecorder(stream, { audioBitsPerSecond: 12000 });
-                rec.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+                rec = new MediaRecorder(stream);
+                rec.ondataavailable = e => { if (e.data && e.data.size > 0) chunks.push(e.data); };
                 rec.onstop = () => {
                     stream.getTracks().forEach(t => t.stop());
                     const blob = new Blob(chunks, { type: rec.mimeType || 'audio/webm' });
-                    if (blob.size < 800) { inConv = false; setSt(null); startWake(); return; }
+                    if (blob.size < 600) { inConv = false; setSt(null); return; }
                     setSt('thinking');
                     const r = new FileReader();
                     r.readAsDataURL(blob);
@@ -693,28 +479,31 @@ HTML_PAGE = """<!DOCTYPE html>
                 rec.start();
                 isRec = true;
                 setSt('listening');
-                setTimeout(() => { if (isRec) { isRec = false; rec.stop(); } }, 5000);
-            } catch(e) { inConv = false; setSt(null); }
+                document.getElementById('replyBox').innerText = "🎙️ Ich höre zu, Margil... (Klicke nochmal auf den Kern, wenn du fertig bist)";
+                setTimeout(() => { if (isRec) { isRec = false; rec.stop(); } }, 6500);
+            } catch(e) {
+                inConv = false; setSt(null);
+                document.getElementById('replyBox').innerText = "Mikrofon-Zugriff blockiert. Bitte oben in der Adressleiste das Mikrofon erlauben.";
+            }
         }
 
         player.onplay = () => { isSpk = true; setSt('speaking'); };
-        player.onended = () => { isSpk = false; setSt(null); if (inConv) setTimeout(startRec, 400); else startWake(); };
+        player.onended = () => { isSpk = false; setSt(null); if (wakeOn) startWake(); };
 
         async function sendTg() {
             document.getElementById('replyBox').innerText = "Sende Autorisierungsanfrage an Telegram...";
             try {
                 const r = await fetch('/telegram_notify', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({text:"📞 NEO Autorisierung angefordert!"}) });
                 const d = await r.json();
-                document.getElementById('replyBox').innerText = d.ok ? "Telegram-Benachrichtigung erfolgreich gesendet." : (d.error || "Telegram Fehler");
+                document.getElementById('replyBox').innerText = d.ok ? "✅ Telegram-Benachrichtigung erfolgreich gesendet!" : ("⚠️ " + (d.error || "Telegram Fehler"));
             } catch(e) { document.getElementById('replyBox').innerText = "Verbindungsfehler zu Telegram."; }
         }
 
         function handleImg(ev) {
             const f = ev.target.files[0]; if (!f) return;
-            highlightNode('camera');
             setSt('thinking');
             const r = new FileReader();
-            r.onload = e => sendNeo({ image: e.target.result.split(',')[1], message: "Erstelle einen kurzen Objekt-Mängelbericht für WhatsApp." });
+            r.onload = e => sendNeo({ image: e.target.result.split(',')[1], message: "Erstelle einen professionellen Objekt-Mängelbericht." });
             r.readAsDataURL(f);
         }
 
@@ -729,32 +518,45 @@ HTML_PAGE = """<!DOCTYPE html>
         async function sendNeo(payload) {
             stopWake();
             document.getElementById('actBar').innerHTML = '';
-            payload.mode = mode; payload.memory = mem; payload.local_time_str = new Date().toLocaleString('de-DE');
+            document.getElementById('replyBox').innerText = "NEO verarbeitet deine Anfrage...";
+            payload.mode = mode;
+            payload.memory = mem;
+            payload.is_mobile = isMobile;
+            payload.local_time_str = new Date().toLocaleString('de-DE');
+
             try {
                 const res = await fetch('/chat', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
                 const d = await res.json();
-                if (d.error) { inConv = false; setSt(null); document.getElementById('replyBox').innerText = d.error; return; }
+                if (d.error) { inConv = false; setSt(null); document.getElementById('replyBox').innerText = "Fehler: " + d.error; return; }
                 if (d.end_conversation) inConv = false;
                 if (d.new_memory) { mem.push(d.new_memory); saveState(); }
                 document.getElementById('replyBox').innerText = d.reply;
 
                 if (d.copy_text) {
-                    const b = document.createElement('button'); b.type = 'button'; b.className = 'gold-pill'; b.innerText = 'Text kopieren';
-                    b.onclick = () => { navigator.clipboard.writeText(d.copy_text); b.innerText = '✓ Kopiert'; };
+                    const b = document.createElement('button'); b.type = 'button'; b.className = 'gold-pill'; b.innerText = '📋 Text kopieren';
+                    b.onclick = () => { navigator.clipboard.writeText(d.copy_text); b.innerText = '✓ Kopiert!'; };
                     document.getElementById('actBar').appendChild(b);
                 }
                 if (d.action_url) {
                     inConv = false;
-                    const a = document.createElement('a'); a.href = d.action_url; a.className = 'gold-pill'; a.innerText = d.action_label || 'Öffnen';
+                    let finalUrl = d.action_url;
+                    // Falls am PC, Android intent:// in normale Web-URL umwandeln!
+                    if (!isMobile && finalUrl.startsWith('intent://')) {
+                        const m = finalUrl.match(/text=([^#&]+)/);
+                        finalUrl = 'https://wa.me/?text=' + (m ? m[1] : '');
+                    }
+                    const a = document.createElement('a'); a.href = finalUrl; a.target = '_blank'; a.className = 'gold-pill'; a.innerText = d.action_label || 'Öffnen';
                     document.getElementById('actBar').appendChild(a);
                 }
                 if (d.audio) {
                     player.src = "data:audio/mp3;base64," + d.audio;
                     player.play().catch(() => { isSpk = false; setSt(null); });
                 } else { setSt(null); }
-            } catch(e) { inConv = false; setSt(null); }
+            } catch(e) {
+                inConv = false; setSt(null);
+                document.getElementById('replyBox').innerText = "Server-Verbindungsfehler. Bitte Seite kurz neu laden.";
+            }
         }
-        window.onload = startWake;
     </script>
 </body>
 </html>"""
@@ -797,7 +599,7 @@ SYSTEM_PROMPT = """Du bist NEO, der hochintelligente KI-Assistent von Margil (Ku
 Modus: {mode} | Zeit: {local_time}. Antworte souverän, ruhig, kurz und ohne Markdown/Sternchen.
 - Morning Brief / Auto-Briefing: Nächste Termine + Codes aus Notizen + Google Maps URL in `action_url` (`action_label`: "Navigation starten").
 - Dolmetscher DE <-> SQ: Bei Übersetzung ins Albanische `voice_lang`: "sq" und Übersetzung in `copy_text`, sonst "de".
-- Kalkulator: Büro ~220 m²/Std, 31,50 €/Std netto (4,33 Wochen/Monat). Fertiges Angebot in `copy_text` + WhatsApp Intent (`intent://send?text=URL_ENCODED#Intent;scheme=whatsapp;package=com.whatsapp.w4b;end`, `action_label`: "WhatsApp öffnen").
+- Kalkulator: Büro ~220 m²/Std, 31,50 €/Std netto (4,33 Wochen/Monat). Fertiges Angebot in `copy_text` + WhatsApp URL (`https://wa.me/?text=URL_ENCODED`, `action_label`: "WhatsApp öffnen").
 - Gespräch Ende ("Danke", "Stopp"): `end_conversation`: true.
 Antworte NUR als JSON:
 {{"reply":"","voice_lang":"de","copy_text":"","new_memory":"","action_url":"","action_label":"","end_conversation":false}}"""
@@ -811,6 +613,16 @@ async def make_voice(text, lang="de"):
         if c["type"] == "audio":
             buf += c["data"]
     return base64.b64encode(buf).decode("utf-8")
+
+def generate_with_fallback(client, parts, config):
+    # Versucht zuerst gemini-3.8-flash; falls Google API 404 zurückgibt, sofortiger Fallback auf gemini-2.5-flash
+    for model_name in ["gemini-3.8-flash", "gemini-2.5-flash"]:
+        try:
+            return client.models.generate_content(model=model_name, contents=parts, config=config)
+        except Exception as e:
+            last_err = e
+            continue
+    raise last_err
 
 @app.route("/")
 def home():
@@ -831,7 +643,7 @@ def cal_prev():
 @app.route("/manifest.json")
 def manifest():
     return jsonify({
-        "name": "NEO",
+        "name": "NEO OS",
         "short_name": "NEO",
         "start_url": "/",
         "display": "standalone",
@@ -849,7 +661,7 @@ def tg_notify():
     token = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
     chat_id = os.environ.get("TELEGRAM_CHAT_ID", "").strip()
     if not token:
-        return jsonify({"ok": False, "error": "Token fehlt"})
+        return jsonify({"ok": False, "error": "TELEGRAM_BOT_TOKEN fehlt in Render"})
     if not chat_id:
         try:
             u = json.loads(urllib.request.urlopen(f"https://api.telegram.org/bot{token}/getUpdates", timeout=5).read().decode())
@@ -858,7 +670,7 @@ def tg_notify():
         except Exception:
             pass
     if not chat_id:
-        return jsonify({"ok": False, "error": "Erst 'Hallo' im Bot senden"})
+        return jsonify({"ok": False, "error": "Bitte sende zuerst 'Hallo' an deinen Bot in Telegram"})
     payload = json.dumps({
         "chat_id": chat_id,
         "text": (request.json or {}).get("text", "🔔 NEO Autorisierung"),
@@ -872,6 +684,8 @@ def tg_notify():
 def chat():
     try:
         api_key = os.environ.get("GEMINI_API_KEY", "").strip()
+        if not api_key:
+            return jsonify({"error": "GEMINI_API_KEY fehlt in Render"}), 500
         data = request.json or {}
         client = genai.Client(api_key=api_key)
         events = parse_upcoming_events()
@@ -883,22 +697,21 @@ def chat():
             parts.append(data.get("message", "Mängelbericht erstellen."))
         elif "audio" in data:
             parts.append(types.Part.from_bytes(data=base64.b64decode(data["audio"]), mime_type=data.get("mime_type", "audio/webm")))
+            parts.append("Antworte auf diese Sprachnachricht von Margil.")
         else:
             parts.append(data.get("message", ""))
 
         parts.append(f"Kalender:\n{cal_txt}\nNotizen: {json.dumps(data.get('memory', []), ensure_ascii=False)}")
 
-        resp = client.models.generate_content(
-            model="gemini-3.8-flash",
-            contents=parts,
-            config=types.GenerateContentConfig(
-                system_instruction=SYSTEM_PROMPT.format(mode=data.get("mode", "ARBEIT"), local_time=data.get("local_time_str", "")),
-                temperature=0.3
-            )
+        cfg = types.GenerateContentConfig(
+            system_instruction=SYSTEM_PROMPT.format(mode=data.get("mode", "ARBEIT"), local_time=data.get("local_time_str", "")),
+            temperature=0.3
         )
+        resp = generate_with_fallback(client, parts, cfg)
+
         m = re.search(r'\{.*\}', resp.text.strip(), re.DOTALL)
         res = json.loads(m.group(0)) if m else {"reply": resp.text.strip()}
-        reply = res.get("reply", "Zu Befehl.")
+        reply = res.get("reply", "Zu Befehl, Margil.")
         audio = asyncio.run(make_voice(reply, res.get("voice_lang", "de")))
         return jsonify({
             "reply": reply,
