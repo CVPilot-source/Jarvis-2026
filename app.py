@@ -15,9 +15,9 @@ app = Flask(__name__)
 ICAL_CACHE = {"ts": 0, "events": []}
 
 ICON_SVG = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="120" fill="#050811"/>
-  <circle cx="256" cy="256" r="145" fill="none" stroke="#F59E0B" stroke-width="8" stroke-dasharray="18 12"/>
-  <circle cx="256" cy="256" r="95" fill="none" stroke="#38BDF8" stroke-width="5"/>
+  <rect width="512" height="512" rx="115" fill="#030712"/>
+  <circle cx="256" cy="256" r="155" fill="none" stroke="#F59E0B" stroke-width="8" stroke-dasharray="16 10"/>
+  <circle cx="256" cy="256" r="110" fill="none" stroke="#38BDF8" stroke-width="5"/>
   <circle cx="256" cy="256" r="24" fill="#F59E0B"/>
 </svg>"""
 
@@ -28,404 +28,573 @@ HTML_PAGE = """<!DOCTYPE html>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#050811">
+    <meta name="theme-color" content="#030712">
     <link rel="manifest" href="/manifest.json">
-    <title>NEO Neural Core</title>
+    <title>NEO // NEURAL COMMAND OS</title>
     <style>
         :root {
-            --core: #F59E0B;
+            --gold: #F59E0B;
+            --gold-glow: rgba(245, 158, 11, 0.45);
             --cyan: #38BDF8;
-            --bg: #050811;
-            --panel: rgba(11, 17, 32, 0.86);
-            --border: rgba(56, 189, 248, 0.22);
+            --cyan-dim: rgba(56, 189, 248, 0.16);
+            --bg: #030712;
+            --panel: rgba(8, 14, 28, 0.86);
+            --border: rgba(56, 189, 248, 0.25);
             --text: #F8FAFC;
             --muted: #94A3B8;
         }
-        body.listening { --core: #10B981; }
-        body.thinking  { --core: #38BDF8; }
-        body.speaking  { --core: #A855F7; }
+        body.listening { --gold: #10B981; --gold-glow: rgba(16, 185, 129, 0.5); }
+        body.thinking  { --gold: #38BDF8; --gold-glow: rgba(56, 189, 248, 0.55); }
+        body.speaking  { --gold: #F59E0B; --gold-glow: rgba(245, 158, 11, 0.65); }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
-        body {
-            margin: 0 auto;
-            max-width: 500px;
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100vw;
             height: 100dvh;
+            overflow: hidden;
             background-color: var(--bg);
             background-image:
-                radial-gradient(circle at 50% 35%, rgba(245, 158, 11, 0.14) 0%, transparent 55%),
-                linear-gradient(rgba(56, 189, 248, 0.045) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(56, 189, 248, 0.045) 1px, transparent 1px);
-            background-size: 100% 100%, 26px 26px, 26px 26px;
+                radial-gradient(circle at 50% 48%, rgba(14, 30, 62, 0.85) 0%, rgba(3, 7, 18, 0.98) 70%),
+                linear-gradient(rgba(56, 189, 248, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(56, 189, 248, 0.05) 1px, transparent 1px),
+                linear-gradient(rgba(56, 189, 248, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(56, 189, 248, 0.02) 1px, transparent 1px);
+            background-size: 100% 100%, 80px 80px, 80px 80px, 20px 20px, 20px 20px;
             color: var(--text);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            padding: 10px 12px;
-            gap: 8px;
-            overflow: hidden;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, monospace, sans-serif;
         }
 
-        /* TOP HUD BAR */
-        .hud-top {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            z-index: 5;
+        /* FULLSCREEN NEURAL CANVAS (LINES + PULSING DATA PACKETS + CORE RINGS) */
+        #neuralCanvas {
+            position: fixed;
+            inset: 0;
+            width: 100vw;
+            height: 100dvh;
+            z-index: 1;
+            pointer-events: none;
         }
-        .hud-chip {
+
+        /* TOP LEFT SYSTEM TELEMETRY (LIKE VIDEO) */
+        .hud-tl {
+            position: fixed;
+            top: 16px;
+            left: 20px;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .sys-title {
+            font-size: 20px;
+            font-weight: 900;
+            letter-spacing: 5px;
+            color: var(--cyan);
+            text-shadow: 0 0 14px rgba(56, 189, 248, 0.5);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .sys-sub {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            color: var(--muted);
+            text-transform: uppercase;
+        }
+        .hud-controls {
+            display: flex;
+            gap: 8px;
+            margin-top: 6px;
+        }
+        .hud-btn {
             background: var(--panel);
             border: 1px solid var(--border);
             color: var(--text);
             padding: 5px 11px;
-            border-radius: 999px;
+            border-radius: 6px;
             font-size: 11px;
             font-weight: 700;
+            letter-spacing: 0.8px;
             cursor: pointer;
+            backdrop-filter: blur(8px);
+        }
+        .hud-btn:hover { border-color: var(--cyan); }
+
+        /* TOP RIGHT LIVE TRANSCRIPT / TELEMETRY PANEL (LIKE VIDEO) */
+        .hud-tr {
+            position: fixed;
+            top: 16px;
+            right: 20px;
+            width: 310px;
+            max-width: 42vw;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-top: 2px solid var(--cyan);
+            border-radius: 10px;
+            padding: 10px 13px;
+            z-index: 10;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+        }
+        .tr-head {
             display: flex;
-            align-items: center;
-            gap: 6px;
+            justify-content: space-between;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 1.2px;
+            color: var(--cyan);
+            margin-bottom: 5px;
+            text-transform: uppercase;
         }
-        .led {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: var(--core);
-            box-shadow: 0 0 10px var(--core);
-        }
-        .hud-brand {
-            font-size: 13px;
-            font-weight: 900;
-            letter-spacing: 4px;
-            color: var(--core);
-            text-shadow: 0 0 12px rgba(245, 158, 11, 0.5);
+        .tr-body {
+            font-size: 12.5px;
+            line-height: 1.42;
+            color: #E2E8F0;
+            max-height: 110px;
+            overflow-y: auto;
         }
 
-        /* NEURAL NODE NETWORK STAGE */
-        .neural-stage {
-            position: relative;
-            width: 100%;
-            height: 295px;
-            flex-shrink: 0;
-            margin: 0 auto;
-        }
-        .neural-lines {
-            position: absolute;
-            inset: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-        }
-        .neural-lines line {
-            stroke: rgba(56, 189, 248, 0.28);
-            stroke-width: 1.5;
-            stroke-dasharray: 4 4;
-        }
-        body.thinking .neural-lines line,
-        body.speaking .neural-lines line {
-            stroke: var(--core);
-            stroke-opacity: 0.65;
-        }
-
-        /* CENTRAL CORE (APEX STYLE) */
-        .core-hub {
-            position: absolute;
-            top: 50%;
+        /* CENTER CLICKABLE CORE HITBOX */
+        .core-trigger {
+            position: fixed;
+            top: 48%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 98px;
-            height: 98px;
+            width: 170px;
+            height: 170px;
             border-radius: 50%;
-            background: radial-gradient(circle, rgba(245, 158, 11, 0.25) 0%, #090E1C 72%);
-            border: 2.5px solid var(--core);
-            box-shadow: 0 0 28px var(--core), inset 0 0 16px var(--core);
+            z-index: 8;
+            cursor: pointer;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            cursor: pointer;
-            z-index: 4;
-            transition: transform 0.15s, border-color 0.2s, box-shadow 0.2s;
-        }
-        .core-hub:active { transform: translate(-50%, -50%) scale(0.94); }
-        .core-ring-outer {
-            position: absolute;
-            inset: -9px;
-            border-radius: 50%;
-            border: 1.5px dashed var(--cyan);
-            opacity: 0.65;
-            animation: spinSlow 18s linear infinite;
-            pointer-events: none;
-        }
-        @keyframes spinSlow {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-        .core-name {
-            font-size: 15px;
-            font-weight: 900;
-            letter-spacing: 2px;
-            color: #FFFFFF;
-        }
-        .core-state {
-            font-size: 9px;
-            font-weight: 800;
-            text-transform: uppercase;
-            color: var(--core);
-            margin-top: 2px;
-        }
-
-        /* SATELLITE NODES AROUND CORE */
-        .node {
-            position: absolute;
-            width: 78px;
-            background: var(--panel);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 6px 4px;
             text-align: center;
-            cursor: pointer;
-            z-index: 3;
-            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
-            transition: border-color 0.15s, transform 0.12s;
         }
-        .node:active {
-            transform: scale(0.94);
-            border-color: var(--core);
+        .core-label {
+            font-size: 18px;
+            font-weight: 900;
+            letter-spacing: 4px;
+            color: #FFFFFF;
+            text-shadow: 0 0 12px var(--gold);
         }
-        .node-ico { font-size: 14px; display: block; }
-        .node-lbl { font-size: 10px; font-weight: 700; color: #E2E8F0; display: block; margin-top: 1px; }
-
-        /* 6 Node Positions */
-        .n-tl { top: 10px; left: 8px; }
-        .n-tr { top: 10px; right: 8px; }
-        .n-ml { top: 50%; left: 2px; transform: translateY(-50%); }
-        .n-mr { top: 50%; right: 2px; transform: translateY(-50%); }
-        .n-bl { bottom: 10px; left: 8px; }
-        .n-br { bottom: 10px; right: 8px; }
-
-        /* LIVE BRIEFING & OUTPUT PANEL */
-        .data-panel {
-            background: var(--panel);
-            border: 1px solid var(--border);
-            border-left: 3px solid var(--core);
-            border-radius: 12px;
-            padding: 8px 11px;
-        }
-        .panel-head {
-            display: flex;
-            justify-content: space-between;
-            font-size: 9.5px;
+        .core-sub {
+            font-size: 10px;
             font-weight: 800;
+            letter-spacing: 1.8px;
+            color: var(--gold);
+            margin-top: 4px;
             text-transform: uppercase;
-            letter-spacing: 0.9px;
-            color: var(--cyan);
-            margin-bottom: 2px;
         }
-        .panel-body {
-            font-size: 12.5px;
-            line-height: 1.38;
+
+        /* FLOATING NEURAL NODES DISTRIBUTED ACROSS FULL SCREEN */
+        .node-item {
+            position: fixed;
+            transform: translate(-50%, -50%);
+            z-index: 7;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(8, 14, 28, 0.82);
+            border: 1px solid rgba(56, 189, 248, 0.28);
+            padding: 6px 12px;
+            border-radius: 999px;
+            cursor: pointer;
+            backdrop-filter: blur(6px);
+            transition: transform 0.15s, border-color 0.2s, box-shadow 0.2s;
+            white-space: nowrap;
+        }
+        .node-item:hover, .node-item.active-node {
+            border-color: var(--gold);
+            box-shadow: 0 0 18px var(--gold-glow);
+            transform: translate(-50%, -50%) scale(1.06);
+        }
+        .node-dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: var(--cyan);
+            box-shadow: 0 0 8px var(--cyan);
+            flex-shrink: 0;
+        }
+        .node-item.active-node .node-dot {
+            background: var(--gold);
+            box-shadow: 0 0 10px var(--gold);
+        }
+        .node-title {
+            font-size: 11.5px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
             color: #F1F5F9;
         }
 
-        .act-bar {
+        /* HOLOGRAPHIC POPUP WINDOW (APPEARS ON COMMAND LIKE VIDEO) */
+        .holo-modal {
+            position: fixed;
+            top: 48%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 440px;
+            max-width: 92vw;
+            background: rgba(7, 13, 27, 0.94);
+            border: 1px solid var(--cyan);
+            box-shadow: 0 0 40px rgba(56, 189, 248, 0.25);
+            border-radius: 12px;
+            padding: 16px;
+            z-index: 20;
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+            backdrop-filter: blur(16px);
+        }
+        .holo-modal.open { display: flex; }
+        .holo-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 8px;
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 1.5px;
+            color: var(--cyan);
+            text-transform: uppercase;
+        }
+        .holo-content {
+            max-height: 240px;
+            overflow-y: auto;
+            font-size: 13px;
+            line-height: 1.45;
+        }
+        .holo-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 7px 10px;
+            background: rgba(56, 189, 248, 0.06);
+            border-left: 2px solid var(--gold);
+            border-radius: 6px;
+            margin-bottom: 6px;
+        }
+
+        /* BOTTOM COMMAND DOCK */
+        .bottom-dock {
+            position: fixed;
+            bottom: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 540px;
+            max-width: 94vw;
+            z-index: 12;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            align-items: center;
+        }
+        .act-strip {
             display: flex;
             gap: 8px;
             justify-content: center;
-            min-height: 26px;
         }
-        .pill {
-            background: var(--core);
-            color: #050811;
+        .gold-pill {
+            background: var(--gold);
+            color: #030712;
             border: none;
             border-radius: 999px;
-            padding: 5px 14px;
-            font-size: 11.5px;
+            padding: 6px 16px;
+            font-size: 12px;
             font-weight: 800;
             text-decoration: none;
             cursor: pointer;
+            box-shadow: 0 0 16px var(--gold-glow);
         }
-
-        /* BOTTOM COMMAND CONSOLE */
-        .console {
+        .cmd-bar {
+            width: 100%;
             background: var(--panel);
             border: 1px solid var(--border);
-            border-radius: 14px;
-            padding: 7px;
+            border-radius: 999px;
+            padding: 6px 8px 6px 14px;
             display: flex;
-            gap: 7px;
             align-items: center;
+            gap: 8px;
+            backdrop-filter: blur(12px);
         }
-        .mic-btn {
-            width: 38px;
-            height: 38px;
-            border-radius: 10px;
-            background: rgba(245, 158, 11, 0.14);
-            border: 1px solid var(--core);
-            color: #FFF;
-            font-size: 16px;
-            cursor: pointer;
-            flex-shrink: 0;
-        }
-        .console input {
+        .cmd-bar input {
             flex: 1;
-            background: #04060D;
-            border: 1px solid var(--border);
-            border-radius: 9px;
+            background: transparent;
+            border: none;
             color: #FFF;
-            padding: 8px 10px;
-            font-size: 13px;
+            font-size: 13.5px;
             outline: none;
         }
-        .send-btn {
+        .mic-round {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: rgba(245, 158, 11, 0.15);
+            border: 1px solid var(--gold);
+            color: #FFF;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .exec-btn {
             background: var(--cyan);
-            color: #050811;
+            color: #030712;
             border: none;
-            border-radius: 9px;
-            padding: 8px 12px;
+            border-radius: 999px;
+            padding: 7px 16px;
             font-size: 12px;
             font-weight: 800;
             cursor: pointer;
         }
 
-        /* MODAL */
-        .modal {
-            position: fixed;
-            inset: 0;
-            background: #050811;
-            z-index: 50;
-            display: none;
-            flex-direction: column;
-            padding: 16px;
-        }
-        .modal.open { display: flex; }
-        .note-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: var(--panel);
-            border: 1px solid var(--border);
-            padding: 10px 12px;
-            border-radius: 10px;
-            margin-bottom: 8px;
-            font-size: 13px;
+        @media (max-width: 768px) {
+            .hud-tr { display: none; }
+            .node-item { padding: 5px 9px; }
+            .node-title { font-size: 10.5px; }
         }
     </style>
 </head>
 <body>
-    <div class="hud-top">
-        <button type="button" class="hud-chip" onclick="toggleWake()">
-            <span class="led"></span>
-            <span id="wBtn">Voice AN</span>
-        </button>
-        <div class="hud-brand">NEO</div>
-        <button type="button" class="hud-chip" id="mBtn" onclick="toggleMode()">Arbeit</button>
-    </div>
+    <!-- FULLSCREEN ANIMATED NEURAL NETWORK & REACTOR CORE -->
+    <canvas id="neuralCanvas"></canvas>
 
-    <!-- NEURAL NODE MAP (APEX STYLE) -->
-    <div class="neural-stage">
-        <svg class="neural-lines" viewBox="0 0 400 295" preserveAspectRatio="none">
-            <line x1="200" y1="147" x2="55" y2="35" />
-            <line x1="200" y1="147" x2="345" y2="35" />
-            <line x1="200" y1="147" x2="42" y2="147" />
-            <line x1="200" y1="147" x2="358" y2="147" />
-            <line x1="200" y1="147" x2="55" y2="260" />
-            <line x1="200" y1="147" x2="345" y2="260" />
-        </svg>
-
-        <!-- CENTRAL CORE -->
-        <div class="core-hub" onclick="toggleRec()">
-            <div class="core-ring-outer"></div>
-            <div class="core-name">NEO</div>
-            <div class="core-state" id="coreState">ONLINE</div>
-        </div>
-
-        <!-- 6 CONNECTED NODES -->
-        <div class="node n-tl" onclick="quickCmd('Gib mir mein Morning Briefing mit allen Terminen heute und wichtigen Codes.')">
-            <span class="node-ico">☀️</span>
-            <span class="node-lbl">Morning Brief</span>
-        </div>
-
-        <div class="node n-tr" onclick="quickCmd('Ich fahre los zum nächsten Termin. Gib mir das Briefing mit Codes und starte Navigation.')">
-            <span class="node-ico">🧭</span>
-            <span class="node-lbl">Auto-Navi</span>
-        </div>
-
-        <div class="node n-ml" onclick="quickCmd('Kalkuliere 600 qm Büro, 2x pro Woche, mit WhatsApp-Angebot.')">
-            <span class="node-ico">📐</span>
-            <span class="node-lbl">Angebot</span>
-        </div>
-
-        <div class="node n-mr" onclick="document.getElementById('cam').click()">
-            <span class="node-ico">📸</span>
-            <span class="node-lbl">Kamera</span>
-        </div>
-
-        <div class="node n-bl" onclick="openList()">
-            <span class="node-ico">🔐</span>
-            <span class="node-lbl">Codes (<span id="nCount">0</span>)</span>
-        </div>
-
-        <div class="node n-br" onclick="sendTg()">
-            <span class="node-ico">✈️</span>
-            <span class="node-lbl">Telegram</span>
+    <!-- TOP LEFT TELEMETRY -->
+    <div class="hud-tl">
+        <div class="sys-title">NEO <span style="font-size:11px; color:var(--gold); letter-spacing:2px;">CORE OS</span></div>
+        <div class="sys-sub" id="sysMeta">HAMBURG • --:-- • SYNCHRONISIERT</div>
+        <div class="hud-controls">
+            <button type="button" class="hud-btn" id="wBtn" onclick="toggleWake()">VOICE: AN</button>
+            <button type="button" class="hud-btn" id="mBtn" onclick="toggleMode()">MODUS: ARBEIT</button>
+            <button type="button" class="hud-btn" onclick="openHolo('calendar')">KALENDER</button>
         </div>
     </div>
 
-    <!-- NEXT SCHEDULE NODE -->
-    <div class="data-panel" onclick="quickCmd('Erkläre mir kurz meine nächsten Termine im Kalender.')" style="cursor:pointer;">
-        <div class="panel-head">
-            <span>Kalender Node</span>
-            <span id="clockMeta">--:-- • HH</span>
+    <!-- TOP RIGHT LIVE OUTPUT LOG (LIKE APEX) -->
+    <div class="hud-tr">
+        <div class="tr-head">
+            <span>NEURAL STREAM</span>
+            <span id="streamStatus">STANDBY</span>
         </div>
-        <div class="panel-body" id="nextEv" style="font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Synchronisiere Termine...</div>
+        <div class="tr-body" id="replyBox">System online, Margil. Bereit für deine Befehle.</div>
     </div>
 
-    <!-- LIVE AI OUTPUT -->
-    <div class="data-panel" style="flex:1; display:flex; flex-direction:column; justify-content:center;">
-        <div class="panel-head">
-            <span>NEO Output</span>
-            <span id="stTxt">Bereit, Margil</span>
-        </div>
-        <div class="panel-body" id="replyBox">Tippe auf den Kern oder sage „Hey Neo“.</div>
+    <!-- CENTER REACTOR CORE HITBOX -->
+    <div class="core-trigger" onclick="toggleRec()">
+        <div class="core-label">NEO</div>
+        <div class="core-sub" id="coreState">ONLINE</div>
     </div>
 
-    <div class="act-bar" id="actBar"></div>
+    <!-- FLOATING NODES CONTAINER (POSITIONED DYNAMICALLY TO MATCH CANVAS LINES) -->
+    <div id="nodesLayer"></div>
 
-    <div class="console">
-        <button type="button" class="mic-btn" onclick="toggleRec()">🎙️</button>
-        <input type="text" id="msg" placeholder="Befehl oder Übersetzung DE/SQ..." onkeypress="if(event.key==='Enter')sendTxt()">
-        <button type="button" class="send-btn" onclick="sendTxt()">Go</button>
+    <!-- HOLOGRAPHIC POPUP PANEL (OPENED BY NODES OR VOICE) -->
+    <div class="holo-modal" id="holoModal">
+        <div class="holo-head">
+            <span id="holoTitle">SYSTEM DATEN</span>
+            <button type="button" class="hud-btn" onclick="closeHolo()">✕</button>
+        </div>
+        <div class="holo-content" id="holoBody"></div>
+    </div>
+
+    <!-- BOTTOM DOCK -->
+    <div class="bottom-dock">
+        <div class="act-strip" id="actBar"></div>
+        <div class="cmd-bar">
+            <button type="button" class="mic-round" onclick="toggleRec()">🎙️</button>
+            <input type="text" id="msg" placeholder="Befehl an NEO (z.B. Morning Brief, Angebot, Übersetzung DE/SQ)..." onkeypress="if(event.key==='Enter')sendTxt()">
+            <button type="button" class="exec-btn" onclick="sendTxt()">EXEC</button>
+        </div>
     </div>
 
     <input type="file" id="cam" accept="image/*" capture="environment" style="display:none" onchange="handleImg(event)">
-
-    <div class="modal" id="modal">
-        <div class="hud-top" style="margin-bottom:12px;">
-            <strong style="color:var(--core);">Objekt-Codes & Notizen</strong>
-            <button type="button" class="hud-chip" onclick="closeList()">✕ Schließen</button>
-        </div>
-        <div id="listBody" style="flex:1; overflow-y:auto;"></div>
-    </div>
-
     <audio id="player" playsinline></audio>
 
     <script>
-        let tempStr = "HH";
-        function updClock() {
-            const t = new Date().toLocaleTimeString('de-DE', {hour:'2-digit', minute:'2-digit'});
-            document.getElementById('clockMeta').innerText = t + " Uhr • " + tempStr;
+        // --- 1. NEURAL NODE DEFINITIONS (DISTRIBUTED ACROSS WIDESCREEN LIKE VIDEO) ---
+        const NODES = [
+            { id: 'brief',    label: 'Morning Brief',  rx: 0.24, ry: 0.24, action: () => quickCmd('Gib mir mein komplettes Morning Briefing mit Terminen, Wetter und wichtigen Objekt-Codes.') },
+            { id: 'calendar', label: 'Calendar Sync',  rx: 0.16, ry: 0.44, action: () => openHolo('calendar') },
+            { id: 'navi',     label: 'Auto-Briefing',  rx: 0.22, ry: 0.66, action: () => quickCmd('Ich fahre los zum nächsten Termin. Gib mir das Briefing mit Codes und starte Navigation.') },
+            { id: 'codes',    label: 'Objekt-Codes',   rx: 0.34, ry: 0.78, action: () => openHolo('codes') },
+            { id: 'offer',    label: 'Angebot Rechner',rx: 0.76, ry: 0.24, action: () => quickCmd('Kalkuliere ein Reinigungsangebot für 600 Quadratmeter Büro, zweimal pro Woche, mit WhatsApp-Nachricht.') },
+            { id: 'camera',   label: 'Mängel-Vision',  rx: 0.84, ry: 0.44, action: () => document.getElementById('cam').click() },
+            { id: 'trans',    label: 'Dolmetscher DE/SQ',rx: 0.78, ry: 0.66, action: () => { document.getElementById('msg').focus(); document.getElementById('msg').placeholder = 'Text auf Deutsch oder Albanisch eingeben...'; } },
+            { id: 'telegram', label: 'Telegram Link',  rx: 0.66, ry: 0.78, action: () => sendTg() }
+        ];
+
+        const nodesLayer = document.getElementById('nodesLayer');
+        NODES.forEach(n => {
+            const el = document.createElement('div');
+            el.className = 'node-item';
+            el.id = 'node-' + n.id;
+            el.style.left = (n.rx * 100) + '%';
+            el.style.top = (n.ry * 100) + '%';
+            el.innerHTML = `<span class="node-dot"></span><span class="node-title">${n.label}</span>`;
+            el.onclick = () => {
+                highlightNode(n.id);
+                n.action();
+            };
+            nodesLayer.appendChild(el);
+        });
+
+        function highlightNode(id) {
+            document.querySelectorAll('.node-item').forEach(e => e.classList.remove('active-node'));
+            const target = document.getElementById('node-' + id);
+            if (target) target.classList.add('active-node');
         }
-        updClock(); setInterval(updClock, 15000);
+
+        // --- 2. FULLSCREEN HOLOGRAPHIC CANVAS (REACTOR RINGS + CURVED NEURAL TRACES + DATA PULSES) ---
+        const canvas = document.getElementById('neuralCanvas');
+        const ctx = canvas.getContext('2d');
+        let W = window.innerWidth, H = window.innerHeight;
+        function resizeCanvas() {
+            W = canvas.width = window.innerWidth;
+            H = canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        let coreStateMode = 'idle';
+        let angle1 = 0, angle2 = 0, pulseT = 0;
+
+        // Data packets traveling along neural lines
+        const packets = NODES.map((_, idx) => ({
+            nodeIdx: idx,
+            progress: (idx * 0.17) % 1,
+            speed: 0.004 + (idx % 3) * 0.0015
+        }));
+
+        function drawNeuralNetwork() {
+            ctx.clearRect(0, 0, W, H);
+            const cx = W * 0.5;
+            const cy = H * 0.48;
+
+            let mainColor = '245, 158, 11'; // Amber Gold
+            let secColor = '56, 189, 248';  // Cyan
+            let rotSpeed = 0.006;
+            let pulseBoost = 1;
+
+            if (coreStateMode === 'listening') {
+                mainColor = '16, 185, 129'; // Emerald
+                rotSpeed = 0.015;
+                pulseBoost = 2.2;
+            } else if (coreStateMode === 'thinking') {
+                mainColor = '56, 189, 248'; // Electric Cyan
+                rotSpeed = 0.025;
+                pulseBoost = 3.2;
+            } else if (coreStateMode === 'speaking') {
+                mainColor = '245, 158, 11'; // Intense Gold
+                rotSpeed = 0.018;
+                pulseBoost = 2.8;
+            }
+
+            angle1 += rotSpeed;
+            angle2 -= rotSpeed * 0.7;
+            pulseT += 0.06 * pulseBoost;
+
+            // A. Curved Neural Traces from Center Core to Each Node
+            NODES.forEach((n, idx) => {
+                const nx = W * n.rx;
+                const ny = H * n.ry;
+                const midX = (cx + nx) * 0.5;
+                const midY = (cy + ny) * 0.5 + (idx % 2 === 0 ? -28 : 28);
+
+                ctx.beginPath();
+                ctx.moveTo(cx, cy);
+                ctx.quadraticCurveTo(midX, midY, nx, ny);
+                ctx.strokeStyle = `rgba(${secColor}, ${coreStateMode === 'idle' ? 0.22 : 0.42})`;
+                ctx.lineWidth = 1.4;
+                ctx.stroke();
+
+                // Traveling energy packet along the quadratic curve
+                const p = packets[idx];
+                p.progress += p.speed * pulseBoost;
+                if (p.progress > 1) p.progress = 0;
+                const t = p.progress;
+                const px = (1 - t) * (1 - t) * cx + 2 * (1 - t) * t * midX + t * t * nx;
+                const py = (1 - t) * (1 - t) * cy + 2 * (1 - t) * t * midY + t * t * ny;
+
+                ctx.beginPath();
+                ctx.arc(px, py, 2.8, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(${mainColor}, 0.9)`;
+                ctx.fill();
+            });
+
+            // B. Multi-Ring Holographic Core (Like APEX Center Orb)
+            const baseR = 76 + (coreStateMode === 'speaking' ? Math.sin(pulseT * 2.2) * 7 : Math.sin(pulseT) * 2);
+
+            // Soft Ambient Radial Glow
+            const glow = ctx.createRadialGradient(cx, cy, 15, cx, cy, baseR + 65);
+            glow.addColorStop(0, `rgba(${mainColor}, 0.28)`);
+            glow.addColorStop(0.6, `rgba(${secColor}, 0.08)`);
+            glow.addColorStop(1, 'rgba(3, 7, 18, 0)');
+            ctx.fillStyle = glow;
+            ctx.beginPath();
+            ctx.arc(cx, cy, baseR + 65, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Outer Segmented Cyan Ring
+            ctx.save();
+            ctx.translate(cx, cy);
+            ctx.rotate(angle1);
+            ctx.strokeStyle = `rgba(${secColor}, 0.55)`;
+            ctx.lineWidth = 2;
+            ctx.setLineDash([28, 14, 6, 14]);
+            ctx.beginPath();
+            ctx.arc(0, 0, baseR + 24, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.restore();
+
+            // Middle Dashed Gold Ring
+            ctx.save();
+            ctx.translate(cx, cy);
+            ctx.rotate(angle2);
+            ctx.strokeStyle = `rgba(${mainColor}, 0.85)`;
+            ctx.lineWidth = 3;
+            ctx.setLineDash([18, 10]);
+            ctx.beginPath();
+            ctx.arc(0, 0, baseR + 8, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.restore();
+
+            // Solid Inner Core Ring
+            ctx.beginPath();
+            ctx.arc(cx, cy, baseR - 6, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(5, 10, 22, 0.88)';
+            ctx.fill();
+            ctx.strokeStyle = `rgba(${mainColor}, 0.95)`;
+            ctx.lineWidth = 2.5;
+            ctx.stroke();
+
+            requestAnimationFrame(drawNeuralNetwork);
+        }
+        drawNeuralNetwork();
+
+        // --- 3. TELEMETRY, CALENDAR & HOLOGRAPHIC WINDOWS ---
+        let cachedEvents = [];
+        let weatherStr = "HAMBURG";
+        function updateTelemetry() {
+            const now = new Date();
+            const t = now.toLocaleTimeString('de-DE', {hour:'2-digit', minute:'2-digit'});
+            const d = now.toLocaleDateString('de-DE', {weekday:'short', day:'2-digit', month:'2-digit'});
+            document.getElementById('sysMeta').innerText = `${weatherStr} • ${d.toUpperCase()} • ${t} UHR`;
+        }
+        updateTelemetry();
+        setInterval(updateTelemetry, 15000);
 
         fetch('https://api.open-meteo.com/v1/forecast?latitude=53.5511&longitude=9.9937&current_weather=true')
             .then(r => r.json()).then(d => {
-                if (d.current_weather) { tempStr = "HH " + Math.round(d.current_weather.temperature) + "°C"; updClock(); }
+                if (d.current_weather) { weatherStr = `HAMBURG ${Math.round(d.current_weather.temperature)}°C`; updateTelemetry(); }
             }).catch(()=>{});
 
         fetch('/calendar_preview').then(r => r.json()).then(d => {
-            document.getElementById('nextEv').innerText = (d.events && d.events.length) ? (d.events[0].time + " – " + d.events[0].title) : "Keine Termine eingetragen";
+            cachedEvents = d.events || [];
         }).catch(()=>{});
 
         let mem = JSON.parse(localStorage.getItem('neo_memory') || '[]');
@@ -433,30 +602,51 @@ HTML_PAGE = """<!DOCTYPE html>
         let wakeOn = true, isRec = false, isSpk = false, inConv = false;
         let rec = null, stream = null, chunks = [], wakeRec = null;
         const player = document.getElementById('player');
-        const stTxt = document.getElementById('stTxt');
-        const coreState = document.getElementById('coreState');
 
         function saveState() {
             localStorage.setItem('neo_memory', JSON.stringify(mem));
             localStorage.setItem('neo_mode', mode);
-            document.getElementById('nCount').innerText = mem.length;
-            document.getElementById('mBtn').innerText = mode === 'ARBEIT' ? 'Arbeit' : 'Privat';
+            document.getElementById('mBtn').innerText = 'MODUS: ' + mode;
         }
         saveState();
 
         function toggleMode() { mode = mode === 'ARBEIT' ? 'PRIVAT' : 'ARBEIT'; saveState(); }
+
+        function openHolo(type) {
+            const modal = document.getElementById('holoModal');
+            const title = document.getElementById('holoTitle');
+            const body = document.getElementById('holoBody');
+            modal.classList.add('open');
+
+            if (type === 'calendar') {
+                title.innerText = 'KALENDER SYNCHRONISATION';
+                body.innerHTML = cachedEvents.length
+                    ? cachedEvents.map(e => `<div class="holo-row"><div><div style="color:var(--gold);font-size:11px;font-weight:800;">${e.time}</div><div>${e.title}</div><div style="color:var(--muted);font-size:11px;">${e.loc || ''}</div></div></div>`).join('')
+                    : '<div style="color:var(--muted);">Keine anstehenden Termine gefunden.</div>';
+            } else if (type === 'codes') {
+                title.innerText = `OBJEKT-CODES & NOTIZEN (${mem.length})`;
+                body.innerHTML = mem.length
+                    ? mem.map((x, i) => `<div class="holo-row"><span>${x}</span><button type="button" class="gold-pill" style="padding:3px 10px;" onclick="mem.splice(${i},1);saveState();openHolo('codes');">✓</button></div>`).join('')
+                    : '<div style="color:var(--muted);">Noch keine Objekt-Codes gespeichert.</div>';
+            }
+        }
+        function closeHolo() { document.getElementById('holoModal').classList.remove('open'); }
+
         function setSt(s) {
+            coreStateMode = s || 'idle';
             document.body.className = s || '';
-            if (s === 'listening') { stTxt.innerText = 'Hört zu...'; coreState.innerText = 'LISTENING'; }
-            else if (s === 'thinking') { stTxt.innerText = 'Analysiert...'; coreState.innerText = 'ACTIVE'; }
-            else if (s === 'speaking') { stTxt.innerText = 'Spricht...'; coreState.innerText = 'SPEAKING'; }
-            else { stTxt.innerText = 'Bereit, Margil'; coreState.innerText = 'ONLINE'; }
+            const cSt = document.getElementById('coreState');
+            const sSt = document.getElementById('streamStatus');
+            if (s === 'listening') { cSt.innerText = 'LISTENING'; sSt.innerText = 'HÖRT ZU'; }
+            else if (s === 'thinking') { cSt.innerText = 'PROCESSING'; sSt.innerText = 'ANALYSE'; }
+            else if (s === 'speaking') { cSt.innerText = 'ACTIVE'; sSt.innerText = 'SPRICHT'; }
+            else { cSt.innerText = 'ONLINE'; sSt.innerText = 'STANDBY'; }
         }
 
         function stopWake() { if (wakeRec) { try { wakeRec.onend = null; wakeRec.abort(); } catch(e){} wakeRec = null; } }
         function toggleWake() {
             wakeOn = !wakeOn;
-            document.getElementById('wBtn').innerText = wakeOn ? 'Voice AN' : 'Voice AUS';
+            document.getElementById('wBtn').innerText = wakeOn ? 'VOICE: AN' : 'VOICE: AUS';
             if (wakeOn) startWake(); else stopWake();
         }
         function startWake() {
@@ -510,23 +700,18 @@ HTML_PAGE = """<!DOCTYPE html>
         player.onplay = () => { isSpk = true; setSt('speaking'); };
         player.onended = () => { isSpk = false; setSt(null); if (inConv) setTimeout(startRec, 400); else startWake(); };
 
-        function openList() {
-            document.getElementById('modal').classList.add('open');
-            document.getElementById('listBody').innerHTML = mem.length ? mem.map((x,i) => `<div class="note-row"><span>${x}</span><button type="button" class="pill" onclick="mem.splice(${i},1);saveState();openList();">✓</button></div>`).join('') : '<p style="color:#94A3B8">Keine Notizen gespeichert.</p>';
-        }
-        function closeList() { document.getElementById('modal').classList.remove('open'); }
-
         async function sendTg() {
-            stTxt.innerText = "Sende Telegram...";
+            document.getElementById('replyBox').innerText = "Sende Autorisierungsanfrage an Telegram...";
             try {
                 const r = await fetch('/telegram_notify', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({text:"📞 NEO Autorisierung angefordert!"}) });
                 const d = await r.json();
-                stTxt.innerText = d.ok ? "Telegram gesendet!" : (d.error || "Fehler");
-            } catch(e) { stTxt.innerText = "Telegram Fehler"; }
+                document.getElementById('replyBox').innerText = d.ok ? "Telegram-Benachrichtigung erfolgreich gesendet." : (d.error || "Telegram Fehler");
+            } catch(e) { document.getElementById('replyBox').innerText = "Verbindungsfehler zu Telegram."; }
         }
 
         function handleImg(ev) {
             const f = ev.target.files[0]; if (!f) return;
+            highlightNode('camera');
             setSt('thinking');
             const r = new FileReader();
             r.onload = e => sendNeo({ image: e.target.result.split(',')[1], message: "Erstelle einen kurzen Objekt-Mängelbericht für WhatsApp." });
@@ -552,14 +737,15 @@ HTML_PAGE = """<!DOCTYPE html>
                 if (d.end_conversation) inConv = false;
                 if (d.new_memory) { mem.push(d.new_memory); saveState(); }
                 document.getElementById('replyBox').innerText = d.reply;
+
                 if (d.copy_text) {
-                    const b = document.createElement('button'); b.type = 'button'; b.className = 'pill'; b.innerText = 'Text kopieren';
+                    const b = document.createElement('button'); b.type = 'button'; b.className = 'gold-pill'; b.innerText = 'Text kopieren';
                     b.onclick = () => { navigator.clipboard.writeText(d.copy_text); b.innerText = '✓ Kopiert'; };
                     document.getElementById('actBar').appendChild(b);
                 }
                 if (d.action_url) {
                     inConv = false;
-                    const a = document.createElement('a'); a.href = d.action_url; a.className = 'pill'; a.innerText = d.action_label || 'Öffnen';
+                    const a = document.createElement('a'); a.href = d.action_url; a.className = 'gold-pill'; a.innerText = d.action_label || 'Öffnen';
                     document.getElementById('actBar').appendChild(a);
                 }
                 if (d.audio) {
@@ -602,13 +788,13 @@ def parse_upcoming_events():
                     }))
         out.sort(key=lambda x: x[0])
         ICAL_CACHE["ts"] = now_ts
-        ICAL_CACHE["events"] = [x[1] for x in out[:10]]
+        ICAL_CACHE["events"] = [x[1] for x in out[:12]]
         return ICAL_CACHE["events"]
     except Exception:
         return ICAL_CACHE["events"]
 
-SYSTEM_PROMPT = """Du bist NEO, der schnelle KI-Assistent von Margil (Kundenbetreuer Gebäudereinigung Hamburg).
-Modus: {mode} | Zeit: {local_time}. Antworte kurz, höflich, ohne Markdown/Sternchen.
+SYSTEM_PROMPT = """Du bist NEO, der hochintelligente KI-Assistent von Margil (Kundenbetreuer Gebäudereinigung Hamburg).
+Modus: {mode} | Zeit: {local_time}. Antworte souverän, ruhig, kurz und ohne Markdown/Sternchen.
 - Morning Brief / Auto-Briefing: Nächste Termine + Codes aus Notizen + Google Maps URL in `action_url` (`action_label`: "Navigation starten").
 - Dolmetscher DE <-> SQ: Bei Übersetzung ins Albanische `voice_lang`: "sq" und Übersetzung in `copy_text`, sonst "de".
 - Kalkulator: Büro ~220 m²/Std, 31,50 €/Std netto (4,33 Wochen/Monat). Fertiges Angebot in `copy_text` + WhatsApp Intent (`intent://send?text=URL_ENCODED#Intent;scheme=whatsapp;package=com.whatsapp.w4b;end`, `action_label`: "WhatsApp öffnen").
@@ -640,7 +826,7 @@ def avatar():
 
 @app.route("/calendar_preview")
 def cal_prev():
-    return jsonify({"events": parse_upcoming_events()[:3]})
+    return jsonify({"events": parse_upcoming_events()})
 
 @app.route("/manifest.json")
 def manifest():
@@ -649,8 +835,8 @@ def manifest():
         "short_name": "NEO",
         "start_url": "/",
         "display": "standalone",
-        "background_color": "#050811",
-        "theme_color": "#050811",
+        "background_color": "#030712",
+        "theme_color": "#030712",
         "icons": [{"src": "/icon.svg", "sizes": "any", "type": "image/svg+xml"}]
     })
 
