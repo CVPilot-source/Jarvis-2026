@@ -15,10 +15,10 @@ app = Flask(__name__)
 ICAL_CACHE = {"ts": 0, "events": []}
 
 ICON_SVG = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="120" fill="#09090B"/>
-  <circle cx="256" cy="256" r="155" fill="none" stroke="#F59E0B" stroke-width="10"/>
-  <circle cx="256" cy="256" r="110" fill="none" stroke="#22D3EE" stroke-width="5" stroke-dasharray="20 12"/>
-  <circle cx="256" cy="256" r="24" fill="#F59E0B"/>
+  <rect width="512" height="512" rx="120" fill="#03050A"/>
+  <circle cx="256" cy="256" r="145" fill="none" stroke="#38BDF8" stroke-width="8" stroke-dasharray="10 18"/>
+  <circle cx="256" cy="256" r="95" fill="none" stroke="#818CF8" stroke-width="6" stroke-dasharray="6 14"/>
+  <circle cx="256" cy="256" r="18" fill="#38BDF8"/>
 </svg>"""
 
 HTML_PAGE = """<!DOCTYPE html>
@@ -28,24 +28,21 @@ HTML_PAGE = """<!DOCTYPE html>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#09090B">
+    <meta name="theme-color" content="#03050A">
     <link rel="manifest" href="/manifest.json">
-    <title>NEO Executive</title>
+    <title>NEO Particle Core</title>
     <style>
         :root {
-            --gold: #F59E0B;
-            --cyan: #22D3EE;
-            --active: #F59E0B;
-            --bg: #09090B;
-            --surface: #141417;
-            --surface-2: #1E1E24;
-            --border: rgba(255, 255, 255, 0.08);
-            --text: #FAFAFA;
-            --muted: #A1A1AA;
+            --accent: #38BDF8;
+            --bg: #03050A;
+            --surface: rgba(15, 23, 42, 0.72);
+            --border: rgba(255, 255, 255, 0.09);
+            --text: #F8FAFC;
+            --muted: #94A3B8;
         }
-        body.listening { --active: #10B981; }
-        body.thinking  { --active: #22D3EE; }
-        body.speaking  { --active: #A855F7; }
+        body.listening { --accent: #10B981; }
+        body.thinking  { --accent: #F59E0B; }
+        body.speaking  { --accent: #A855F7; }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
@@ -53,23 +50,24 @@ HTML_PAGE = """<!DOCTYPE html>
             margin: 0 auto;
             max-width: 500px;
             height: 100dvh;
-            background: radial-gradient(circle at 50% 18%, #1C1917 0%, #09090B 62%);
+            background: radial-gradient(circle at 50% 34%, #0B152C 0%, #03050A 68%);
             color: var(--text);
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
             padding: 12px 14px;
-            gap: 9px;
+            gap: 8px;
+            overflow: hidden;
         }
 
-        /* HEADER */
-        .header {
+        .top-bar {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            z-index: 2;
         }
-        .pill-tag {
+        .chip {
             background: var(--surface);
             border: 1px solid var(--border);
             color: var(--text);
@@ -82,70 +80,50 @@ HTML_PAGE = """<!DOCTYPE html>
             align-items: center;
             gap: 6px;
         }
-        .indicator {
+        .dot {
             width: 8px;
             height: 8px;
             border-radius: 50%;
-            background: var(--active);
-            box-shadow: 0 0 8px var(--active);
+            background: var(--accent);
+            box-shadow: 0 0 10px var(--accent);
         }
-        .brand {
+        .logo {
             font-size: 13px;
             font-weight: 900;
             letter-spacing: 4px;
-            color: var(--gold);
+            color: var(--accent);
         }
 
-        /* CENTER ORB / AVATAR */
-        .core-stage {
+        /* 3D PARTICLE SPHERE STAGE */
+        .sphere-stage {
+            position: relative;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 4px 0;
-        }
-        .orb-wrap {
-            width: 112px;
-            height: 112px;
-            border-radius: 50%;
-            padding: 3px;
-            background: linear-gradient(135deg, var(--active), var(--cyan));
-            box-shadow: 0 0 26px rgba(245, 158, 11, 0.25);
+            flex: 1;
+            min-height: 210px;
             cursor: pointer;
-            transition: transform 0.15s;
         }
-        .orb-wrap:active { transform: scale(0.95); }
-        .orb-img {
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            overflow: hidden;
-            background: #09090B;
-        }
-        .orb-img img {
-            width: 100%;
-            height: 114%;
-            object-fit: cover;
-            object-position: center 12%;
+        #particleCanvas {
+            width: 220px;
+            height: 220px;
             display: block;
         }
-        .core-title {
-            font-size: 16px;
-            font-weight: 800;
-            margin-top: 8px;
-        }
-        .core-sub {
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--active);
+        .status-caption {
             margin-top: 2px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent);
+            text-align: center;
+            letter-spacing: 0.3px;
         }
-        .meta-strip {
+        .meta-line {
             display: flex;
             gap: 6px;
             margin-top: 6px;
         }
-        .meta-chip {
+        .meta-tag {
             background: var(--surface);
             border: 1px solid var(--border);
             border-radius: 7px;
@@ -156,88 +134,87 @@ HTML_PAGE = """<!DOCTYPE html>
             cursor: pointer;
         }
 
-        /* CARDS */
-        .card {
+        /* COMPACT INFO CARDS */
+        .glass-card {
             background: var(--surface);
             border: 1px solid var(--border);
             border-radius: 14px;
-            padding: 10px 12px;
+            padding: 9px 12px;
         }
-        .card-head {
-            font-size: 10px;
+        .card-lbl {
+            font-size: 9.5px;
             font-weight: 800;
-            text-transform: uppercase;
             letter-spacing: 1px;
-            color: var(--gold);
-            margin-bottom: 3px;
+            text-transform: uppercase;
+            color: var(--accent);
+            margin-bottom: 2px;
         }
-        .card-body {
+        .card-txt {
             font-size: 13px;
-            line-height: 1.4;
-            color: #F4F4F5;
+            line-height: 1.38;
+            color: #F1F5F9;
         }
 
-        /* 4 COMPACT BUTTONS */
-        .tools-row {
+        /* 4 QUICK MODULES */
+        .quick-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 7px;
         }
-        .tool-btn {
+        .q-tile {
             background: var(--surface);
             border: 1px solid var(--border);
-            border-radius: 13px;
-            padding: 10px 4px;
+            border-radius: 12px;
+            padding: 9px 4px;
             text-align: center;
             cursor: pointer;
         }
-        .tool-btn:active { border-color: var(--gold); background: var(--surface-2); }
-        .tool-ico { font-size: 17px; display: block; margin-bottom: 3px; }
-        .tool-lbl { font-size: 10.5px; font-weight: 700; color: var(--text); }
+        .q-tile:active { border-color: var(--accent); }
+        .q-ico { font-size: 16px; display: block; margin-bottom: 2px; }
+        .q-lbl { font-size: 10.5px; font-weight: 700; color: var(--text); }
 
-        /* ACTION BAR */
         .act-bar {
             display: flex;
             gap: 8px;
             justify-content: center;
-            min-height: 28px;
+            min-height: 26px;
         }
-        .gold-pill {
-            background: var(--gold);
-            color: #09090B;
+        .pill {
+            background: var(--accent);
+            color: #03050A;
             border: none;
             border-radius: 999px;
-            padding: 6px 15px;
+            padding: 6px 14px;
             font-size: 12px;
             font-weight: 800;
             text-decoration: none;
             cursor: pointer;
         }
 
-        /* BOTTOM CONSOLE */
-        .console {
+        /* INPUT BAR */
+        .dock {
             background: var(--surface);
             border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 8px;
+            border-radius: 15px;
+            padding: 7px;
             display: flex;
             gap: 7px;
             align-items: center;
         }
         .mic-btn {
-            width: 42px;
-            height: 42px;
-            border-radius: 12px;
-            background: var(--surface-2);
-            border: 1px solid var(--active);
+            width: 40px;
+            height: 40px;
+            border-radius: 11px;
+            background: rgba(56, 189, 248, 0.12);
+            border: 1px solid var(--accent);
             color: #FFF;
-            font-size: 18px;
+            font-size: 17px;
             cursor: pointer;
             flex-shrink: 0;
         }
-        .console input {
+        .dock input {
             flex: 1;
-            background: #09090B;
+            background: #03050A;
             border: 1px solid var(--border);
             border-radius: 10px;
             color: #FFF;
@@ -246,8 +223,8 @@ HTML_PAGE = """<!DOCTYPE html>
             outline: none;
         }
         .send-btn {
-            background: var(--gold);
-            color: #09090B;
+            background: var(--accent);
+            color: #03050A;
             border: none;
             border-radius: 10px;
             padding: 9px 13px;
@@ -256,18 +233,18 @@ HTML_PAGE = """<!DOCTYPE html>
             cursor: pointer;
         }
 
-        /* NOTES MODAL */
+        /* MODAL */
         .modal {
             position: fixed;
             inset: 0;
-            background: #09090B;
+            background: #03050A;
             z-index: 50;
             display: none;
             flex-direction: column;
             padding: 16px;
         }
         .modal.open { display: flex; }
-        .note-item {
+        .note-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -281,60 +258,58 @@ HTML_PAGE = """<!DOCTYPE html>
     </style>
 </head>
 <body>
-    <div class="header">
-        <button type="button" class="pill-tag" onclick="toggleWake()">
-            <span class="indicator"></span>
+    <div class="top-bar">
+        <button type="button" class="chip" onclick="toggleWake()">
+            <span class="dot"></span>
             <span id="wBtn">Voice AN</span>
         </button>
-        <div class="brand">NEO</div>
-        <button type="button" class="pill-tag" id="mBtn" onclick="toggleMode()">Arbeit</button>
+        <div class="logo">NEO</div>
+        <button type="button" class="chip" id="mBtn" onclick="toggleMode()">Arbeit</button>
     </div>
 
-    <div class="core-stage">
-        <div class="orb-wrap" onclick="toggleRec()">
-            <div class="orb-img"><img src="/avatar" alt="NEO" onerror="this.src='/icon.svg'"></div>
-        </div>
-        <div class="core-title">Hallo, Margil</div>
-        <div class="core-sub" id="stTxt" onclick="toggleRec()">Tippen oder „Hey Neo“ sagen</div>
-        <div class="meta-strip">
-            <span class="meta-chip" id="clock">--:--</span>
-            <span class="meta-chip" id="weather">Hamburg</span>
-            <span class="meta-chip" onclick="openList()">Codes: <span id="nCount">0</span></span>
+    <!-- 3D PARTICLE SPHERE -->
+    <div class="sphere-stage" onclick="toggleRec()">
+        <canvas id="particleCanvas" width="440" height="440"></canvas>
+        <div class="status-caption" id="stTxt">Tippen oder „Hey Neo“ sagen</div>
+        <div class="meta-line" onclick="event.stopPropagation()">
+            <span class="meta-tag" id="clock">--:--</span>
+            <span class="meta-tag" id="weather">Hamburg</span>
+            <span class="meta-tag" onclick="openList()">Codes: <span id="nCount">0</span></span>
         </div>
     </div>
 
-    <div class="card" onclick="quickCmd('Erkläre mir kurz meine nächsten Termine im Kalender.')" style="cursor:pointer;">
-        <div class="card-head">Nächster Termin • Kalender</div>
-        <div class="card-body" id="nextEv" style="font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Wird synchronisiert...</div>
+    <div class="glass-card" onclick="quickCmd('Erkläre mir kurz meine nächsten Termine im Kalender.')" style="cursor:pointer;">
+        <div class="card-lbl">Nächster Termin</div>
+        <div class="card-txt" id="nextEv" style="font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Kalender wird geladen...</div>
     </div>
 
-    <div class="card" style="flex:1; display:flex; flex-direction:column; justify-content:center;">
-        <div class="card-head">NEO Antwort</div>
-        <div class="card-body" id="replyBox">System bereit, Margil.</div>
+    <div class="glass-card">
+        <div class="card-lbl">NEO Antwort</div>
+        <div class="card-txt" id="replyBox">Bereit, Margil.</div>
     </div>
 
-    <div class="tools-row">
-        <div class="tool-btn" onclick="quickCmd('Ich fahre los zum nächsten Termin. Gib mir das Briefing mit Codes und starte Navigation.')">
-            <span class="tool-ico">🧭</span>
-            <span class="tool-lbl">Briefing</span>
+    <div class="quick-grid">
+        <div class="q-tile" onclick="quickCmd('Ich fahre los zum nächsten Termin. Gib mir das Briefing mit Codes und starte Navigation.')">
+            <span class="q-ico">🧭</span>
+            <span class="q-lbl">Briefing</span>
         </div>
-        <div class="tool-btn" onclick="quickCmd('Kalkuliere 600 qm Büro, 2x pro Woche, mit WhatsApp-Angebot.')">
-            <span class="tool-ico">📐</span>
-            <span class="tool-lbl">Angebot</span>
+        <div class="q-tile" onclick="quickCmd('Kalkuliere 600 qm Büro, 2x pro Woche, mit WhatsApp-Angebot.')">
+            <span class="q-ico">📐</span>
+            <span class="q-lbl">Angebot</span>
         </div>
-        <div class="tool-btn" onclick="document.getElementById('cam').click()">
-            <span class="tool-ico">📸</span>
-            <span class="tool-lbl">Mängel</span>
+        <div class="q-tile" onclick="document.getElementById('cam').click()">
+            <span class="q-ico">📸</span>
+            <span class="q-lbl">Mängel</span>
         </div>
-        <div class="tool-btn" onclick="sendTg()">
-            <span class="tool-ico">✈️</span>
-            <span class="tool-lbl">Telegram</span>
+        <div class="q-tile" onclick="sendTg()">
+            <span class="q-ico">✈️</span>
+            <span class="q-lbl">Telegram</span>
         </div>
     </div>
 
     <div class="act-bar" id="actBar"></div>
 
-    <div class="console">
+    <div class="dock">
         <button type="button" class="mic-btn" onclick="toggleRec()">🎙️</button>
         <input type="text" id="msg" placeholder="Befehl oder Übersetzung..." onkeypress="if(event.key==='Enter')sendTxt()">
         <button type="button" class="send-btn" onclick="sendTxt()">Go</button>
@@ -343,9 +318,9 @@ HTML_PAGE = """<!DOCTYPE html>
     <input type="file" id="cam" accept="image/*" capture="environment" style="display:none" onchange="handleImg(event)">
 
     <div class="modal" id="modal">
-        <div class="header" style="margin-bottom:12px;">
-            <strong style="color:var(--gold);">Objekt-Codes & Notizen</strong>
-            <button type="button" class="pill-tag" onclick="closeList()">✕ Schließen</button>
+        <div class="top-bar" style="margin-bottom:12px;">
+            <strong style="color:var(--accent);">Objekt-Codes & Notizen</strong>
+            <button type="button" class="chip" onclick="closeList()">✕ Schließen</button>
         </div>
         <div id="listBody" style="flex:1; overflow-y:auto;"></div>
     </div>
@@ -353,6 +328,103 @@ HTML_PAGE = """<!DOCTYPE html>
     <audio id="player" playsinline></audio>
 
     <script>
+        // --- 3D HOLOGRAPHIC PARTICLE SPHERE ENGINE ---
+        const canvas = document.getElementById('particleCanvas');
+        const ctx = canvas.getContext('2d');
+        const NUM_DOTS = 240;
+        const dots = [];
+        for (let i = 0; i < NUM_DOTS; i++) {
+            const phi = Math.acos(-1 + (2 * i) / NUM_DOTS);
+            const theta = Math.sqrt(NUM_DOTS * Math.PI) * phi;
+            dots.push({
+                x: Math.cos(theta) * Math.sin(phi),
+                y: Math.sin(theta) * Math.sin(phi),
+                z: Math.cos(phi),
+                phase: i * 0.15
+            });
+        }
+
+        let currentModeState = 'idle';
+        let angleY = 0, angleX = 0, tick = 0;
+
+        function renderParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            tick += 0.05;
+
+            let speed = 0.008;
+            let baseRadius = 138;
+            let colorRGB = '56, 189, 248'; // Cyan
+            let waveAmp = 4;
+
+            if (currentModeState === 'listening') {
+                speed = 0.016;
+                baseRadius = 148 + Math.sin(tick * 2.5) * 10;
+                colorRGB = '16, 185, 129'; // Green
+                waveAmp = 12;
+            } else if (currentModeState === 'thinking') {
+                speed = 0.032;
+                baseRadius = 132;
+                colorRGB = '245, 158, 11'; // Gold/Amber
+                waveAmp = 8;
+            } else if (currentModeState === 'speaking') {
+                speed = 0.018;
+                baseRadius = 146 + Math.sin(tick * 3.8) * 14;
+                colorRGB = '168, 85, 247'; // Purple
+                waveAmp = 18;
+            }
+
+            angleY += speed;
+            angleX += speed * 0.45;
+
+            const cosY = Math.cos(angleY), sinY = Math.sin(angleY);
+            const cosX = Math.cos(angleX), sinX = Math.sin(angleX);
+            const cx = canvas.width / 2, cy = canvas.height / 2;
+
+            // Core soft glow
+            const grad = ctx.createRadialGradient(cx, cy, 10, cx, cy, baseRadius + 30);
+            grad.addColorStop(0, `rgba(${colorRGB}, 0.22)`);
+            grad.addColorStop(1, `rgba(${colorRGB}, 0)`);
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.arc(cx, cy, baseRadius + 30, 0, Math.PI * 2);
+            ctx.fill();
+
+            const projected = [];
+            for (let i = 0; i < NUM_DOTS; i++) {
+                const d = dots[i];
+                const wave = Math.sin(tick * 2 + d.phase) * waveAmp;
+                const r = baseRadius + wave;
+
+                let x1 = d.x * r * cosY - d.z * r * sinY;
+                let z1 = d.z * r * cosY + d.x * r * sinY;
+                let y1 = d.y * r * cosX - z1 * sinX;
+                let z2 = z1 * cosX + d.y * r * sinX;
+
+                const scale = 360 / (360 + z2);
+                projected.push({
+                    x: cx + x1 * scale,
+                    y: cy + y1 * scale,
+                    z: z2,
+                    alpha: Math.max(0.18, (z2 + baseRadius) / (2 * baseRadius)),
+                    size: Math.max(1.4, 3.2 * scale)
+                });
+            }
+
+            projected.sort((a, b) => b.z - a.z);
+
+            for (let i = 0; i < projected.length; i++) {
+                const p = projected[i];
+                ctx.fillStyle = `rgba(${colorRGB}, ${p.alpha.toFixed(2)})`;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            requestAnimationFrame(renderParticles);
+        }
+        renderParticles();
+
+        // --- APP LOGIC ---
         function updClock() {
             document.getElementById('clock').innerText = new Date().toLocaleTimeString('de-DE', {hour:'2-digit', minute:'2-digit'}) + " Uhr";
         }
@@ -384,6 +456,7 @@ HTML_PAGE = """<!DOCTYPE html>
 
         function toggleMode() { mode = mode === 'ARBEIT' ? 'PRIVAT' : 'ARBEIT'; saveState(); }
         function setSt(s) {
+            currentModeState = s || 'idle';
             document.body.className = s || '';
             stTxt.innerText = s === 'listening' ? 'Hört zu, Margil...' : (s === 'thinking' ? 'NEO analysiert...' : (s === 'speaking' ? 'NEO spricht...' : 'Tippen oder „Hey Neo“ sagen'));
         }
@@ -447,7 +520,7 @@ HTML_PAGE = """<!DOCTYPE html>
 
         function openList() {
             document.getElementById('modal').classList.add('open');
-            document.getElementById('listBody').innerHTML = mem.length ? mem.map((x,i) => `<div class="note-item"><span>${x}</span><button type="button" class="gold-pill" onclick="mem.splice(${i},1);saveState();openList();">✓</button></div>`).join('') : '<p style="color:#A1A1AA">Keine Notizen gespeichert.</p>';
+            document.getElementById('listBody').innerHTML = mem.length ? mem.map((x,i) => `<div class="note-row"><span>${x}</span><button type="button" class="pill" onclick="mem.splice(${i},1);saveState();openList();">✓</button></div>`).join('') : '<p style="color:#94A3B8">Keine Notizen gespeichert.</p>';
         }
         function closeList() { document.getElementById('modal').classList.remove('open'); }
 
@@ -488,13 +561,13 @@ HTML_PAGE = """<!DOCTYPE html>
                 if (d.new_memory) { mem.push(d.new_memory); saveState(); }
                 document.getElementById('replyBox').innerText = d.reply;
                 if (d.copy_text) {
-                    const b = document.createElement('button'); b.type = 'button'; b.className = 'gold-pill'; b.innerText = 'Text kopieren';
+                    const b = document.createElement('button'); b.type = 'button'; b.className = 'pill'; b.innerText = 'Text kopieren';
                     b.onclick = () => { navigator.clipboard.writeText(d.copy_text); b.innerText = '✓ Kopiert'; };
                     document.getElementById('actBar').appendChild(b);
                 }
                 if (d.action_url) {
                     inConv = false;
-                    const a = document.createElement('a'); a.href = d.action_url; a.className = 'gold-pill'; a.innerText = d.action_label || 'Öffnen';
+                    const a = document.createElement('a'); a.href = d.action_url; a.className = 'pill'; a.innerText = d.action_label || 'Öffnen';
                     document.getElementById('actBar').appendChild(a);
                 }
                 if (d.audio) {
@@ -584,8 +657,8 @@ def manifest():
         "short_name": "NEO",
         "start_url": "/",
         "display": "standalone",
-        "background_color": "#09090B",
-        "theme_color": "#09090B",
+        "background_color": "#03050A",
+        "theme_color": "#03050A",
         "icons": [{"src": "/icon.svg", "sizes": "any", "type": "image/svg+xml"}]
     })
 
@@ -663,3 +736,4 @@ def chat():
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+  
