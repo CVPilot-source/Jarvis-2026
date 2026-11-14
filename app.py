@@ -315,7 +315,7 @@ HTML_PAGE = """
             <span id="stateLabel">NEO • STANDBY</span>
         </div>
         <div class="top-pills">
-            <div class="mode-tag" id="visualBtn" onclick="toggleVisual()">JARVIS</div>
+            <div class="mode-tag" id="visualBtn" onclick="toggleVisual()">GALAXIE</div>
             <div class="mode-tag" id="modeBtn" onclick="toggleMode()">ARBEIT</div>
         </div>
     </div>
@@ -358,20 +358,21 @@ HTML_PAGE = """
     <audio id="player" playsinline></audio>
 
     <script>
-        /* --- Ultra-Clean Luxury 3D Engine (JARVIS CORE / PLASMA ORB / MATRIX) --- */
+        /* --- 3D Milky Way Spiral Galaxy + JARVIS + PLASMA Engine --- */
         let audioEnergy = 0;
         let currentState = 'idle';
-        const visualModes = ['JARVIS', 'PLASMA', 'MATRIX'];
-        let visualMode = localStorage.getItem('neo_visual_v2') || 'JARVIS';
-        if (!visualModes.includes(visualMode)) visualMode = 'JARVIS';
+        const visualModes = ['GALAXIE', 'JARVIS', 'PLASMA'];
+        let visualMode = localStorage.getItem('neo_visual_v3') || 'GALAXIE';
+        if (!visualModes.includes(visualMode)) visualMode = 'GALAXIE';
         document.getElementById('visualBtn').innerText = visualMode;
 
         const container = document.getElementById('threeContainer');
         const scene = new THREE.Scene();
         const w = container.clientWidth || window.innerWidth;
         const h = container.clientHeight || (window.innerHeight * 0.65);
-        const camera = new THREE.PerspectiveCamera(38, w / h, 0.1, 1000);
-        camera.position.z = 30;
+        const camera = new THREE.PerspectiveCamera(42, w / h, 0.1, 1000);
+        camera.position.set(0, 7.5, 23);
+        camera.lookAt(0, 0, 0);
 
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(w, h);
@@ -393,6 +394,81 @@ HTML_PAGE = """
         }
         const glowTex = createGlowSprite();
 
+        /* --- 1. MILCHSTRASSE / 3D SPIRAL GALAXY (3.400 Sterne & Nebel) --- */
+        const galaxyGroup = new THREE.Group();
+        const starCount = 3400;
+        const gPositions = new Float32Array(starCount * 3);
+        const gOrigPositions = new Float32Array(starCount * 3);
+        const gColors = new Float32Array(starCount * 3);
+        const gRadii = new Float32Array(starCount);
+
+        const branches = 4;
+        const maxRadius = 12.5;
+        const spinFactor = 1.35;
+
+        const colorInside = new THREE.Color(0xFFFFFF);
+        const colorMid = new THREE.Color(0x00F5D4);
+        const colorOutside = new THREE.Color(0x3B82F6);
+
+        for (let i = 0; i < starCount; i++) {
+            const i3 = i * 3;
+            const radius = Math.pow(Math.random(), 1.65) * maxRadius;
+            gRadii[i] = radius;
+
+            const spinAngle = radius * spinFactor;
+            const branchAngle = ((i % branches) / branches) * Math.PI * 2;
+
+            // Dichte Spiral-Streuung (enger im Zentrum, breiter außen)
+            const scatter = Math.pow(Math.random(), 2.2) * (Math.random() < 0.5 ? 1 : -1) * (0.45 + radius * 0.14);
+            const randomY = Math.pow(Math.random(), 2.8) * (Math.random() < 0.5 ? 1 : -1) * (1.4 - radius * 0.08);
+            const scatterZ = Math.pow(Math.random(), 2.2) * (Math.random() < 0.5 ? 1 : -1) * (0.45 + radius * 0.14);
+
+            const x = Math.cos(branchAngle + spinAngle) * radius + scatter;
+            const y = randomY;
+            const z = Math.sin(branchAngle + spinAngle) * radius + scatterZ;
+
+            gPositions[i3] = x;
+            gPositions[i3 + 1] = y;
+            gPositions[i3 + 2] = z;
+
+            gOrigPositions[i3] = x;
+            gOrigPositions[i3 + 1] = y;
+            gOrigPositions[i3 + 2] = z;
+
+            // Farbverlauf vom hellen galaktischen Kern bis zu den blauen Außenarmen
+            const mixedColor = colorInside.clone();
+            if (radius < 3.5) {
+                mixedColor.lerp(colorMid, radius / 3.5);
+            } else {
+                mixedColor.copy(colorMid).lerp(colorOutside, (radius - 3.5) / (maxRadius - 3.5));
+            }
+
+            gColors[i3] = mixedColor.r;
+            gColors[i3 + 1] = mixedColor.g;
+            gColors[i3 + 2] = mixedColor.b;
+        }
+
+        const galaxyGeo = new THREE.BufferGeometry();
+        galaxyGeo.setAttribute('position', new THREE.BufferAttribute(gPositions, 3));
+        galaxyGeo.setAttribute('color', new THREE.BufferAttribute(gColors, 3));
+
+        const galaxyMat = new THREE.PointsMaterial({
+            size: 0.34,
+            map: glowTex,
+            vertexColors: true,
+            transparent: true,
+            opacity: 0.95,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+        });
+
+        const galaxyPoints = new THREE.Points(galaxyGeo, galaxyMat);
+        galaxyGroup.add(galaxyPoints);
+        galaxyGroup.rotation.x = 0.28;
+        galaxyGroup.rotation.z = -0.18;
+        scene.add(galaxyGroup);
+
+        /* --- 2. JARVIS CORE --- */
         const coreMat = new THREE.PointsMaterial({
             color: 0x00F5D4,
             size: 0.36,
@@ -402,7 +478,6 @@ HTML_PAGE = """
             blending: THREE.AdditiveBlending,
             depthWrite: false
         });
-
         const wireMat = new THREE.MeshBasicMaterial({
             color: 0x00BBF9,
             wireframe: true,
@@ -410,84 +485,37 @@ HTML_PAGE = """
             opacity: 0.12,
             blending: THREE.AdditiveBlending
         });
-
-        const ringMat1 = new THREE.MeshBasicMaterial({
+        const ringMat = new THREE.MeshBasicMaterial({
             color: 0x00F5D4,
             transparent: true,
-            opacity: 0.55,
+            opacity: 0.5,
             blending: THREE.AdditiveBlending
         });
 
-        const ringMat2 = new THREE.MeshBasicMaterial({
-            color: 0x00BBF9,
-            transparent: true,
-            opacity: 0.35,
-            blending: THREE.AdditiveBlending
-        });
-
-        /* --- 1. JARVIS CORE (Gyroscopic Energy Core + Particle Cloud) --- */
         const jarvisGroup = new THREE.Group();
-        const innerGeo = new THREE.IcosahedronGeometry(4.2, 4);
-        const innerOrig = Float32Array.from(innerGeo.attributes.position.array);
+        const innerGeo = new THREE.IcosahedronGeometry(3.8, 4);
         jarvisGroup.add(new THREE.Points(innerGeo, coreMat));
         jarvisGroup.add(new THREE.Mesh(innerGeo, wireMat));
-
-        const gyro1 = new THREE.Mesh(new THREE.TorusGeometry(6.2, 0.05, 16, 120), ringMat1);
-        const gyro2 = new THREE.Mesh(new THREE.TorusGeometry(7.3, 0.04, 16, 120), ringMat2);
-        const gyro3 = new THREE.Mesh(new THREE.TorusGeometry(8.4, 0.03, 16, 120), ringMat1);
+        const gyro1 = new THREE.Mesh(new THREE.TorusGeometry(5.6, 0.045, 16, 120), ringMat);
+        const gyro2 = new THREE.Mesh(new THREE.TorusGeometry(6.7, 0.035, 16, 120), ringMat);
         gyro1.rotation.x = Math.PI / 3;
         gyro2.rotation.y = Math.PI / 4;
-        gyro3.rotation.x = -Math.PI / 5;
-        jarvisGroup.add(gyro1, gyro2, gyro3);
-
-        // Äußere schwebende Partikel-Aura
-        const auraCount = 450;
-        const auraPositions = new Float32Array(auraCount * 3);
-        for (let i = 0; i < auraCount; i++) {
-            const r = 7.0 + Math.random() * 3.2;
-            const theta = Math.random() * Math.PI * 2;
-            const phi = Math.acos(2 * Math.random() - 1);
-            auraPositions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
-            auraPositions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
-            auraPositions[i * 3 + 2] = r * Math.cos(phi);
-        }
-        const auraGeo = new THREE.BufferGeometry();
-        auraGeo.setAttribute('position', new THREE.BufferAttribute(auraPositions, 3));
-        const auraPts = new THREE.Points(auraGeo, coreMat);
-        jarvisGroup.add(auraPts);
+        jarvisGroup.add(gyro1, gyro2);
+        jarvisGroup.visible = false;
         scene.add(jarvisGroup);
 
-        /* --- 2. PLASMA ORB (High-Density Liquid Sphere) --- */
+        /* --- 3. PLASMA ORB --- */
         const plasmaGroup = new THREE.Group();
-        const pGeo = new THREE.SphereGeometry(7.6, 64, 64);
+        const pGeo = new THREE.SphereGeometry(6.8, 60, 60);
         const pOrig = Float32Array.from(pGeo.attributes.position.array);
         plasmaGroup.add(new THREE.Points(pGeo, coreMat));
         plasmaGroup.visible = false;
         scene.add(plasmaGroup);
 
-        /* --- 3. MATRIX CORE (3D Energy Helix) --- */
-        const matrixGroup = new THREE.Group();
-        const helixCount = 700;
-        const hPos = new Float32Array(helixCount * 3);
-        for (let i = 0; i < helixCount; i++) {
-            const t = (i / helixCount) * Math.PI * 6;
-            const strand = (i % 2 === 0) ? 1 : -1;
-            const y = ((i / helixCount) - 0.5) * 16;
-            const r = 4.2 + Math.sin(i * 0.2) * 0.4;
-            hPos[i * 3] = Math.cos(t) * r * strand;
-            hPos[i * 3 + 1] = y;
-            hPos[i * 3 + 2] = Math.sin(t) * r * strand;
-        }
-        const hGeo = new THREE.BufferGeometry();
-        hGeo.setAttribute('position', new THREE.BufferAttribute(hPos, 3));
-        matrixGroup.add(new THREE.Points(hGeo, coreMat));
-        matrixGroup.visible = false;
-        scene.add(matrixGroup);
-
         function toggleVisual() {
             const idx = (visualModes.indexOf(visualMode) + 1) % visualModes.length;
             visualMode = visualModes[idx];
-            localStorage.setItem('neo_visual_v2', visualMode);
+            localStorage.setItem('neo_visual_v3', visualMode);
             document.getElementById('visualBtn').innerText = visualMode;
         }
 
@@ -502,59 +530,59 @@ HTML_PAGE = """
             requestAnimationFrame(animate3D);
             const t = Date.now() * 0.002;
 
+            galaxyGroup.visible = (visualMode === 'GALAXIE');
             jarvisGroup.visible = (visualMode === 'JARVIS');
             plasmaGroup.visible = (visualMode === 'PLASMA');
-            matrixGroup.visible = (visualMode === 'MATRIX');
 
             let pulse = 0;
+            let tintHex = 0xFFFFFF;
+
             if (currentState === 'listening') {
+                tintHex = 0x55FFAA;
                 coreMat.color.setHex(0x00FF88);
-                wireMat.color.setHex(0x00FF88);
-                ringMat1.color.setHex(0x00FF88);
-                ringMat2.color.setHex(0x00FF88);
-                pulse = audioEnergy * 0.028;
+                ringMat.color.setHex(0x00FF88);
+                pulse = audioEnergy * 0.03;
             } else if (currentState === 'thinking') {
+                tintHex = 0xFFCC66;
                 coreMat.color.setHex(0xF59E0B);
-                wireMat.color.setHex(0xF59E0B);
-                ringMat1.color.setHex(0xF59E0B);
-                ringMat2.color.setHex(0xFBBF24);
+                ringMat.color.setHex(0xF59E0B);
                 pulse = 0.45;
             } else if (currentState === 'speaking') {
+                tintHex = 0x88E5FF;
                 coreMat.color.setHex(0x38BDF8);
-                wireMat.color.setHex(0x00F5D4);
-                ringMat1.color.setHex(0x38BDF8);
-                ringMat2.color.setHex(0x00F5D4);
+                ringMat.color.setHex(0x38BDF8);
                 pulse = Math.abs(Math.sin(t * 7.5)) * 0.85 + Math.abs(Math.cos(t * 4.2)) * 0.35;
             } else {
+                tintHex = 0xFFFFFF;
                 coreMat.color.setHex(0x00F5D4);
-                wireMat.color.setHex(0x00BBF9);
-                ringMat1.color.setHex(0x00F5D4);
-                ringMat2.color.setHex(0x00BBF9);
+                ringMat.color.setHex(0x00F5D4);
                 audioEnergy *= 0.85;
-                pulse = Math.sin(t * 1.5) * 0.12;
+                pulse = Math.sin(t * 1.4) * 0.1;
             }
 
-            if (jarvisGroup.visible) {
+            if (galaxyGroup.visible) {
+                galaxyMat.color.setHex(tintHex);
+                galaxyMat.size = 0.33 + pulse * 0.08;
+                galaxyGroup.rotation.y += (currentState === 'thinking' ? 0.022 : 0.0045);
+
+                // Sanfte Gravitations-Welle durch die Spiralarme beim Sprechen/Zuhören
+                const pos = galaxyGeo.attributes.position.array;
+                for (let i = 0; i < starCount; i++) {
+                    const i3 = i * 3;
+                    const r = gRadii[i];
+                    const wave = Math.sin(t * 3.2 - r * 0.85) * (0.08 + pulse * 0.48);
+                    pos[i3 + 1] = gOrigPositions[i3 + 1] + wave;
+                }
+                galaxyGeo.attributes.position.needsUpdate = true;
+            } else if (jarvisGroup.visible) {
                 const spin = currentState === 'thinking' ? 0.04 : 0.01;
                 gyro1.rotation.x += spin * 1.2;
                 gyro1.rotation.y += spin * 0.8;
                 gyro2.rotation.y -= spin * 1.4;
-                gyro2.rotation.z += spin * 0.6;
-                gyro3.rotation.x -= spin * 0.9;
-                gyro3.rotation.z -= spin * 1.1;
-                auraPts.rotation.y += 0.004;
-
-                const pos = innerGeo.attributes.position.array;
-                for (let i = 0; i < pos.length; i += 3) {
-                    const ox = innerOrig[i], oy = innerOrig[i + 1], oz = innerOrig[i + 2];
-                    const wave = 1 + Math.sin(t * 3 + ox * 0.8 + oy * 0.8) * (0.04 + pulse * 0.14);
-                    pos[i] = ox * wave;
-                    pos[i + 1] = oy * wave;
-                    pos[i + 2] = oz * wave;
-                }
-                innerGeo.attributes.position.needsUpdate = true;
-            } else if (plasmaGroup.visible) {
-                plasmaGroup.rotation.y += (currentState === 'thinking' ? 0.035 : 0.008);
+                const s = 1 + pulse * 0.14;
+                jarvisGroup.scale.set(s, s, s);
+            } else {
+                plasmaGroup.rotation.y += 0.008;
                 const pos = pGeo.attributes.position.array;
                 for (let i = 0; i < pos.length; i += 3) {
                     const ox = pOrig[i], oy = pOrig[i + 1], oz = pOrig[i + 2];
@@ -564,10 +592,6 @@ HTML_PAGE = """
                     pos[i + 2] = oz * ripple;
                 }
                 pGeo.attributes.position.needsUpdate = true;
-            } else {
-                matrixGroup.rotation.y += (currentState === 'thinking' ? 0.045 : 0.014);
-                const s = 1 + pulse * 0.15;
-                matrixGroup.scale.set(s, 1, s);
             }
 
             renderer.render(scene, camera);
