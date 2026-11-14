@@ -6,7 +6,6 @@ import base64
 import asyncio
 import threading
 import urllib.request
-import urllib.parse
 from datetime import datetime, timedelta
 from flask import Flask, request, jsonify, render_template_string, Response, send_file
 from google import genai
@@ -15,7 +14,6 @@ import edge_tts
 
 app = Flask(__name__)
 
-# Cache & Gjendja e Telegram-it
 ICAL_CACHE = {"ts": 0, "events": []}
 TG_STATE = {
     "chat_id": os.environ.get("TELEGRAM_CHAT_ID", "").strip(),
@@ -28,8 +26,8 @@ MANIFEST_JSON = {
     "short_name": "NEO",
     "start_url": "/",
     "display": "standalone",
-    "background_color": "#060913",
-    "theme_color": "#060913",
+    "background_color": "#050811",
+    "theme_color": "#050811",
     "icons": [
         {
             "src": "/icon.svg",
@@ -41,10 +39,10 @@ MANIFEST_JSON = {
 }
 
 ICON_SVG = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="120" fill="#060913"/>
-  <circle cx="256" cy="256" r="160" fill="none" stroke="#38BDF8" stroke-width="8" stroke-dasharray="24 14"/>
-  <circle cx="256" cy="256" r="110" fill="none" stroke="#818CF8" stroke-width="4"/>
-  <circle cx="256" cy="256" r="22" fill="#38BDF8"/>
+  <rect width="512" height="512" rx="120" fill="#050811"/>
+  <circle cx="256" cy="256" r="160" fill="none" stroke="#00F0FF" stroke-width="10" stroke-dasharray="28 16"/>
+  <circle cx="256" cy="256" r="105" fill="none" stroke="#6366F1" stroke-width="5"/>
+  <circle cx="256" cy="256" r="24" fill="#00F0FF"/>
 </svg>"""
 
 HTML_PAGE = """
@@ -55,79 +53,83 @@ HTML_PAGE = """
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#060913">
+    <meta name="theme-color" content="#050811">
     <link rel="manifest" href="/manifest.json">
     <link rel="icon" type="image/svg+xml" href="/icon.svg">
-    <title>NEO AI</title>
+    <title>NEO OS</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
         :root {
-            --accent: #38BDF8;
-            --accent-2: #818CF8;
-            --accent-glow: rgba(56, 189, 248, 0.35);
-            --bg-main: #060913;
-            --card-bg: rgba(15, 23, 42, 0.68);
-            --card-border: rgba(255, 255, 255, 0.09);
-            --text-main: #F8FAFC;
-            --text-muted: #94A3B8;
+            --accent: #00F0FF;
+            --accent-2: #6366F1;
+            --glow: rgba(0, 240, 255, 0.32);
+            --bg: #050811;
+            --glass: rgba(17, 25, 46, 0.72);
+            --border: rgba(255, 255, 255, 0.10);
+            --text: #F8FAFC;
+            --muted: #94A3B8;
         }
 
-        body.listening {
-            --accent: #10B981;
-            --accent-2: #34D399;
-            --accent-glow: rgba(16, 185, 129, 0.45);
-        }
-        body.thinking {
-            --accent: #F59E0B;
-            --accent-2: #FB923C;
-            --accent-glow: rgba(245, 158, 11, 0.45);
-        }
-        body.speaking {
-            --accent: #38BDF8;
-            --accent-2: #A855F7;
-            --accent-glow: rgba(168, 85, 247, 0.45);
+        body.listening { --accent: #10B981; --accent-2: #34D399; --glow: rgba(16, 185, 129, 0.45); }
+        body.thinking  { --accent: #F59E0B; --accent-2: #FB923C; --glow: rgba(245, 158, 11, 0.45); }
+        body.speaking  { --accent: #38BDF8; --accent-2: #A855F7; --glow: rgba(168, 85, 247, 0.45); }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
         }
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-
-        body {
+        html, body {
             margin: 0;
-            background: radial-gradient(circle at 50% 25%, #111D3B 0%, #060913 65%, #03050A 100%);
-            color: var(--text-main);
-            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            padding: 0;
+            width: 100%;
             height: 100dvh;
             overflow: hidden;
+            background:
+                radial-gradient(circle at 15% 10%, rgba(99, 102, 241, 0.22) 0%, transparent 45%),
+                radial-gradient(circle at 85% 85%, rgba(0, 240, 255, 0.14) 0%, transparent 45%),
+                #050811;
+            color: var(--text);
+            font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+        }
+
+        .app-shell {
+            width: 100%;
+            max-width: 540px;
+            height: 100dvh;
+            margin: 0 auto;
+            padding: 12px 14px 14px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            padding: 12px 14px 14px;
-            -webkit-font-smoothing: antialiased;
+            gap: 10px;
         }
 
-        .top-strip {
+        /* TOP HEADER */
+        .top-bar {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            z-index: 5;
         }
 
-        .status-chip {
-            background: var(--card-bg);
-            border: 1px solid var(--card-border);
-            backdrop-filter: blur(14px);
-            -webkit-backdrop-filter: blur(14px);
-            padding: 6px 12px;
+        .pill-btn {
+            background: var(--glass);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 7px 13px;
             border-radius: 999px;
-            font-size: 11.5px;
-            font-weight: 600;
-            display: flex;
+            font-size: 12px;
+            font-weight: 700;
+            display: inline-flex;
             align-items: center;
             gap: 7px;
             cursor: pointer;
         }
+        .pill-btn:active { transform: scale(0.96); }
 
-        .led-dot {
+        .status-dot {
             width: 8px;
             height: 8px;
             border-radius: 50%;
@@ -135,626 +137,525 @@ HTML_PAGE = """
             box-shadow: 0 0 10px var(--accent);
         }
 
-        .brand-badge {
-            font-size: 12px;
-            font-weight: 800;
-            letter-spacing: 3.5px;
-            padding-left: 3.5px;
-            color: #CBD5E1;
-            text-transform: uppercase;
-        }
-
-        .dashboard {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            width: 100%;
-            max-width: 560px;
-            margin: 8px auto 4px;
-            gap: 10px;
-            z-index: 4;
-        }
-
-        .hero-grid {
-            display: grid;
-            grid-template-columns: 1fr auto 1fr;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .glass-box {
-            background: var(--card-bg);
-            border: 1px solid var(--card-border);
-            border-radius: 18px;
-            padding: 12px;
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-        }
-
-        .glass-box.top-align {
-            justify-content: flex-start;
-        }
-
-        .hello-title {
-            font-size: 17px;
-            font-weight: 800;
-            color: #FFFFFF;
-            line-height: 1.2;
-        }
-
-        .hello-sub {
-            font-size: 11px;
-            color: var(--text-muted);
-            margin-top: 4px;
-            line-height: 1.35;
-        }
-
-        .mini-badge {
-            display: inline-block;
-            margin-top: 8px;
-            font-size: 10px;
+        .os-logo {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
             font-weight: 700;
+            letter-spacing: 3px;
             color: var(--accent);
-            background: rgba(56, 189, 248, 0.12);
-            border: 1px solid rgba(56, 189, 248, 0.25);
-            padding: 3px 8px;
-            border-radius: 6px;
-            width: fit-content;
         }
 
-        .avatar-frame {
-            position: relative;
-            width: 126px;
-            height: 148px;
+        /* HERO PROFILE CARD */
+        .hero-card {
+            background: linear-gradient(135deg, rgba(23, 33, 62, 0.85), rgba(11, 17, 34, 0.90));
+            border: 1px solid var(--border);
             border-radius: 22px;
-            padding: 3px;
-            background: linear-gradient(145deg, var(--accent), var(--accent-2));
-            box-shadow: 0 0 28px var(--accent-glow);
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.25s;
+            padding: 12px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
         }
-        .avatar-frame:active { transform: scale(0.96); }
 
-        .avatar-inner {
+        .neo-avatar {
+            width: 78px;
+            height: 88px;
+            border-radius: 18px;
+            padding: 2.5px;
+            background: linear-gradient(145deg, var(--accent), var(--accent-2));
+            box-shadow: 0 0 22px var(--glow);
+            flex-shrink: 0;
+            cursor: pointer;
+        }
+
+        .neo-avatar-img {
             width: 100%;
             height: 100%;
-            border-radius: 19px;
+            border-radius: 15.5px;
             overflow: hidden;
-            background: #0A1020;
-            position: relative;
+            background: #090E1D;
         }
 
-        .avatar-inner img {
+        .neo-avatar-img img {
             width: 100%;
-            height: 114%;
+            height: 115%;
             object-fit: cover;
             object-position: center 12%;
             display: block;
-            transition: transform 0.4s ease;
         }
 
-        body.speaking .avatar-inner img {
-            animation: avatarBreath 1.1s infinite alternate ease-in-out;
+        body.speaking .neo-avatar-img img {
+            animation: pulseAvatar 0.9s infinite alternate ease-in-out;
+        }
+        @keyframes pulseAvatar {
+            from { transform: scale(1); }
+            to { transform: scale(1.06); }
         }
 
-        @keyframes avatarBreath {
-            from { transform: scale(1.0); }
-            to { transform: scale(1.045); }
+        .hero-info {
+            flex: 1;
+            min-width: 0;
         }
 
-        .avatar-tag {
-            position: absolute;
-            bottom: 6px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(6, 9, 19, 0.82);
-            backdrop-filter: blur(8px);
-            border: 1px solid rgba(255, 255, 255, 0.15);
+        .hero-greeting {
+            font-size: 19px;
+            font-weight: 800;
+            letter-spacing: -0.3px;
             color: #FFFFFF;
-            font-size: 9.5px;
-            font-weight: 700;
-            letter-spacing: 1.5px;
-            padding: 2px 10px;
-            border-radius: 999px;
         }
 
-        .weather-temp {
+        .hero-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 7px;
+        }
+
+        .meta-tag {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            padding: 4px 8px;
             font-family: 'JetBrains Mono', monospace;
-            font-size: 24px;
-            font-weight: 700;
-            color: #FFFFFF;
-            line-height: 1.1;
-        }
-        .weather-loc {
             font-size: 11px;
-            font-weight: 600;
+            font-weight: 700;
             color: var(--accent);
-            margin-top: 2px;
-        }
-        .weather-desc {
-            font-size: 10.5px;
-            color: var(--text-muted);
-            margin-top: 4px;
         }
 
-        .mid-grid {
+        /* NEXT EVENT BANNER */
+        .mission-card {
+            background: var(--glass);
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--accent);
+            border-radius: 16px;
+            padding: 11px 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+        }
+        .mission-card:active { background: rgba(0, 240, 255, 0.10); }
+
+        .mission-label {
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+            color: var(--accent);
+        }
+
+        .mission-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #FFFFFF;
+            margin-top: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .mission-sub {
+            font-size: 11.5px;
+            color: var(--muted);
+            margin-top: 1px;
+        }
+
+        /* 2x2 BENTO ACTION GRID */
+        .bento-grid {
             display: grid;
-            grid-template-columns: 1fr 1.15fr;
+            grid-template-columns: 1fr 1fr;
             gap: 10px;
             flex: 1;
             min-height: 0;
         }
 
-        .section-label {
-            font-size: 10.5px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.9px;
-            color: var(--text-muted);
-            margin-bottom: 10px;
+        .bento-tile {
+            background: var(--glass);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            cursor: pointer;
+            transition: transform 0.12s, border-color 0.15s;
+        }
+        .bento-tile:active {
+            transform: scale(0.97);
+            border-color: var(--accent);
+        }
+
+        .tile-top {
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
-        .shortcut-list {
-            display: flex;
-            flex-direction: column;
-            gap: 7px;
-        }
-
-        .shortcut-btn {
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.07);
+        .tile-icon {
+            width: 36px;
+            height: 36px;
             border-radius: 11px;
-            padding: 9px 10px;
-            color: #F8FAFC;
-            font-size: 12px;
-            font-weight: 600;
+            background: rgba(0, 240, 255, 0.10);
+            border: 1px solid rgba(0, 240, 255, 0.22);
             display: flex;
             align-items: center;
-            gap: 8px;
-            cursor: pointer;
-            transition: background 0.15s;
+            justify-content: center;
         }
-        .shortcut-btn:active { background: rgba(56, 189, 248, 0.16); }
-        .shortcut-btn svg {
-            width: 15px;
-            height: 15px;
+        .tile-icon svg {
+            width: 19px;
+            height: 19px;
             stroke: var(--accent);
-            stroke-width: 2;
+            stroke-width: 2.1;
             fill: none;
-            flex-shrink: 0;
         }
 
-        .schedule-list {
-            display: flex;
-            flex-direction: column;
-            gap: 7px;
-            overflow-y: auto;
-        }
-
-        .sched-item {
-            background: rgba(255, 255, 255, 0.04);
-            border-left: 2.5px solid var(--accent);
-            border-radius: 8px;
-            padding: 7px 9px;
-            font-size: 11.5px;
-        }
-        .sched-time {
+        .tile-badge {
             font-family: 'JetBrains Mono', monospace;
             font-size: 10px;
-            color: var(--accent);
             font-weight: 700;
-        }
-        .sched-title {
-            color: #F1F5F9;
-            font-weight: 600;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            margin-top: 1px;
+            color: var(--muted);
         }
 
-        .voice-hub {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 4px 0;
-            cursor: pointer;
-            user-select: none;
+        .tile-name {
+            font-size: 14px;
+            font-weight: 700;
+            color: #FFFFFF;
+            margin-top: 8px;
+        }
+        .tile-desc {
+            font-size: 11px;
+            color: var(--muted);
+            margin-top: 2px;
         }
 
-        .orb-ring {
-            width: 72px;
-            height: 72px;
-            border-radius: 50%;
-            background: radial-gradient(circle, var(--accent-glow) 0%, rgba(15, 23, 42, 0.95) 72%);
-            border: 2px solid var(--accent);
-            box-shadow: 0 0 26px var(--accent-glow), inset 0 0 14px var(--accent-glow);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: transform 0.12s ease;
-        }
-
-        .orb-ring svg {
-            width: 28px;
-            height: 28px;
-            stroke: #FFFFFF;
-            stroke-width: 2;
-            fill: none;
-        }
-
-        body.speaking .orb-ring {
-            animation: orbPulse 0.45s infinite alternate;
-        }
-        @keyframes orbPulse {
-            from { transform: scale(0.95); }
-            to { transform: scale(1.12); }
-        }
-
-        .voice-hint {
-            margin-top: 6px;
-            font-size: 11.5px;
-            font-weight: 600;
-            color: var(--accent);
-            letter-spacing: 0.3px;
-        }
-
+        /* DYNAMIC ACTION PILLS */
         .action-bar {
-            min-height: 34px;
             display: flex;
             gap: 8px;
             justify-content: center;
-            align-items: center;
-            z-index: 6;
+            min-height: 32px;
         }
 
         .action-pill {
-            padding: 7px 16px;
-            border-radius: 999px;
             background: var(--accent);
-            color: #060913;
+            color: #050811;
             border: none;
+            border-radius: 999px;
+            padding: 7px 16px;
             font-size: 12px;
-            font-weight: 700;
+            font-weight: 800;
             text-decoration: none;
             cursor: pointer;
-            box-shadow: 0 4px 16px var(--accent-glow);
+            box-shadow: 0 4px 16px var(--glow);
         }
 
-        .bottom-nav {
-            width: 100%;
-            max-width: 560px;
-            margin: 0 auto;
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 6px;
-            background: rgba(10, 15, 29, 0.92);
-            border: 1px solid var(--card-border);
-            backdrop-filter: blur(18px);
-            -webkit-backdrop-filter: blur(18px);
-            border-radius: 18px;
-            padding: 6px;
-            z-index: 5;
-        }
-
-        .nav-tab {
-            background: transparent;
-            border: 1px solid transparent;
-            border-radius: 12px;
-            padding: 6px 2px;
-            color: var(--text-muted);
+        /* BOTTOM COMMAND DOCK (VOICE + QUICK INPUT) */
+        .command-dock {
+            background: rgba(13, 20, 38, 0.94);
+            border: 1px solid var(--border);
+            border-radius: 22px;
+            padding: 10px 12px;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 3px;
-            cursor: pointer;
-            font-size: 10.5px;
-            font-weight: 600;
+            gap: 9px;
         }
-        .nav-tab svg {
-            width: 18px;
-            height: 18px;
-            stroke: currentColor;
-            stroke-width: 2;
-            fill: none;
-        }
-        .nav-tab.active {
-            background: rgba(56, 189, 248, 0.14);
-            border-color: rgba(56, 189, 248, 0.35);
-            color: #FFFFFF;
-        }
-        .nav-tab.active svg { stroke: var(--accent); }
 
-        .drawer {
-            position: fixed;
-            inset: 0;
-            background: rgba(6, 9, 19, 0.97);
-            backdrop-filter: blur(24px);
-            -webkit-backdrop-filter: blur(24px);
-            z-index: 30;
-            display: none;
-            flex-direction: column;
-            justify-content: space-between;
-            padding: 18px 16px 20px;
-        }
-        .drawer.open { display: flex; }
-
-        .drawer-top {
+        .dock-row {
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            padding-bottom: 14px;
-            border-bottom: 1px solid var(--card-border);
-        }
-
-        .close-btn {
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.18);
-            color: #FFFFFF;
-            padding: 7px 14px;
-            border-radius: 999px;
-            font-size: 12px;
-            font-weight: 600;
-            cursor: pointer;
-        }
-
-        .tab-bar {
-            display: flex;
-            gap: 8px;
-            margin: 14px 0;
-            overflow-x: auto;
-        }
-
-        .tab-pill {
-            padding: 8px 14px;
-            border-radius: 999px;
-            background: rgba(255, 255, 255, 0.06);
-            border: 1px solid var(--card-border);
-            color: var(--text-muted);
-            font-size: 12.5px;
-            font-weight: 600;
-            cursor: pointer;
-            white-space: nowrap;
-        }
-
-        .tab-pill.active {
-            background: var(--accent);
-            border-color: var(--accent);
-            color: #060913;
-            font-weight: 700;
-        }
-
-        .drawer-content {
-            flex: 1;
-            overflow-y: auto;
-            padding: 4px 0;
-        }
-
-        .action-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
             gap: 10px;
         }
 
-        .action-tile {
-            background: var(--card-bg);
-            border: 1px solid var(--card-border);
-            border-radius: 14px;
-            padding: 14px 12px;
-            color: #FFFFFF;
-            font-size: 13px;
-            font-weight: 600;
+        .mic-btn {
+            width: 54px;
+            height: 54px;
+            border-radius: 50%;
+            background: radial-gradient(circle, var(--glow) 0%, #0B1328 75%);
+            border: 2px solid var(--accent);
+            box-shadow: 0 0 20px var(--glow);
             display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 8px;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        .mic-btn svg {
+            width: 24px;
+            height: 24px;
+            stroke: #FFFFFF;
+            stroke-width: 2.2;
+            fill: none;
+        }
+
+        .dock-status {
+            flex: 1;
+            min-width: 0;
             cursor: pointer;
         }
-        .action-tile svg {
-            width: 20px;
-            height: 20px;
+        .dock-status-title {
+            font-size: 13.5px;
+            font-weight: 700;
+            color: var(--accent);
+        }
+        .dock-status-sub {
+            font-size: 11px;
+            color: var(--muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .dock-tools {
+            display: flex;
+            gap: 6px;
+        }
+
+        .mini-icon-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--border);
+            color: #FFFFFF;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        .mini-icon-btn svg {
+            width: 18px;
+            height: 18px;
             stroke: var(--accent);
             stroke-width: 2;
             fill: none;
         }
 
-        .item-card {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: var(--card-bg);
-            border: 1px solid var(--card-border);
-            padding: 12px 14px;
-            border-radius: 12px;
-            margin-bottom: 8px;
-            font-size: 14px;
-            color: #F8FAFC;
-        }
-
-        .done-btn {
-            background: rgba(16, 185, 129, 0.16);
-            color: #10B981;
-            border: 1px solid rgba(16, 185, 129, 0.35);
-            border-radius: 8px;
-            padding: 5px 10px;
-            font-weight: 700;
-            cursor: pointer;
-        }
-
-        .input-bar {
+        .quick-input {
             display: flex;
             gap: 8px;
-            background: rgba(15, 23, 42, 0.9);
-            border: 1px solid var(--card-border);
-            padding: 6px 8px;
-            border-radius: 14px;
+            background: rgba(5, 8, 17, 0.75);
+            border: 1px solid var(--border);
+            border-radius: 13px;
+            padding: 4px 6px 4px 12px;
         }
-        .input-bar input {
+        .quick-input input {
             flex: 1;
             background: transparent;
             border: none;
             color: #FFFFFF;
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            font-size: 14.5px;
-            padding: 8px;
+            font-size: 13.5px;
             outline: none;
         }
-        .input-bar button {
+        .quick-input button {
             background: var(--accent);
-            color: #060913;
+            color: #050811;
             border: none;
-            border-radius: 10px;
-            padding: 8px 16px;
-            font-size: 13px;
+            border-radius: 9px;
+            padding: 7px 14px;
+            font-size: 12px;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        /* LISTS MODAL (ONLY VISIBLE WHEN OPEN) */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(5, 8, 17, 0.96);
+            z-index: 50;
+            display: none;
+            flex-direction: column;
+            padding: 18px 16px;
+        }
+        .modal-overlay.open {
+            display: flex;
+        }
+
+        .modal-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .modal-tabs {
+            display: flex;
+            gap: 8px;
+            margin: 12px 0;
+        }
+
+        .m-tab {
+            padding: 8px 14px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.07);
+            color: var(--muted);
+            font-size: 12.5px;
             font-weight: 700;
             cursor: pointer;
+        }
+        .m-tab.active {
+            background: var(--accent);
+            color: #050811;
+        }
+
+        .modal-list {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .list-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--glass);
+            border: 1px solid var(--border);
+            padding: 12px;
+            border-radius: 12px;
+            margin-bottom: 8px;
+            font-size: 13.5px;
         }
     </style>
 </head>
 <body>
-    <div class="top-strip">
-        <div class="status-chip" onclick="toggleWakeWord()">
-            <div class="led-dot"></div>
-            <span id="stateLabel">Voice Active</span>
+    <div class="app-shell">
+        <!-- TOP BAR -->
+        <div class="top-bar">
+            <button type="button" class="pill-btn" onclick="toggleWakeWord()">
+                <span class="status-dot"></span>
+                <span id="stateLabel">Voice Aktiv</span>
+            </button>
+            <div class="os-logo">NEO // OS</div>
+            <button type="button" class="pill-btn" id="modeBtn" onclick="toggleMode()">Arbeit</button>
         </div>
 
-        <div class="brand-badge">NEO • AI</div>
-
-        <div class="status-chip" id="modeBtn" onclick="toggleMode()">
-            <span>Arbeit</span>
-        </div>
-    </div>
-
-    <div class="dashboard">
-        <div class="hero-grid">
-            <div class="glass-box">
-                <div>
-                    <div class="hello-title">Hallo, Margil</div>
-                    <div class="hello-sub">Bereit für deine Objekte & Termine.</div>
-                </div>
-                <div class="mini-badge" id="hudClock">00:00 Uhr</div>
-            </div>
-
-            <div class="avatar-frame" onclick="toggleDirectRecord()">
-                <div class="avatar-inner">
+        <!-- HERO PROFILE CARD -->
+        <div class="hero-card">
+            <div class="neo-avatar" onclick="toggleDirectRecord()">
+                <div class="neo-avatar-img">
                     <img src="/avatar" alt="NEO" onerror="this.src='/icon.svg'">
-                    <div class="avatar-tag">NEO</div>
                 </div>
             </div>
-
-            <div class="glass-box" onclick="quickCmd('Wie wird das Wetter heute in Hamburg?')" style="cursor:pointer;">
-                <div>
-                    <div class="weather-temp" id="weatherTemp">--°</div>
-                    <div class="weather-loc">Hamburg</div>
-                    <div class="weather-desc" id="weatherDesc">Gebäudereinigung</div>
+            <div class="hero-info">
+                <div class="hero-greeting">Hallo, Margil</div>
+                <div class="hero-meta">
+                    <span class="meta-tag" id="hudClock">12:00 Uhr</span>
+                    <span class="meta-tag" id="weatherTag">Hamburg --°</span>
+                    <span class="meta-tag" onclick="openDrawer()" style="cursor:pointer;">Notizen: <span id="hud-mem">0</span></span>
                 </div>
-                <div class="mini-badge">Notizen: <span id="hud-mem">0</span></div>
             </div>
         </div>
 
-        <div class="mid-grid">
-            <div class="glass-box top-align">
-                <div class="section-label"><span>Smart Tools</span></div>
-                <div class="shortcut-list">
-                    <div class="shortcut-btn" onclick="quickCmd('Ich fahre los zum nächsten Termin im Kalender. Gib mir das Auto-Briefing mit Objekt-Codes und starte die Navigation.')">
+        <!-- NEXT MISSION / CALENDAR BANNER -->
+        <div class="mission-card" onclick="quickCmd('Erkläre mir ausführlich meine Termine im Kalender für heute und die nächsten Tage.')">
+            <div style="min-width:0; flex:1;">
+                <div class="mission-label">Nächster Termin • Live Kalender</div>
+                <div class="mission-title" id="nextEvTitle">Termine werden geladen...</div>
+                <div class="mission-sub" id="nextEvTime">Tippen für komplette Wochenübersicht</div>
+            </div>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00F0FF" stroke-width="2.2"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+
+        <!-- 2x2 BENTO MODULES -->
+        <div class="bento-grid">
+            <div class="bento-tile" onclick="quickCmd('Ich fahre los zum nächsten Termin im Kalender. Gib mir das Auto-Briefing mit Objekt-Codes und starte die Navigation.')">
+                <div class="tile-top">
+                    <div class="tile-icon">
                         <svg viewBox="0 0 24 24"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
-                        <span>Auto-Briefing</span>
                     </div>
-                    <div class="shortcut-btn" onclick="quickCmd('Kalkuliere ein Reinigungsangebot für 600 Quadratmeter Büro, zweimal pro Woche, und mach die WhatsApp-Nachricht fertig.')">
+                    <span class="tile-badge">GPS</span>
+                </div>
+                <div>
+                    <div class="tile-name">Auto-Briefing</div>
+                    <div class="tile-desc">Codes & Route starten</div>
+                </div>
+            </div>
+
+            <div class="bento-tile" onclick="quickCmd('Kalkuliere ein Reinigungsangebot für 600 Quadratmeter Büro, zweimal pro Woche, und mach die WhatsApp-Nachricht fertig.')">
+                <div class="tile-top">
+                    <div class="tile-icon">
                         <svg viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/></svg>
-                        <span>Angebot Rechner</span>
                     </div>
-                    <div class="shortcut-btn" onclick="document.getElementById('camInput').click()">
+                    <span class="tile-badge">m² / €</span>
+                </div>
+                <div>
+                    <div class="tile-name">Angebot Rechner</div>
+                    <div class="tile-desc">Kalkulation & WhatsApp</div>
+                </div>
+            </div>
+
+            <div class="bento-tile" onclick="document.getElementById('camInput').click()">
+                <div class="tile-top">
+                    <div class="tile-icon">
                         <svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                        <span>Mängel-Foto</span>
                     </div>
-                    <div class="shortcut-btn" onclick="openDrawer()">
-                        <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-                        <span>Listen (<span id="hud-task">0</span>)</span>
-                    </div>
+                    <span class="tile-badge">CAM</span>
+                </div>
+                <div>
+                    <div class="tile-name">Mängel-Bericht</div>
+                    <div class="tile-desc">Foto-Analyse für Kunden</div>
                 </div>
             </div>
 
-            <div class="glass-box top-align" onclick="quickCmd('Erkläre mir ausführlich meine Termine im Kalender für heute und die nächsten Tage.')" style="cursor:pointer;">
-                <div class="section-label">
-                    <span>Kalender</span>
-                    <span style="color:var(--accent); font-size:9.5px;">LIVE</span>
-                </div>
-                <div class="schedule-list" id="schedulePreview">
-                    <div class="sched-item">
-                        <div class="sched-time">SYNCHRONISIERT</div>
-                        <div class="sched-title">Termine werden geladen...</div>
+            <div class="bento-tile" onclick="testTelegramAlert()">
+                <div class="tile-top">
+                    <div class="tile-icon">
+                        <svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
                     </div>
+                    <span class="tile-badge">BOT</span>
+                </div>
+                <div>
+                    <div class="tile-name">Telegram Alert</div>
+                    <div class="tile-desc">Autorisierung senden</div>
                 </div>
             </div>
         </div>
 
-        <div class="voice-hub" onclick="toggleDirectRecord()">
-            <div class="orb-ring" id="coreEye">
-                <svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+        <!-- DYNAMIC ACTION BAR -->
+        <div class="action-bar" id="actionBar"></div>
+
+        <!-- BOTTOM COMMAND DOCK -->
+        <div class="command-dock">
+            <div class="dock-row">
+                <button type="button" class="mic-btn" id="coreEye" onclick="toggleDirectRecord()">
+                    <svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+                </button>
+                <div class="dock-status" onclick="toggleDirectRecord()">
+                    <div class="dock-status-title" id="reticleStatus">Tippen oder „Hey Neo“ sagen</div>
+                    <div class="dock-status-sub">Dolmetscher DE/SQ • Kalender • Codes</div>
+                </div>
+                <div class="dock-tools">
+                    <button type="button" class="mini-icon-btn" onclick="saveParking()" title="Parkplatz">
+                        <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                    </button>
+                    <button type="button" class="mini-icon-btn" onclick="openDrawer()" title="Listen">
+                        <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                    </button>
+                </div>
             </div>
-            <div class="voice-hint" id="reticleStatus">Tippen oder „Hey Neo“ sagen</div>
-        </div>
-    </div>
 
-    <div class="action-bar" id="actionBar"></div>
-
-    <div class="bottom-nav">
-        <div class="nav-tab" onclick="quickCmd('Ich fahre los zum nächsten Termin im Kalender. Gib mir das Briefing und starte die Navigation.')">
-            <svg viewBox="0 0 24 24"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
-            <span>Navi</span>
-        </div>
-        <div class="nav-tab" onclick="document.getElementById('camInput').click()">
-            <svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-            <span>Kamera</span>
-        </div>
-        <div class="nav-tab active" id="wakeBtn" onclick="toggleWakeWord()">
-            <svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
-            <span>Voice</span>
-        </div>
-        <div class="nav-tab" onclick="quickCmd('Erkläre mir ausführlich meine Termine im Kalender für heute und die nächsten Tage.')">
-            <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            <span>Kalender</span>
-        </div>
-        <div class="nav-tab" onclick="openDrawer()">
-            <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
-            <span>System</span>
+            <div class="quick-input">
+                <input type="text" id="msg" placeholder="Befehl, Übersetzung oder Code speichern..." onkeypress="if(event.key==='Enter')sendText()">
+                <button type="button" onclick="sendText()">Senden</button>
+            </div>
         </div>
     </div>
 
     <input type="file" id="camInput" accept="image/*" capture="environment" style="display:none" onchange="handleImage(event)">
 
-    <div class="drawer" id="drawer">
-        <div>
-            <div class="drawer-top">
-                <span style="font-size:16px; font-weight:800; letter-spacing:0.5px;">NEO Command Center</span>
-                <button class="close-btn" onclick="closeDrawer()">✕ Schließen</button>
-            </div>
-            <div class="tab-bar">
-                <div class="tab-pill active" id="tab-tools" onclick="switchTab('tools')">Aktionen</div>
-                <div class="tab-pill" id="tab-memory" onclick="switchTab('memory')">Notizen (<span id="c-mem">0</span>)</div>
-                <div class="tab-pill" id="tab-materials" onclick="switchTab('materials')">Material (<span id="c-mat">0</span>)</div>
-                <div class="tab-pill" id="tab-tasks" onclick="switchTab('tasks')">Tasks (<span id="c-task">0</span>)</div>
-            </div>
+    <!-- CLEAN LISTS MODAL -->
+    <div class="modal-overlay" id="drawer">
+        <div class="modal-head">
+            <span style="font-size:16px; font-weight:800;">Speicher & Listen</span>
+            <button type="button" class="pill-btn" onclick="closeDrawer()">✕ Schließen</button>
         </div>
-
-        <div class="drawer-content" id="drawerBody"></div>
-
-        <div class="input-bar">
-            <input type="text" id="msg" placeholder="Befehl, Kalkulation oder Übersetzung..." onkeypress="if(event.key==='Enter'){closeDrawer();sendText();}">
-            <button onclick="closeDrawer();sendText();">Senden</button>
+        <div class="modal-tabs">
+            <div class="m-tab active" id="tab-memory" onclick="switchTab('memory')">Notizen (<span id="c-mem">0</span>)</div>
+            <div class="m-tab" id="tab-materials" onclick="switchTab('materials')">Material (<span id="c-mat">0</span>)</div>
+            <div class="m-tab" id="tab-tasks" onclick="switchTab('tasks')">Tasks (<span id="c-task">0</span>)</div>
         </div>
+        <div class="modal-list" id="drawerBody"></div>
     </div>
 
     <audio id="player" playsinline></audio>
@@ -772,24 +673,19 @@ HTML_PAGE = """
                 const wRes = await fetch('https://api.open-meteo.com/v1/forecast?latitude=53.5511&longitude=9.9937&current_weather=true');
                 const wData = await wRes.json();
                 if (wData.current_weather) {
-                    document.getElementById('weatherTemp').innerText = Math.round(wData.current_weather.temperature) + "°C";
-                    document.getElementById('weatherDesc').innerText = "Wind " + Math.round(wData.current_weather.windspeed) + " km/h";
+                    document.getElementById('weatherTag').innerText = "Hamburg " + Math.round(wData.current_weather.temperature) + "°C";
                 }
             } catch (e) {}
 
             try {
                 const cRes = await fetch('/calendar_preview');
                 const cData = await cRes.json();
-                const listEl = document.getElementById('schedulePreview');
                 if (cData.events && cData.events.length > 0) {
-                    listEl.innerHTML = cData.events.slice(0, 3).map(ev => `
-                        <div class="sched-item">
-                            <div class="sched-time">${ev.time}</div>
-                            <div class="sched-title">${ev.title}</div>
-                        </div>
-                    `).join('');
+                    const first = cData.events[0];
+                    document.getElementById('nextEvTitle').innerText = first.title;
+                    document.getElementById('nextEvTime').innerText = first.time + (first.loc ? " • " + first.loc : "");
                 } else {
-                    listEl.innerHTML = `<div class="sched-item"><div class="sched-time">HEUTE</div><div class="sched-title">Keine Termine eingetragen</div></div>`;
+                    document.getElementById('nextEvTitle').innerText = "Keine Termine eingetragen";
                 }
             } catch (e) {}
         }
@@ -846,8 +742,7 @@ HTML_PAGE = """
             document.getElementById('c-mat').innerText = userMaterials.length;
             document.getElementById('c-task').innerText = userTasks.length;
             document.getElementById('hud-mem').innerText = userMemory.length;
-            document.getElementById('hud-task').innerText = userTasks.length;
-            document.getElementById('modeBtn').innerHTML = `<span>${workMode === 'ARBEIT' ? 'Arbeit' : 'Privat'}</span>`;
+            document.getElementById('modeBtn').innerText = (workMode === 'ARBEIT') ? 'Arbeit' : 'Privat';
         }
         updateBadges();
 
@@ -871,7 +766,7 @@ HTML_PAGE = """
                 stateLabel.innerText = "NEO spricht";
                 reticleStatus.innerText = "Antwort läuft...";
             } else {
-                stateLabel.innerText = wakeEnabled ? "Voice Active" : "Stummgeschaltet";
+                stateLabel.innerText = wakeEnabled ? "Voice Aktiv" : "Stumm";
                 reticleStatus.innerText = "Tippen oder „Hey Neo“ sagen";
             }
         }
@@ -885,7 +780,6 @@ HTML_PAGE = """
 
         function toggleWakeWord() {
             wakeEnabled = !wakeEnabled;
-            document.getElementById('wakeBtn').classList.toggle('active', wakeEnabled);
             if (wakeEnabled) {
                 setState(null);
                 startWakeListener();
@@ -924,7 +818,7 @@ HTML_PAGE = """
             wakeRec.onend = () => {
                 wakeRec = null;
                 if (wakeEnabled && !isRecording && !inConversation && !isSpeaking) {
-                    setTimeout(() => startWakeListener(), 300);
+                    setTimeout(() => startWakeListener(), 350);
                 }
             };
 
@@ -1008,15 +902,12 @@ HTML_PAGE = """
 
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                 const source = audioCtx.createMediaStreamSource(activeStream);
-
                 const highPass = audioCtx.createBiquadFilter();
                 highPass.type = 'highpass';
                 highPass.frequency.value = 140;
-
                 const lowPass = audioCtx.createBiquadFilter();
                 lowPass.type = 'lowpass';
                 lowPass.frequency.value = 3200;
-
                 const analyser = audioCtx.createAnalyser();
                 analyser.fftSize = 256;
 
@@ -1025,7 +916,6 @@ HTML_PAGE = """
                 lowPass.connect(analyser);
 
                 const dataArray = new Uint8Array(analyser.frequencyBinCount);
-
                 let hasSpoken = false;
                 const startTime = Date.now();
 
@@ -1056,22 +946,13 @@ HTML_PAGE = """
             }
         }
 
-        player.onplay = () => {
-            isSpeaking = true;
-            stopWakeListener();
-            setState('speaking');
-        };
-
+        player.onplay = () => { isSpeaking = true; stopWakeListener(); setState('speaking'); };
         player.onended = () => {
             isSpeaking = false;
             setState(null);
-            if (inConversation) {
-                setTimeout(() => startDirectAudio(), 450);
-            } else if (wakeEnabled) {
-                setTimeout(() => startWakeListener(), 650);
-            }
+            if (inConversation) setTimeout(() => startDirectAudio(), 450);
+            else if (wakeEnabled) setTimeout(() => startWakeListener(), 650);
         };
-
         player.onerror = () => {
             isSpeaking = false;
             setState(null);
@@ -1079,13 +960,13 @@ HTML_PAGE = """
         };
 
         async function testTelegramAlert() {
-            reticleStatus.innerText = "Sende Telegram-Anruf...";
+            reticleStatus.innerText = "Sende Telegram-Alert...";
             try {
                 const res = await fetch('/telegram_notify', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        text: "📞 NEO Autorisierung erforderlich:\n\nNächster Termin im Kalender steht an. Soll ich das Auto-Briefing & die Navigation vorbereiten?"
+                        text: "📞 NEO Autorisierung erforderlich:\n\nNächster Termin steht an. Soll ich das Auto-Briefing & die Navigation vorbereiten?"
                     })
                 });
                 const d = await res.json();
@@ -1095,49 +976,18 @@ HTML_PAGE = """
             }
         }
 
-        let activeTab = 'tools';
+        let activeTab = 'memory';
         function openDrawer() { document.getElementById('drawer').classList.add('open'); switchTab(activeTab); }
         function closeDrawer() { document.getElementById('drawer').classList.remove('open'); }
         function switchTab(tab) {
             activeTab = tab;
-            document.querySelectorAll('.tab-pill').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.m-tab').forEach(el => el.classList.remove('active'));
             document.getElementById('tab-' + tab).classList.add('active');
             const body = document.getElementById('drawerBody');
-
-            if (tab === 'tools') {
-                body.innerHTML = `
-                    <div class="action-grid">
-                        <div class="action-tile" onclick="closeDrawer();quickCmd('Ich fahre los zum nächsten Termin im Kalender. Gib mir das Auto-Briefing mit Objekt-Codes und starte die Navigation.')">
-                            <svg viewBox="0 0 24 24"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
-                            <span>Auto-Briefing & Navi</span>
-                        </div>
-                        <div class="action-tile" onclick="closeDrawer();testTelegramAlert()">
-                            <svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                            <span>Telegram Autorisierung</span>
-                        </div>
-                        <div class="action-tile" onclick="closeDrawer();quickCmd('Kalkuliere ein Reinigungsangebot für 600 Quadratmeter Büro, zweimal pro Woche, und mach die WhatsApp-Nachricht fertig.')">
-                            <svg viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/></svg>
-                            <span>Angebots-Rechner</span>
-                        </div>
-                        <div class="action-tile" onclick="closeDrawer();document.getElementById('camInput').click()">
-                            <svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                            <span>Mängelbericht Foto</span>
-                        </div>
-                        <div class="action-tile" onclick="closeDrawer();saveParking()">
-                            <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                            <span>Parkplatz merken</span>
-                        </div>
-                        <div class="action-tile" onclick="closeDrawer();findParking()">
-                            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
-                            <span>Auto finden (GPS)</span>
-                        </div>
-                    </div>`;
-                return;
-            }
             let list = tab === 'materials' ? userMaterials : (tab === 'tasks' ? userTasks : userMemory);
             body.innerHTML = list.length === 0
                 ? `<div style="color:#64748B; text-align:center; margin-top:40px; font-size:14px;">Keine Einträge vorhanden, Margil.</div>`
-                : list.map((item, idx) => `<div class="item-card"><span>${idx + 1}. ${item}</span><button class="done-btn" onclick="deleteItem('${tab}', ${idx})">✓</button></div>`).join('');
+                : list.map((item, idx) => `<div class="list-row"><span>${idx + 1}. ${item}</span><button type="button" class="pill-btn" style="padding:4px 10px; color:#10B981;" onclick="deleteItem('${tab}', ${idx})">✓</button></div>`).join('');
         }
 
         function deleteItem(type, idx) {
@@ -1153,14 +1003,8 @@ HTML_PAGE = """
             navigator.geolocation.getCurrentPosition(pos => {
                 const time = new Date().toLocaleTimeString('de-DE', {hour:'2-digit', minute:'2-digit'});
                 localStorage.setItem('neo_parking', JSON.stringify({lat: pos.coords.latitude, lng: pos.coords.longitude, time}));
-                reticleStatus.innerText = "Parkplatz gespeichert";
+                reticleStatus.innerText = "Parkplatz gespeichert (" + time + ")";
             });
-        }
-
-        function findParking() {
-            const p = JSON.parse(localStorage.getItem('neo_parking') || 'null');
-            if (!p) { saveParking(); return; }
-            window.location.href = `https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}&travelmode=walking`;
         }
 
         function handleImage(event) {
@@ -1446,7 +1290,6 @@ async def make_voice(text, voice_lang="de"):
             audio_bytes += chunk["data"]
     return base64.b64encode(audio_bytes).decode("utf-8")
 
-# --- TELEGRAM BOT ENGINE (EMPANGEN, AUTORISIEREN & PROAKTIVE ANRUFE/NACHRICHTEN) ---
 def tg_api(method, payload=None):
     token = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
     if not token:
@@ -1467,10 +1310,7 @@ def send_telegram_auth(text, with_buttons=True):
     chat_id = TG_STATE.get("chat_id")
     if not chat_id:
         return False
-    payload = {
-        "chat_id": chat_id,
-        "text": text
-    }
+    payload = {"chat_id": chat_id, "text": text}
     if with_buttons:
         payload["reply_markup"] = {
             "inline_keyboard": [[
@@ -1511,12 +1351,10 @@ def telegram_background_worker():
             time.sleep(10)
             continue
 
-        # 1. Auf eingehende Nachrichten oder Button-Klicks von Margil hören
         updates = tg_api("getUpdates", {"offset": TG_STATE["last_update_id"] + 1, "timeout": 10})
         if updates and updates.get("ok"):
             for upd in updates.get("result", []):
                 TG_STATE["last_update_id"] = upd["update_id"]
-
                 if "message" in upd:
                     msg = upd["message"]
                     cid = str(msg["chat"]["id"])
@@ -1525,11 +1363,10 @@ def telegram_background_worker():
                     if txt == "/start":
                         tg_api("sendMessage", {
                             "chat_id": cid,
-                            "text": f"Hallo Margil! NEO ist jetzt mit deinem Telegram verbunden.\nDeine Chat-ID: {cid}\n\nIch benachrichtige dich hier vor Terminen und frage nach deiner Autorisierung."
+                            "text": f"Hallo Margil! NEO ist verbunden.\nDeine Chat-ID: {cid}"
                         })
                     elif txt:
                         process_telegram_message(cid, txt)
-
                 elif "callback_query" in upd:
                     cb = upd["callback_query"]
                     cid = str(cb["message"]["chat"]["id"])
@@ -1541,7 +1378,6 @@ def telegram_background_worker():
                     elif data_cb == "reject_action":
                         tg_api("sendMessage", {"chat_id": cid, "text": "❌ Abgelehnt. Aktion wurde gestoppt."})
 
-        # 2. Proaktive Kalender-Prüfung (30 Minuten vor einem Termin automatisch melden)
         if TG_STATE["chat_id"]:
             try:
                 events = parse_upcoming_events()
@@ -1561,10 +1397,8 @@ def telegram_background_worker():
                         )
             except Exception:
                 pass
-
         time.sleep(2)
 
-# Starte Telegram-Listener im Hintergrund
 threading.Thread(target=telegram_background_worker, daemon=True).start()
 
 @app.route("/")
