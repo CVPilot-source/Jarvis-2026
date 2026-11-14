@@ -31,9 +31,10 @@ MANIFEST_JSON = {
 
 ICON_SVG = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <rect width="512" height="512" rx="120" fill="#000000"/>
-  <circle cx="256" cy="256" r="160" fill="none" stroke="#00F5D4" stroke-width="6" stroke-dasharray="10 14"/>
-  <circle cx="256" cy="256" r="120" fill="none" stroke="#00BBF9" stroke-width="3" stroke-opacity="0.7"/>
-  <circle cx="256" cy="256" r="8" fill="#00F5D4"/>
+  <ellipse cx="256" cy="245" rx="115" ry="150" fill="none" stroke="#00F5D4" stroke-width="5" stroke-dasharray="8 12"/>
+  <circle cx="215" cy="220" r="10" fill="#00F5D4"/>
+  <circle cx="297" cy="220" r="10" fill="#00F5D4"/>
+  <path d="M 225 305 Q 256 320 287 305" fill="none" stroke="#00BBF9" stroke-width="5" stroke-linecap="round"/>
 </svg>"""
 
 HTML_PAGE = """
@@ -49,7 +50,6 @@ HTML_PAGE = """
     <link rel="icon" type="image/svg+xml" href="/icon.svg">
     <title>NEO</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
 
@@ -359,7 +359,7 @@ HTML_PAGE = """
     <audio id="player" playsinline></audio>
 
     <script>
-        /* --- Real 3D Hologram Head (Three.js + High-Res 3D Face Scan Mesh) --- */
+        /* --- Self-Contained High-Density 3D Cyber-Bust / Head (Zero External Files!) --- */
         let audioEnergy = 0;
         let currentState = 'idle';
         let visualMode = localStorage.getItem('neo_visual') || 'KOPF 3D';
@@ -367,22 +367,23 @@ HTML_PAGE = """
 
         const container = document.getElementById('threeContainer');
         const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(38, container.clientWidth / container.clientHeight, 0.1, 1000);
-        camera.position.z = 32;
+        const w = container.clientWidth || window.innerWidth;
+        const h = container.clientHeight || (window.innerHeight * 0.65);
+        const camera = new THREE.PerspectiveCamera(36, w / h, 0.1, 1000);
+        camera.position.set(0, 0.4, 33);
 
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setSize(w, h);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         container.appendChild(renderer.domElement);
 
-        // Leuchtende Neon-Partikel-Textur erstellen
         function createGlowSprite() {
             const c = document.createElement('canvas');
             c.width = 32; c.height = 32;
             const g = c.getContext('2d');
             const grad = g.createRadialGradient(16, 16, 0, 16, 16, 16);
             grad.addColorStop(0, 'rgba(255,255,255,1)');
-            grad.addColorStop(0.35, 'rgba(255,255,255,0.8)');
+            grad.addColorStop(0.35, 'rgba(255,255,255,0.75)');
             grad.addColorStop(1, 'rgba(255,255,255,0)');
             g.fillStyle = grad;
             g.fillRect(0, 0, 32, 32);
@@ -392,7 +393,7 @@ HTML_PAGE = """
 
         const pointsMat = new THREE.PointsMaterial({
             color: 0x00F5D4,
-            size: 0.34,
+            size: 0.32,
             map: glowTex,
             transparent: true,
             opacity: 0.92,
@@ -404,46 +405,144 @@ HTML_PAGE = """
             color: 0x00BBF9,
             wireframe: true,
             transparent: true,
-            opacity: 0.11,
+            opacity: 0.08,
             blending: THREE.AdditiveBlending
         });
 
-        let headGroup = new THREE.Group();
-        let sphereGroup = new THREE.Group();
-        let headOrigPositions = null;
-        let headGeoRef = null;
+        const eyeMat = new THREE.MeshBasicMaterial({
+            color: 0xE0FFFF,
+            transparent: true,
+            opacity: 0.95,
+            blending: THREE.AdditiveBlending
+        });
 
-        // 1. Lade echtes 3D-Kopfmodell (Lee Perry-Smith Standard 3D Head Scan aus dem offiziellen Three.js CDN)
-        const loader = new THREE.OBJLoader();
-        loader.load(
-            'https://raw.githubusercontent.com/mrdoob/three.js/r128/examples/models/obj/leeperrysmith/LeePerrySmith.obj',
-            function (obj) {
-                obj.traverse(function (child) {
-                    if (child.isMesh) {
-                        const geo = child.geometry;
-                        geo.center();
-                        geo.scale(3.4, 3.4, 3.4);
+        // Sculpted High-Res 3D Cyber-Bust Mesh (3.200+ Vertices, 100% Instant!)
+        function createSculptedHeadGeometry() {
+            const geo = new THREE.SphereGeometry(7.2, 72, 72);
+            const pos = geo.attributes.position;
 
-                        // Speichere Original-Vertices für Stimm-Vibrationen
-                        headGeoRef = geo;
-                        headOrigPositions = Float32Array.from(geo.attributes.position.array);
+            for (let i = 0; i < pos.count; i++) {
+                let x = pos.getX(i);
+                let y = pos.getY(i);
+                let z = pos.getZ(i);
 
-                        const pts = new THREE.Points(geo, pointsMat);
-                        const wire = new THREE.Mesh(geo, wireMat);
-                        headGroup.add(pts);
-                        headGroup.add(wire);
+                // Normierte Koordinaten (-1 bis +1)
+                const nx = x / 7.2;
+                const ny = y / 7.2;
+                const nz = z / 7.2;
+
+                // 1. Schädel- & Gesichts-Proportionen (höher als breit, tiefer nach hinten)
+                x *= 0.80;
+                y *= 1.15;
+                z *= 0.94;
+
+                // Hinterkopf etwas voller machen
+                if (nz < 0 && ny > -0.2) {
+                    z += nz * 0.9;
+                }
+
+                // 2. Kiefer- & Kinn-Verjüngung (untere Gesichtshälfte)
+                if (ny < 0.05 && ny >= -0.78) {
+                    const jawT = Math.abs(ny - 0.05) / 0.83;
+                    x *= (1 - jawT * 0.36);
+                    if (nz > 0) {
+                        z *= (1 - jawT * 0.16);
+                    } else {
+                        // Nacken-Einzug hinten
+                        z *= (1 - jawT * 0.45);
                     }
-                });
-                scene.add(headGroup);
-            }
-        );
+                }
 
-        // 2. Fallback / Alternative: Hochauflösende 3D-Sphäre
-        const sGeo = new THREE.IcosahedronGeometry(9.2, 5);
-        const sPts = new THREE.Points(sGeo, pointsMat);
-        const sWire = new THREE.Mesh(sGeo, wireMat);
-        sphereGroup.add(sPts);
-        sphereGroup.add(sWire);
+                // 3. Hals & Schulter-Ansatz ganz unten (ny < -0.78)
+                if (ny < -0.78) {
+                    const neckT = Math.min(1, (-0.78 - ny) / 0.22);
+                    x *= (0.58 + neckT * 0.65);
+                    z *= (0.56 + neckT * 0.15);
+                    y -= neckT * 1.4;
+                }
+
+                // 4. Anatomische Gesichts-Details (Vorderseite nz > 0.15)
+                if (nz > 0.15 && ny > -0.76) {
+                    // Augenbrauen-Bogen
+                    const browDist = Math.abs(ny - 0.24);
+                    if (browDist < 0.08 && Math.abs(nx) < 0.56) {
+                        z += (1 - browDist / 0.08) * 0.55;
+                    }
+
+                    // Tiefe Augenhöhlen (links & rechts)
+                    const eyeL = Math.hypot((nx + 0.28) * 1.15, (ny - 0.11) * 1.9);
+                    const eyeR = Math.hypot((nx - 0.28) * 1.15, (ny - 0.11) * 1.9);
+                    if (eyeL < 0.18) z -= Math.cos((eyeL / 0.18) * (Math.PI / 2)) * 0.85;
+                    if (eyeR < 0.18) z -= Math.cos((eyeR / 0.18) * (Math.PI / 2)) * 0.85;
+
+                    // Markanter Nasenrücken & Nasenspitze
+                    if (ny > -0.22 && ny < 0.22 && Math.abs(nx) < 0.16) {
+                        const noseY = 1 - Math.abs(ny + 0.03) / 0.25;
+                        const noseX = Math.cos((nx / 0.16) * (Math.PI / 2));
+                        if (noseY > 0) {
+                            z += Math.pow(noseY, 0.75) * noseX * 1.55;
+                        }
+                    }
+
+                    // Wangenknochen
+                    const cheekL = Math.hypot((nx + 0.38) * 1.2, (ny + 0.04) * 1.4);
+                    const cheekR = Math.hypot((nx - 0.38) * 1.2, (ny + 0.04) * 1.4);
+                    if (cheekL < 0.26) z += (1 - cheekL / 0.26) * 0.45;
+                    if (cheekR < 0.26) z += (1 - cheekR / 0.26) * 0.45;
+
+                    // Ober- und Unterlippe
+                    if (Math.abs(nx) < 0.26) {
+                        const lipX = Math.cos((nx / 0.26) * (Math.PI / 2));
+                        const upperLip = Math.abs(ny + 0.32);
+                        const lowerLip = Math.abs(ny + 0.41);
+                        if (upperLip < 0.045) z += (1 - upperLip / 0.045) * lipX * 0.65;
+                        if (lowerLip < 0.05) z += (1 - lowerLip / 0.05) * lipX * 0.60;
+                    }
+
+                    // Kinn-Kontur
+                    const chin = Math.hypot(nx * 1.8, (ny + 0.64) * 1.6);
+                    if (chin < 0.25) {
+                        z += (1 - chin / 0.25) * 0.65;
+                    }
+                }
+
+                pos.setXYZ(i, x, y, z);
+            }
+            geo.computeVertexNormals();
+            return geo;
+        }
+
+        const headGeo = createSculptedHeadGeometry();
+        const headOrigPositions = Float32Array.from(headGeo.attributes.position.array);
+
+        const headGroup = new THREE.Group();
+        headGroup.add(new THREE.Points(headGeo, pointsMat));
+        headGroup.add(new THREE.Mesh(headGeo, wireMat));
+
+        // Leuchtende Cyber-Augen in den Augenhöhlen
+        const eyeGeo = new THREE.SphereGeometry(0.32, 16, 16);
+        const leftEye = new THREE.Mesh(eyeGeo, eyeMat);
+        leftEye.position.set(-1.62, 0.90, 5.45);
+        const rightEye = new THREE.Mesh(eyeGeo, eyeMat);
+        rightEye.position.set(1.62, 0.90, 5.45);
+        headGroup.add(leftEye);
+        headGroup.add(rightEye);
+
+        // Hologramm-Scan-Ringe um den Hals/Basis
+        const ringGeo = new THREE.RingGeometry(5.6, 5.75, 64);
+        const ringMat = new THREE.MeshBasicMaterial({ color: 0x00F5D4, side: THREE.DoubleSide, transparent: true, opacity: 0.35 });
+        const baseRing = new THREE.Mesh(ringGeo, ringMat);
+        baseRing.rotation.x = Math.PI / 2;
+        baseRing.position.y = -7.8;
+        headGroup.add(baseRing);
+
+        scene.add(headGroup);
+
+        // Alternative: Klassische Sphäre
+        const sphereGroup = new THREE.Group();
+        const sGeo = new THREE.IcosahedronGeometry(8.5, 5);
+        sphereGroup.add(new THREE.Points(sGeo, pointsMat));
+        sphereGroup.add(new THREE.Mesh(sGeo, wireMat));
         sphereGroup.visible = false;
         scene.add(sphereGroup);
 
@@ -467,57 +566,63 @@ HTML_PAGE = """
             headGroup.visible = (visualMode === 'KOPF 3D');
             sphereGroup.visible = (visualMode !== 'KOPF 3D');
 
-            // Farben nach Zustand
             if (currentState === 'listening') {
                 pointsMat.color.setHex(0x00FF88);
                 wireMat.color.setHex(0x00FF88);
-                pointsMat.size = 0.36 + (audioEnergy * 0.003);
+                eyeMat.color.setHex(0xAAFFCC);
+                ringMat.color.setHex(0x00FF88);
+                pointsMat.size = 0.34 + (audioEnergy * 0.003);
             } else if (currentState === 'thinking') {
                 pointsMat.color.setHex(0xF59E0B);
                 wireMat.color.setHex(0xF59E0B);
-                pointsMat.size = 0.38;
+                eyeMat.color.setHex(0xFDE68A);
+                ringMat.color.setHex(0xF59E0B);
+                pointsMat.size = 0.35;
             } else if (currentState === 'speaking') {
                 pointsMat.color.setHex(0x38BDF8);
                 wireMat.color.setHex(0x00F5D4);
-                pointsMat.size = 0.35 + Math.abs(Math.sin(t * 7)) * 0.12;
+                eyeMat.color.setHex(0xFFFFFF);
+                ringMat.color.setHex(0x38BDF8);
+                pointsMat.size = 0.33 + Math.abs(Math.sin(t * 7)) * 0.10;
             } else {
                 pointsMat.color.setHex(0x00F5D4);
                 wireMat.color.setHex(0x00BBF9);
-                pointsMat.size = 0.32;
+                eyeMat.color.setHex(0xCFFAFE);
+                ringMat.color.setHex(0x00F5D4);
+                pointsMat.size = 0.30;
                 audioEnergy *= 0.85;
             }
 
-            // Lebendige Bewegung des 3D-Kopfes
             if (headGroup.visible) {
                 if (currentState === 'thinking') {
-                    headGroup.rotation.y += 0.035;
+                    headGroup.rotation.y += 0.032;
                 } else {
-                    const targetY = Math.sin(t * 0.65) * 0.38;
-                    const targetX = Math.sin(t * 0.45) * 0.08;
+                    const targetY = Math.sin(t * 0.65) * 0.36;
+                    const targetX = Math.sin(t * 0.45) * 0.07;
                     headGroup.rotation.y += (targetY - headGroup.rotation.y) * 0.06;
                     headGroup.rotation.x += (targetX - headGroup.rotation.x) * 0.06;
                 }
 
-                // Mund- und Energie-Welle auf dem 3D-Gesicht beim Sprechen!
-                if (headGeoRef && headOrigPositions) {
-                    const pos = headGeoRef.attributes.position.array;
-                    const speakPulse = currentState === 'speaking' ? Math.abs(Math.sin(t * 8.5)) : (audioEnergy * 0.015);
-                    for (let i = 0; i < pos.length; i += 3) {
-                        const ox = headOrigPositions[i];
-                        const oy = headOrigPositions[i + 1];
-                        const oz = headOrigPositions[i + 2];
+                // Lip-Sync & Unterkiefer-Animation beim Sprechen
+                const pos = headGeo.attributes.position.array;
+                const speakPulse = currentState === 'speaking'
+                    ? (Math.abs(Math.sin(t * 8.5)) * 0.65 + Math.abs(Math.cos(t * 4.5)) * 0.35)
+                    : (audioEnergy * 0.012);
 
-                        // Unterkiefer/Mundbereich bewegt sich beim Sprechen!
-                        if (oy < -1.5 && oy > -5.5 && oz > 3.5 && Math.abs(ox) < 3.5) {
-                            pos[i + 1] = oy - speakPulse * 0.65;
-                            pos[i + 2] = oz + speakPulse * 0.25;
-                        } else {
-                            pos[i + 1] = oy;
-                            pos[i + 2] = oz;
-                        }
+                for (let i = 0; i < pos.length; i += 3) {
+                    const ox = headOrigPositions[i];
+                    const oy = headOrigPositions[i + 1];
+                    const oz = headOrigPositions[i + 2];
+
+                    if (oy < -2.2 && oy > -5.5 && oz > 2.5 && Math.abs(ox) < 2.6) {
+                        pos[i + 1] = oy - speakPulse * 0.52;
+                        pos[i + 2] = oz + speakPulse * 0.18;
+                    } else {
+                        pos[i + 1] = oy;
+                        pos[i + 2] = oz;
                     }
-                    headGeoRef.attributes.position.needsUpdate = true;
                 }
+                headGeo.attributes.position.needsUpdate = true;
             } else {
                 sphereGroup.rotation.y += (currentState === 'thinking' ? 0.035 : 0.008);
                 sphereGroup.rotation.x += 0.003;
@@ -544,7 +649,7 @@ HTML_PAGE = """
             } catch (e) {}
         }
 
-        /* --- Directional Voice-Isolation Engine (Unchanged & Stable!) --- */
+        /* --- Directional Voice-Isolation Engine --- */
         const actionBar = document.getElementById('actionBar');
         const stateLabel = document.getElementById('stateLabel');
         const player = document.getElementById('player');
