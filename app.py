@@ -28,7 +28,7 @@ HTML_PAGE = """<!DOCTYPE html>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#030712">
     <link rel="manifest" href="/manifest.json">
-    <title>N.E.O. // REZNIKOV HOLOGRAPHIC CORE</title>
+    <title>N.E.O. // HOLOGRAPHIC CORE</title>
     <style>
         :root {
             --cyan: #00E5FF;
@@ -70,7 +70,7 @@ HTML_PAGE = """<!DOCTYPE html>
             display: flex; flex-direction: column; gap: 6px;
         }
         .sys-title {
-            font-size: 22px; font-weight: 900; letter-spacing: 4px; color: var(--cyan);
+            font-size: 24px; font-weight: 900; letter-spacing: 5px; color: var(--cyan);
             display: flex; align-items: center; gap: 10px;
             text-shadow: 0 0 15px var(--cyan-glow);
         }
@@ -99,7 +99,7 @@ HTML_PAGE = """<!DOCTYPE html>
             max-height: 150px; overflow-y: auto; user-select: text;
         }
 
-        /* CENTER INTERACTIVE STAGE */
+        /* CENTER STAGE */
         .core-trigger {
             position: fixed; top: 48%; left: 50%; transform: translate(-50%, -50%);
             width: 320px; height: 360px; border-radius: 50%; z-index: 8;
@@ -110,7 +110,7 @@ HTML_PAGE = """<!DOCTYPE html>
         .core-sub {
             font-size: 11px; font-weight: 800; letter-spacing: 2.5px;
             color: #FFF; text-shadow: 0 0 12px var(--cyan);
-            background: rgba(3, 7, 18, 0.8); padding: 4px 12px; border-radius: 99px;
+            background: rgba(3, 7, 18, 0.85); padding: 4px 14px; border-radius: 99px;
             border: 1px solid var(--border);
         }
 
@@ -173,7 +173,7 @@ HTML_PAGE = """<!DOCTYPE html>
 
     <!-- TOP LEFT -->
     <div class="hud-tl">
-        <div class="sys-title">N E O <span style="font-size:11px; color:var(--orange); letter-spacing:2px;">REZNIKOV OS</span></div>
+        <div class="sys-title">N E O</div>
         <div class="sys-sub" id="sysMeta">HAMBURG • 24/7 AKTIV</div>
         <div class="hud-controls">
             <button type="button" class="hud-btn" id="wBtn" onclick="toggleWake()" style="border-color:#10B981; color:#10B981;">● HEY NEO: 24/7 AKTIV</button>
@@ -192,7 +192,7 @@ HTML_PAGE = """<!DOCTYPE html>
         <div class="tr-body" id="replyBox">Spreche einfach jederzeit mit mir: Sage „Hey Neo“ gefolgt von deinem Befehl. Kein Tippen nötig!</div>
     </div>
 
-    <!-- CENTER INTERACTIVE STAGE -->
+    <!-- CENTER STAGE -->
     <div class="core-trigger" onclick="manualListenTrigger()">
         <div class="core-sub" id="coreState">SAY "HEY NEO"</div>
     </div>
@@ -256,7 +256,7 @@ HTML_PAGE = """<!DOCTYPE html>
             nodesLayer.appendChild(el);
         });
 
-        // --- 2. REZNIKOV HOLOGRAPHIC BUST CANVAS ENGINE ---
+        // --- 2. ORGANIC WIREFRAME BUST CANVAS ENGINE (REZNIKOV STYLE) ---
         const canvas = document.getElementById('neuralCanvas');
         const ctx = canvas.getContext('2d');
         let W = window.innerWidth, H = window.innerHeight;
@@ -267,76 +267,71 @@ HTML_PAGE = """<!DOCTYPE html>
         let coreStateMode = 'idle', timeStep = 0;
         const packets = NODES.map((_, idx) => ({ progress: (idx * 0.15) % 1, speed: 0.004 + (idx % 3) * 0.0012 }));
 
-        // Generate particle dust above head
-        const dust = Array.from({length: 80}, () => ({
-            x: (Math.random() - 0.5) * 160,
-            y: -140 - Math.random() * 80,
-            size: Math.random() * 2 + 0.5,
-            speed: Math.random() * 0.6 + 0.2
+        const dust = Array.from({length: 90}, () => ({
+            x: (Math.random() - 0.5) * 120,
+            y: -130 - Math.random() * 90,
+            size: Math.random() * 2 + 0.6,
+            speed: Math.random() * 0.7 + 0.3
         }));
 
-        function drawReznikovBust(cx, cy, pulseBoost) {
-            timeStep += 0.03 * pulseBoost;
+        function drawOrganicBust(cx, cy, pulseBoost) {
+            timeStep += 0.035 * pulseBoost;
 
-            // 1. Warm orange face/core glow (Reznikov style center heat)
-            const faceGlow = ctx.createRadialGradient(cx, cy - 10, 10, cx, cy - 10, 110);
-            faceGlow.addColorStop(0, 'rgba(255, 153, 0, 0.45)');
-            faceGlow.addColorStop(0.5, 'rgba(0, 229, 255, 0.15)');
+            // Intense orange/amber face core aura
+            const faceGlow = ctx.createRadialGradient(cx, cy - 25, 10, cx, cy - 25, 95);
+            faceGlow.addColorStop(0, 'rgba(255, 140, 0, 0.75)');
+            faceGlow.addColorStop(0.5, 'rgba(0, 229, 255, 0.25)');
             faceGlow.addColorStop(1, 'rgba(3, 7, 18, 0)');
             ctx.fillStyle = faceGlow;
-            ctx.beginPath(); ctx.arc(cx, cy - 10, 110, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(cx, cy - 25, 95, 0, Math.PI * 2); ctx.fill();
 
-            // 2. Horizontal contour lines forming the wireframe bust & shoulders
-            const linesCount = 42;
-            for (let i = 0; i < linesCount; i++) {
-                const yNorm = (i / linesCount) * 2 - 1; // -1 to 1 (top to bottom)
-                const y = cy + yNorm * 130;
+            // Organic wireframe rings (Head, Neck, Shoulders)
+            const totalRings = 38;
+            for (let i = 0; i < totalRings; i++) {
+                const p = i / (totalRings - 1); // 0 (top) to 1 (bottom)
+                const y = cy - 110 + p * 230;
 
-                // Calculate head/shoulder width profile based on vertical position
-                let widthFactor = 0;
-                if (yNorm < -0.6) {
-                    // Crown / top particles
-                    widthFactor = Math.cos((yNorm + 0.6) * Math.PI * 1.2) * 55;
-                } else if (yNorm < 0.1) {
-                    // Head / face
-                    widthFactor = 70 + Math.sin(yNorm * Math.PI * 3) * 15;
-                } else if (yNorm < 0.4) {
-                    // Neck
-                    widthFactor = 30 + (yNorm * 15);
+                let radiusX = 0;
+                if (p < 0.35) {
+                    const headP = p / 0.35;
+                    radiusX = Math.sin(headP * Math.PI) * 52;
+                } else if (p < 0.5) {
+                    const neckP = (p - 0.35) / 0.15;
+                    radiusX = 22 + (1 - neckP) * 10;
                 } else {
-                    // Shoulders sweeping out wide
-                    widthFactor = 50 + Math.pow((yNorm - 0.4) * 3, 2) * 75;
+                    const shoulderP = (p - 0.5) / 0.5;
+                    radiusX = 30 + Math.pow(shoulderP, 1.8) * 115;
                 }
-
-                if (widthFactor < 0) widthFactor = 0;
 
                 ctx.beginPath();
-                const points = 30;
-                for (let j = 0; j <= points; j++) {
-                    const xNorm = (j / points) * 2 - 1; // -1 to 1
-                    const wave = Math.sin(timeStep + i * 0.4 + j * 0.3) * (coreStateMode !== 'idle' ? 4 : 1.5);
-                    const x = cx + xNorm * widthFactor + wave * (1 - Math.abs(xNorm));
+                const segs = 40;
+                for (let s = 0; s <= segs; s++) {
+                    const angle = (s / segs) * Math.PI * 2;
+                    const distortion = Math.sin(timeStep * 1.5 + i * 0.3 + s * 0.5) * (coreStateMode !== 'idle' ? 3.5 : 1.2);
+                    const x = cx + Math.cos(angle) * radiusX;
+                    const zOffset = Math.sin(angle) * (radiusX * 0.3) + distortion;
 
-                    if (j === 0) ctx.moveTo(x, y);
-                    else ctx.lineTo(x, y);
+                    if (s === 0) ctx.moveTo(x, y + zOffset * 0.2);
+                    else ctx.lineTo(x, y + zOffset * 0.2);
                 }
 
-                // Color gradient: Cyan on edges/shoulders, orange-gold in center face
-                const lineAlpha = 0.25 + Math.abs(yNorm) * 0.35;
-                ctx.strokeStyle = i % 3 === 0 ? `rgba(255, 153, 0, ${lineAlpha * 0.9})` : `rgba(0, 229, 255, ${lineAlpha})`;
-                ctx.lineWidth = i % 4 === 0 ? 1.5 : 1;
+                const alpha = 0.2 + Math.sin(p * Math.PI) * 0.65;
+                ctx.strokeStyle = (p < 0.4 && i % 2 === 0) ? `rgba(255, 140, 0, ${alpha * 0.95})` : `rgba(0, 229, 255, ${alpha})`;
+                ctx.lineWidth = (p > 0.45) ? 1.5 : 1;
                 ctx.stroke();
             }
 
-            // 3. Floating particle dust cloud at the crown (Reznikov top burst)
-            ctx.fillStyle = 'rgba(0, 229, 255, 0.75)';
+            // Upward particle dust cloud at crown
             dust.forEach(d => {
-                d.y -= d.speed * pulseBoost;
-                if (d.y < -190) d.y = -130;
-                const alpha = Math.max(0, 1 - Math.abs(d.y + 160) / 70);
+                d.y -= d.speed * pulseBoost * 1.2;
+                if (d.y < -160) {
+                    d.y = -90;
+                    d.x = (Math.random() - 0.5) * 80;
+                }
+                const alpha = Math.max(0, 1 - Math.abs(d.y + 120) / 60);
                 ctx.fillStyle = `rgba(0, 229, 255, ${alpha})`;
                 ctx.beginPath();
-                ctx.arc(cx + d.x, cy + d.y, d.size, 0, Math.PI * 2);
+                ctx.arc(cx + d.x, cy - 110 + d.y, d.size, 0, Math.PI * 2);
                 ctx.fill();
             });
         }
@@ -350,10 +345,8 @@ HTML_PAGE = """<!DOCTYPE html>
             else if (coreStateMode === 'thinking') { mainColor = '0, 229, 255'; pulseBoost = 2.4; }
             else if (coreStateMode === 'speaking') { mainColor = '168, 85, 247'; pulseBoost = 1.8; }
 
-            // Draw Reznikov Holographic Bust in center
-            drawReznikovBust(cx, cy, pulseBoost);
+            drawOrganicBust(cx, cy, pulseBoost);
 
-            // Draw neural network connecting nodes
             NODES.forEach((n, idx) => {
                 const nx = W * n.rx, ny = H * n.ry;
                 const midX = (cx + nx) * 0.5, midY = (cy + ny) * 0.5 + (idx % 2 === 0 ? -20 : 20);
