@@ -1,9 +1,12 @@
 import os
 import re
+import time
 import json
 import base64
 import asyncio
+import threading
 import urllib.request
+import urllib.parse
 from datetime import datetime, timedelta
 from flask import Flask, request, jsonify, render_template_string, Response, send_file
 from google import genai
@@ -11,6 +14,14 @@ from google.genai import types
 import edge_tts
 
 app = Flask(__name__)
+
+# Cache & Gjendja e Telegram-it
+ICAL_CACHE = {"ts": 0, "events": []}
+TG_STATE = {
+    "chat_id": os.environ.get("TELEGRAM_CHAT_ID", "").strip(),
+    "last_update_id": 0,
+    "notified_events": set()
+}
 
 MANIFEST_JSON = {
     "name": "NEO",
@@ -94,7 +105,6 @@ HTML_PAGE = """
             -webkit-font-smoothing: antialiased;
         }
 
-        /* --- TOP STATUS STRIP --- */
         .top-strip {
             display: flex;
             justify-content: space-between;
@@ -134,7 +144,6 @@ HTML_PAGE = """
             text-transform: uppercase;
         }
 
-        /* --- DASHBOARD CONTAINER --- */
         .dashboard {
             flex: 1;
             display: flex;
@@ -147,7 +156,6 @@ HTML_PAGE = """
             z-index: 4;
         }
 
-        /* HERO ROW: GREETING + AVATAR + WEATHER */
         .hero-grid {
             display: grid;
             grid-template-columns: 1fr auto 1fr;
@@ -167,6 +175,10 @@ HTML_PAGE = """
             display: flex;
             flex-direction: column;
             justify-content: space-between;
+        }
+
+        .glass-box.top-align {
+            justify-content: flex-start;
         }
 
         .hello-title {
@@ -196,7 +208,6 @@ HTML_PAGE = """
             width: fit-content;
         }
 
-        /* AVATAR PORTRAIT CARD */
         .avatar-frame {
             position: relative;
             width: 126px;
@@ -219,14 +230,13 @@ HTML_PAGE = """
             position: relative;
         }
 
-        /* Croppt leicht den unteren Rand (Wasserzeichen) und zentriert das Gesicht perfekt */
         .avatar-inner img {
             width: 100%;
             height: 114%;
             object-fit: cover;
             object-position: center 12%;
             display: block;
-            transition: transform 0.4s ease, filter 0.3s ease;
+            transition: transform 0.4s ease;
         }
 
         body.speaking .avatar-inner img {
@@ -273,7 +283,6 @@ HTML_PAGE = """
             margin-top: 4px;
         }
 
-        /* MIDDLE ROW: SMART SHORTCUTS + TODAY'S SCHEDULE */
         .mid-grid {
             display: grid;
             grid-template-columns: 1fr 1.15fr;
@@ -288,7 +297,7 @@ HTML_PAGE = """
             text-transform: uppercase;
             letter-spacing: 0.9px;
             color: var(--text-muted);
-            margin-bottom: 8px;
+            margin-bottom: 10px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -297,14 +306,14 @@ HTML_PAGE = """
         .shortcut-list {
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            gap: 7px;
         }
 
         .shortcut-btn {
             background: rgba(255, 255, 255, 0.04);
             border: 1px solid rgba(255, 255, 255, 0.07);
             border-radius: 11px;
-            padding: 8px 10px;
+            padding: 9px 10px;
             color: #F8FAFC;
             font-size: 12px;
             font-weight: 600;
@@ -327,7 +336,7 @@ HTML_PAGE = """
         .schedule-list {
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            gap: 7px;
             overflow-y: auto;
         }
 
@@ -335,7 +344,7 @@ HTML_PAGE = """
             background: rgba(255, 255, 255, 0.04);
             border-left: 2.5px solid var(--accent);
             border-radius: 8px;
-            padding: 6px 9px;
+            padding: 7px 9px;
             font-size: 11.5px;
         }
         .sched-time {
@@ -350,9 +359,9 @@ HTML_PAGE = """
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            margin-top: 1px;
         }
 
-        /* VOICE ORB CONTROLLER */
         .voice-hub {
             display: flex;
             flex-direction: column;
@@ -400,7 +409,6 @@ HTML_PAGE = """
             letter-spacing: 0.3px;
         }
 
-        /* ACTION BAR */
         .action-bar {
             min-height: 34px;
             display: flex;
@@ -423,7 +431,6 @@ HTML_PAGE = """
             box-shadow: 0 4px 16px var(--accent-glow);
         }
 
-        /* BOTTOM NAVIGATION BAR */
         .bottom-nav {
             width: 100%;
             max-width: 560px;
@@ -469,7 +476,6 @@ HTML_PAGE = """
         }
         .nav-tab.active svg { stroke: var(--accent); }
 
-        /* COMMAND DRAWER */
         .drawer {
             position: fixed;
             inset: 0;
@@ -617,7 +623,6 @@ HTML_PAGE = """
     </style>
 </head>
 <body>
-    <!-- TOP STRIP -->
     <div class="top-strip">
         <div class="status-chip" onclick="toggleWakeWord()">
             <div class="led-dot"></div>
@@ -631,9 +636,7 @@ HTML_PAGE = """
         </div>
     </div>
 
-    <!-- MAIN DASHBOARD -->
     <div class="dashboard">
-        <!-- HERO ROW: HELLO MARGIL + NEO AVATAR + WEATHER -->
         <div class="hero-grid">
             <div class="glass-box">
                 <div>
@@ -660,9 +663,8 @@ HTML_PAGE = """
             </div>
         </div>
 
-        <!-- MIDDLE ROW: SMART SHORTCUTS + LIVE SCHEDULE -->
         <div class="mid-grid">
-            <div class="glass-box">
+            <div class="glass-box top-align">
                 <div class="section-label"><span>Smart Tools</span></div>
                 <div class="shortcut-list">
                     <div class="shortcut-btn" onclick="quickCmd('Ich fahre los zum nächsten Termin im Kalender. Gib mir das Auto-Briefing mit Objekt-Codes und starte die Navigation.')">
@@ -684,7 +686,7 @@ HTML_PAGE = """
                 </div>
             </div>
 
-            <div class="glass-box" onclick="quickCmd('Erkläre mir ausführlich meine Termine im Kalender für heute und die nächsten Tage.')" style="cursor:pointer;">
+            <div class="glass-box top-align" onclick="quickCmd('Erkläre mir ausführlich meine Termine im Kalender für heute und die nächsten Tage.')" style="cursor:pointer;">
                 <div class="section-label">
                     <span>Kalender</span>
                     <span style="color:var(--accent); font-size:9.5px;">LIVE</span>
@@ -698,7 +700,6 @@ HTML_PAGE = """
             </div>
         </div>
 
-        <!-- CENTER VOICE ORB -->
         <div class="voice-hub" onclick="toggleDirectRecord()">
             <div class="orb-ring" id="coreEye">
                 <svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
@@ -707,10 +708,8 @@ HTML_PAGE = """
         </div>
     </div>
 
-    <!-- DYNAMIC ACTION BAR -->
     <div class="action-bar" id="actionBar"></div>
 
-    <!-- BOTTOM NAVIGATION BAR -->
     <div class="bottom-nav">
         <div class="nav-tab" onclick="quickCmd('Ich fahre los zum nächsten Termin im Kalender. Gib mir das Briefing und starte die Navigation.')">
             <svg viewBox="0 0 24 24"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
@@ -736,7 +735,6 @@ HTML_PAGE = """
 
     <input type="file" id="camInput" accept="image/*" capture="environment" style="display:none" onchange="handleImage(event)">
 
-    <!-- COMMAND DRAWER -->
     <div class="drawer" id="drawer">
         <div>
             <div class="drawer-top">
@@ -769,7 +767,6 @@ HTML_PAGE = """
         updateHudClock();
         setInterval(updateHudClock, 10000);
 
-        // Lade Live-Wetter Hamburg & Kalender-Vorschau beim Start
         async function loadDashboardWidgets() {
             try {
                 const wRes = await fetch('https://api.open-meteo.com/v1/forecast?latitude=53.5511&longitude=9.9937&current_weather=true');
@@ -807,11 +804,11 @@ HTML_PAGE = """
                 gain.connect(ac.destination);
                 osc.type = 'sine';
                 osc.frequency.setValueAtTime(freq1, ac.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(freq2, ac.currentTime + 0.12);
-                gain.gain.setValueAtTime(0.12, ac.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.15);
+                osc.frequency.exponentialRampToValueAtTime(freq2, ac.currentTime + 0.10);
+                gain.gain.setValueAtTime(0.10, ac.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.12);
                 osc.start();
-                osc.stop(ac.currentTime + 0.16);
+                osc.stop(ac.currentTime + 0.13);
             } catch (e) {}
         }
 
@@ -868,7 +865,7 @@ HTML_PAGE = """
             } else if (state === 'thinking') {
                 document.body.classList.add('thinking');
                 stateLabel.innerText = "Analysiert...";
-                reticleStatus.innerText = "NEO denkt nach...";
+                reticleStatus.innerText = "NEO antwortet gleich...";
             } else if (state === 'speaking') {
                 document.body.classList.add('speaking');
                 stateLabel.innerText = "NEO spricht";
@@ -918,7 +915,7 @@ HTML_PAGE = """
                         stopWakeListener();
                         inConversation = true;
                         playTone(540, 960);
-                        setTimeout(() => startDirectAudio(), 180);
+                        setTimeout(() => startDirectAudio(), 110);
                         return;
                     }
                 }
@@ -927,7 +924,7 @@ HTML_PAGE = """
             wakeRec.onend = () => {
                 wakeRec = null;
                 if (wakeEnabled && !isRecording && !inConversation && !isSpeaking) {
-                    setTimeout(() => startWakeListener(), 400);
+                    setTimeout(() => startWakeListener(), 300);
                 }
             };
 
@@ -975,7 +972,7 @@ HTML_PAGE = """
                     }
                 });
                 audioChunks = [];
-                let options = { audioBitsPerSecond: 16000 };
+                let options = { audioBitsPerSecond: 12000 };
                 if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) options.mimeType = 'audio/webm;codecs=opus';
                 else if (MediaRecorder.isTypeSupported('audio/webm')) options.mimeType = 'audio/webm';
                 else if (MediaRecorder.isTypeSupported('audio/mp4')) options.mimeType = 'audio/mp4';
@@ -990,10 +987,10 @@ HTML_PAGE = """
                     const mimeType = (mediaRecorder.mimeType || 'audio/webm').split(';')[0];
                     const blob = new Blob(audioChunks, { type: mimeType });
 
-                    if (blob.size < 1100 || voiceFramesCount < 8) {
+                    if (blob.size < 900 || voiceFramesCount < 6) {
                         inConversation = false;
                         setState(null);
-                        if (wakeEnabled) setTimeout(() => startWakeListener(), 600);
+                        if (wakeEnabled) setTimeout(() => startWakeListener(), 400);
                         return;
                     }
                     playTone(760, 440);
@@ -1045,8 +1042,8 @@ HTML_PAGE = """
                         voiceFramesCount++;
                         if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null; }
                     } else if (hasSpoken && !silenceTimer) {
-                        silenceTimer = setTimeout(() => stopDirectAudio(), 1150);
-                    } else if (!hasSpoken && (Date.now() - startTime > 5500)) {
+                        silenceTimer = setTimeout(() => stopDirectAudio(), 700);
+                    } else if (!hasSpoken && (Date.now() - startTime > 5000)) {
                         inConversation = false;
                         stopDirectAudio();
                     }
@@ -1069,17 +1066,34 @@ HTML_PAGE = """
             isSpeaking = false;
             setState(null);
             if (inConversation) {
-                setTimeout(() => startDirectAudio(), 650);
+                setTimeout(() => startDirectAudio(), 450);
             } else if (wakeEnabled) {
-                setTimeout(() => startWakeListener(), 850);
+                setTimeout(() => startWakeListener(), 650);
             }
         };
 
         player.onerror = () => {
             isSpeaking = false;
             setState(null);
-            if (wakeEnabled) setTimeout(() => startWakeListener(), 850);
+            if (wakeEnabled) setTimeout(() => startWakeListener(), 650);
         };
+
+        async function testTelegramAlert() {
+            reticleStatus.innerText = "Sende Telegram-Anruf...";
+            try {
+                const res = await fetch('/telegram_notify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        text: "📞 NEO Autorisierung erforderlich:\n\nNächster Termin im Kalender steht an. Soll ich das Auto-Briefing & die Navigation vorbereiten?"
+                    })
+                });
+                const d = await res.json();
+                reticleStatus.innerText = d.ok ? "Telegram gesendet!" : (d.error || "Erst /start im Bot senden");
+            } catch (e) {
+                reticleStatus.innerText = "Telegram Fehler";
+            }
+        }
 
         let activeTab = 'tools';
         function openDrawer() { document.getElementById('drawer').classList.add('open'); switchTab(activeTab); }
@@ -1097,12 +1111,12 @@ HTML_PAGE = """
                             <svg viewBox="0 0 24 24"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
                             <span>Auto-Briefing & Navi</span>
                         </div>
-                        <div class="action-tile" onclick="closeDrawer();quickCmd('Erkläre mir ausführlich meine Termine im Kalender für heute und die nächsten Tage.')">
-                            <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                            <span>Kalender erklären</span>
+                        <div class="action-tile" onclick="closeDrawer();testTelegramAlert()">
+                            <svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                            <span>Telegram Autorisierung</span>
                         </div>
                         <div class="action-tile" onclick="closeDrawer();quickCmd('Kalkuliere ein Reinigungsangebot für 600 Quadratmeter Büro, zweimal pro Woche, und mach die WhatsApp-Nachricht fertig.')">
-                            <svg viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="12" y2="14"/></svg>
+                            <svg viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/></svg>
                             <span>Angebots-Rechner</span>
                         </div>
                         <div class="action-tile" onclick="closeDrawer();document.getElementById('camInput').click()">
@@ -1160,12 +1174,12 @@ HTML_PAGE = """
                 const img = new Image();
                 img.onload = function() {
                     const canvas = document.createElement('canvas');
-                    const scale = Math.min(1, 800 / img.width);
+                    const scale = Math.min(1, 720 / img.width);
                     canvas.width = img.width * scale;
                     canvas.height = img.height * scale;
                     canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
                     sendToNeo({
-                        image: canvas.toDataURL('image/jpeg', 0.7).split(',')[1],
+                        image: canvas.toDataURL('image/jpeg', 0.65).split(',')[1],
                         message: note || "Erstelle anhand dieses Fotos einen professionellen Objekt-Mängelbericht mit Datum und Uhrzeit für den Kunden und mach ihn für WhatsApp fertig."
                     });
                 };
@@ -1192,7 +1206,7 @@ HTML_PAGE = """
             payload.memory = userMemory;
             payload.materials = userMaterials;
             payload.tasks = userTasks;
-            payload.history = chatHistory.slice(-6);
+            payload.history = chatHistory.slice(-4);
             payload.local_time_str = new Date().toLocaleString('de-DE');
 
             try {
@@ -1207,14 +1221,14 @@ HTML_PAGE = """
                     inConversation = false;
                     setState(null);
                     reticleStatus.innerText = "Systemfehler";
-                    if (wakeEnabled) setTimeout(() => startWakeListener(), 1000);
+                    if (wakeEnabled) setTimeout(() => startWakeListener(), 800);
                     return;
                 }
 
                 if (data.ignore_background) {
                     setState(null);
-                    if (inConversation) setTimeout(() => startDirectAudio(), 300);
-                    else if (wakeEnabled) setTimeout(() => startWakeListener(), 500);
+                    if (inConversation) setTimeout(() => startDirectAudio(), 250);
+                    else if (wakeEnabled) setTimeout(() => startWakeListener(), 400);
                     return;
                 }
 
@@ -1228,7 +1242,7 @@ HTML_PAGE = """
                 updateBadges();
 
                 chatHistory.push({ role: "neo", text: data.reply });
-                localStorage.setItem('neo_history', JSON.stringify(chatHistory.slice(-10)));
+                localStorage.setItem('neo_history', JSON.stringify(chatHistory.slice(-6)));
 
                 if (data.copy_text && data.copy_text.trim() !== "") {
                     const cBtn = document.createElement('button');
@@ -1246,7 +1260,7 @@ HTML_PAGE = """
                     aBtn.innerText = data.action_label || "Öffnen";
                     if (data.copy_text) aBtn.onclick = () => navigator.clipboard.writeText(data.copy_text).catch(()=>{});
                     actionBar.appendChild(aBtn);
-                    if (!data.copy_text) setTimeout(() => { window.location.href = data.action_url; }, 600);
+                    if (!data.copy_text) setTimeout(() => { window.location.href = data.action_url; }, 500);
                 }
 
                 if (data.audio) {
@@ -1258,19 +1272,19 @@ HTML_PAGE = """
                         playPromise.catch(() => {
                             isSpeaking = false;
                             setState(null);
-                            if (wakeEnabled) setTimeout(() => startWakeListener(), 800);
+                            if (wakeEnabled) setTimeout(() => startWakeListener(), 650);
                         });
                     }
                 } else {
                     setState(null);
-                    if (inConversation) setTimeout(() => startDirectAudio(), 650);
-                    else if (wakeEnabled) setTimeout(() => startWakeListener(), 800);
+                    if (inConversation) setTimeout(() => startDirectAudio(), 450);
+                    else if (wakeEnabled) setTimeout(() => startWakeListener(), 650);
                 }
             } catch (err) {
                 inConversation = false;
                 isSpeaking = false;
                 setState(null);
-                if (wakeEnabled) setTimeout(() => startWakeListener(), 1000);
+                if (wakeEnabled) setTimeout(() => startWakeListener(), 800);
             }
         }
 
@@ -1278,7 +1292,7 @@ HTML_PAGE = """
             const params = new URLSearchParams(window.location.search);
             if (params.get('listen') === '1') {
                 inConversation = true;
-                sendToNeo({ message: "Begrüße Sir kurz beim Öffnen der App und frage, wie du helfen kannst." });
+                sendToNeo({ message: "Begrüße Margil kurz beim Öffnen der App und frage, wie du helfen kannst." });
             } else {
                 startWakeListener();
             }
@@ -1303,11 +1317,15 @@ def format_ical_dt(raw_dt):
         return None, raw_dt
 
 def parse_upcoming_events():
+    now_ts = time.time()
+    if ICAL_CACHE["events"] and (now_ts - ICAL_CACHE["ts"] < 60):
+        return ICAL_CACHE["events"]
+
     ical_url = os.environ.get("ICAL_URL", "").strip()
     if not ical_url:
         return []
     try:
-        req = urllib.request.urlopen(ical_url, timeout=6)
+        req = urllib.request.urlopen(ical_url, timeout=4)
         raw = req.read().decode("utf-8", errors="ignore")
         raw = re.sub(r"\r?\n[ \t]", "", raw)
         now = datetime.now() - timedelta(hours=12)
@@ -1322,19 +1340,23 @@ def parse_upcoming_events():
             if title_m and dt_m:
                 dt_obj, dt_str = format_ical_dt(dt_m.group(1).strip())
                 if dt_obj and dt_obj >= now:
-                    title = title_m.group(1).strip().replace("\\,", ",")
-                    loc = loc_m.group(1).strip().replace("\\,", ",") if loc_m else ""
+                    title = title_m.group(1).strip().replace("\\,", ",").replace("\\n", " ")
+                    loc = loc_m.group(1).strip().replace("\\,", ",").replace("\\n", " ") if loc_m else ""
                     desc = desc_m.group(1).strip().replace("\\n", " ")[:120] if desc_m else ""
                     upcoming.append((dt_obj, {
+                        "dt_iso": dt_obj.isoformat(),
                         "time": dt_str,
                         "title": title,
                         "loc": loc,
                         "desc": desc
                     }))
         upcoming.sort(key=lambda x: x[0])
-        return [x[1] for x in upcoming[:15]]
+        res = [x[1] for x in upcoming[:15]]
+        ICAL_CACHE["ts"] = now_ts
+        ICAL_CACHE["events"] = res
+        return res
     except Exception:
-        return []
+        return ICAL_CACHE["events"]
 
 def get_ical_events():
     events = parse_upcoming_events()
@@ -1352,10 +1374,10 @@ def get_ical_events():
 
 SYSTEM_PROMPT = """Du bist NEO, der hochintelligente, ruhige KI-Assistent von Margil (Kundenbetreuer in einer Gebäudereinigung in Hamburg).
 Aktueller Modus: {mode} | Aktuelle Zeit: {local_time}
-Antworte höflich, ohne Sternchen/Markdown, und nenne den Nutzer 'Margil' oder 'Sir'. Standard-Sprache ist Deutsch (außer bei Übersetzungen ins Albanische).
+Antworte höflich, präzise, ohne Sternchen/Markdown, und nenne den Nutzer 'Margil' oder 'Sir'. Standard-Sprache ist Deutsch (außer bei Übersetzungen ins Albanische).
 
 WICHTIGE REGELN & 4 SPEZIAL-MODULE:
-1. NUR DIREKTE STIMME BEACHTEN (SEHR WICHTIG):
+1. NUR DIREKTE STIMME BEACHTEN:
    - Konzentriere dich ausschließlich auf die lauteste, nahe Hauptstimme (Margil). Ignoriere Hintergrundstimmen im Raum, TV, Radio oder Telefon!
    - Wenn keine klare direkte Anfrage vorliegt, setze `"ignore_background": true` und `"reply": ""`.
 
@@ -1365,22 +1387,22 @@ WICHTIGE REGELN & 4 SPEZIAL-MODULE:
    - Fasse beides (Termin + Codes/Notizen) in 2-3 klaren Sätzen zusammen und setze `action_url` auf Google Maps Navigation: `"https://www.google.com/maps/dir/?api=1&destination=ADRESSE_URL_ENCODED&travelmode=driving"` mit `action_label`: `"Navigation starten"`.
 
 3. MODUL B — ZWEISPRACHIGER DOLMETSCHER DEUTSCH <-> ALBANISCH ("Übersetze...", "Përktheje..."):
-   - Wenn Margil sagt "Übersetze für das Team..." oder auf Deutsch spricht und Albanisch will: Übersetze den Satz in natürliches, freundliches Albanisch, setze `reply` auf die albanische Übersetzung (damit NEO es laut vorliest!), `voice_lang`: `"sq"` und schreibe die Übersetzung zusätzlich in `copy_text`.
+   - Wenn Margil sagt "Übersetze für das Team..." oder auf Deutsch spricht und Albanisch will: Übersetze den Satz in natürliches, freundliches Albanisch, setze `reply` auf die albanische Übersetzung, `voice_lang`: `"sq"` und schreibe die Übersetzung zusätzlich in `copy_text`.
    - Wenn Margil auf Albanisch spricht und die deutsche Übersetzung für einen Kunden braucht: Setze `reply` auf die höfliche deutsche Übersetzung, `voice_lang`: `"de"` und schreibe sie in `copy_text`.
 
 4. MODUL C — ANGEBOTS- & STUNDEN-KALKULATOR ("Kalkuliere...", "Angebot berechnen..."):
-   - Nutze realistische Richtwerte der Gebäudereinigung in Deutschland:
-     * Büroreinigung: ca. 220 m²/Stunde | Unterhaltsreinigung / Praxis: ca. 160 m²/Stunde | Treppenhaus: ca. 180 m²/Stunde | Glasreinigung: ca. 45 m²/Stunde.
-     * Verrechnungssatz: ca. 31,50 € netto/Stunde (4,33 Wochen pro Monat).
-   - Nenne in `reply` die geschätzten Stunden pro Einsatz, die monatlichen Stunden und den monatlichen Netto-Preis in 2-3 Sätzen.
-   - Erstelle ein fertiges, professionelles Angebots-Kurzschreiben in `copy_text` und bereite den WhatsApp-Business-Intent in `action_url` vor (`action_label`: `"Angebot per WhatsApp"`).
+   - Richtwerte: Büroreinigung ~220 m²/Std | Unterhaltsreinigung/Praxis ~160 m²/Std | Treppenhaus ~180 m²/Std | Glasreinigung ~45 m²/Std | Satz: 31,50 € netto/Std (4,33 Wochen/Monat).
+   - Nenne in `reply` kurz Stunden pro Einsatz, Monatsstunden und Netto-Preis in 2 Sätzen.
+   - Schreibe ein fertiges Angebots-Kurzschreiben in `copy_text` und bereite den WhatsApp-Business-Intent in `action_url` vor (`action_label`: `"Angebot per WhatsApp"`).
 
 5. MODUL D — OBJEKT-MÄNGELBERICHT MIT KAMERA:
-   - Wenn ein Bild gesendet wird: Beschreibe den Zustand/Mangel sachlich und professionell in 2 Sätzen für Margil.
-   - Schreibe einen formellen Mängelbericht (inkl. Datum & Uhrzeit `{local_time}`, Befund und Maßnahme) in `copy_text` und setze `action_url` auf den WhatsApp-Intent (`action_label`: `"Bericht senden"`).
+   - Bei einem Foto: Beschreibe den Zustand/Mangel sachlich in 2 Sätzen für Margil, schreibe einen formellen Mängelbericht (inkl. Datum & Uhrzeit `{local_time}`) in `copy_text` und setze `action_url` auf den WhatsApp-Intent (`action_label`: `"Bericht senden"`).
 
-6. KALENDER & ALLGEMEINES:
-   - Bei allgemeinen Kalenderfragen erkläre die Termine in 3-5 Sätzen mit Datum, Uhrzeit und Ort.
+6. TELEGRAM BENACHRICHTIGUNG ("Schicke mir das auf Telegram", "Erinnere mich per Telegram"):
+   - Wenn Margil ausdrücklich bittet, eine Info oder Autorisierung auf Telegram zu senden, fülle `telegram_alert` mit der kurzen Nachricht aus.
+
+7. KALENDER & ALLGEMEINES:
+   - Bei Kalenderfragen erkläre die Termine in 3-4 Sätzen mit Datum, Uhrzeit und Ort.
    - WHATSAPP (ANDROID NATIVE INTENT — NIEMALS web.whatsapp.com!):
      * Nummer bekannt: `"https://wa.me/49176...?text=URL_ENCODED"`
      * Nummer NICHT bekannt (ARBEIT): `"intent://send?text=URL_ENCODED#Intent;scheme=whatsapp;package=com.whatsapp.w4b;end"`
@@ -1394,6 +1416,7 @@ Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt (ohne Markdown-Codeblöcke):
   "voice_lang": "de",
   "ignore_background": false,
   "copy_text": "",
+  "telegram_alert": "",
   "new_memory": "",
   "delete_memory": "",
   "new_material": "",
@@ -1416,25 +1439,153 @@ def extract_json(raw_text):
 async def make_voice(text, voice_lang="de"):
     clean_text = text.replace("*", "").replace("#", "").replace("...", ".").strip()
     voice_name = "sq-AL-IlirNeural" if voice_lang == "sq" else "de-DE-FlorianMultilingualNeural"
-    communicate = edge_tts.Communicate(clean_text, voice_name, rate="+5%")
+    communicate = edge_tts.Communicate(clean_text, voice_name, rate="+8%")
     audio_bytes = b""
     async for chunk in communicate.stream():
         if chunk["type"] == "audio":
             audio_bytes += chunk["data"]
     return base64.b64encode(audio_bytes).decode("utf-8")
 
+# --- TELEGRAM BOT ENGINE (EMPANGEN, AUTORISIEREN & PROAKTIVE ANRUFE/NACHRICHTEN) ---
+def tg_api(method, payload=None):
+    token = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
+    if not token:
+        return None
+    url = f"https://api.telegram.org/bot{token}/{method}"
+    try:
+        if payload:
+            data = json.dumps(payload).encode("utf-8")
+            req = urllib.request.Request(url, data=data, headers={"Content-Type": "application/json"})
+        else:
+            req = urllib.request.Request(url)
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            return json.loads(resp.read().decode("utf-8"))
+    except Exception:
+        return None
+
+def send_telegram_auth(text, with_buttons=True):
+    chat_id = TG_STATE.get("chat_id")
+    if not chat_id:
+        return False
+    payload = {
+        "chat_id": chat_id,
+        "text": text
+    }
+    if with_buttons:
+        payload["reply_markup"] = {
+            "inline_keyboard": [[
+                {"text": "✅ Autorisieren", "callback_data": "approve_action"},
+                {"text": "❌ Ablehnen", "callback_data": "reject_action"}
+            ]]
+        }
+    res = tg_api("sendMessage", payload)
+    return bool(res and res.get("ok"))
+
+def process_telegram_message(chat_id, user_text):
+    api_key = os.environ.get("GEMINI_API_KEY", "").strip()
+    if not api_key:
+        return
+    try:
+        client = genai.Client(api_key=api_key)
+        cal_info = get_ical_events()
+        now_str = datetime.now().strftime("%d.%m.%Y %H:%M")
+        prompt = f"Nachricht von Margil über Telegram: {user_text}\n\nAktuelle Kalender-Termine:\n{cal_info}"
+        response = client.models.generate_content(
+            model="gemini-3.8-flash",
+            contents=[prompt],
+            config=types.GenerateContentConfig(
+                system_instruction=SYSTEM_PROMPT.format(mode="ARBEIT", local_time=now_str),
+                temperature=0.4
+            )
+        )
+        res = extract_json(response.text)
+        reply = res.get("reply", "Zu Befehl, Margil.")
+        tg_api("sendMessage", {"chat_id": chat_id, "text": reply})
+    except Exception as e:
+        tg_api("sendMessage", {"chat_id": chat_id, "text": f"Fehler: {str(e)}"})
+
+def telegram_background_worker():
+    while True:
+        token = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
+        if not token:
+            time.sleep(10)
+            continue
+
+        # 1. Auf eingehende Nachrichten oder Button-Klicks von Margil hören
+        updates = tg_api("getUpdates", {"offset": TG_STATE["last_update_id"] + 1, "timeout": 10})
+        if updates and updates.get("ok"):
+            for upd in updates.get("result", []):
+                TG_STATE["last_update_id"] = upd["update_id"]
+
+                if "message" in upd:
+                    msg = upd["message"]
+                    cid = str(msg["chat"]["id"])
+                    TG_STATE["chat_id"] = cid
+                    txt = msg.get("text", "")
+                    if txt == "/start":
+                        tg_api("sendMessage", {
+                            "chat_id": cid,
+                            "text": f"Hallo Margil! NEO ist jetzt mit deinem Telegram verbunden.\nDeine Chat-ID: {cid}\n\nIch benachrichtige dich hier vor Terminen und frage nach deiner Autorisierung."
+                        })
+                    elif txt:
+                        process_telegram_message(cid, txt)
+
+                elif "callback_query" in upd:
+                    cb = upd["callback_query"]
+                    cid = str(cb["message"]["chat"]["id"])
+                    TG_STATE["chat_id"] = cid
+                    data_cb = cb.get("data", "")
+                    tg_api("answerCallbackQuery", {"callback_query_id": cb["id"]})
+                    if data_cb == "approve_action":
+                        tg_api("sendMessage", {"chat_id": cid, "text": "✅ Autorisiert, Margil. Aktion wurde freigegeben!"})
+                    elif data_cb == "reject_action":
+                        tg_api("sendMessage", {"chat_id": cid, "text": "❌ Abgelehnt. Aktion wurde gestoppt."})
+
+        # 2. Proaktive Kalender-Prüfung (30 Minuten vor einem Termin automatisch melden)
+        if TG_STATE["chat_id"]:
+            try:
+                events = parse_upcoming_events()
+                now_dt = datetime.now()
+                for ev in events:
+                    dt_iso = ev.get("dt_iso", "")
+                    if not dt_iso or dt_iso in TG_STATE["notified_events"]:
+                        continue
+                    ev_dt = datetime.fromisoformat(dt_iso)
+                    diff_min = (ev_dt - now_dt).total_seconds() / 60.0
+                    if 0 < diff_min <= 35:
+                        TG_STATE["notified_events"].add(dt_iso)
+                        loc_txt = f"\nOrt: {ev['loc']}" if ev.get("loc") else ""
+                        send_telegram_auth(
+                            f"🔔 NEO Termin-Erinnerung ({ev['time']}):\n{ev['title']}{loc_txt}\n\nSoll ich die Navigation und das Briefing starten?",
+                            with_buttons=True
+                        )
+            except Exception:
+                pass
+
+        time.sleep(2)
+
+# Starte Telegram-Listener im Hintergrund
+threading.Thread(target=telegram_background_worker, daemon=True).start()
+
 @app.route("/")
 def home():
     return render_template_string(HTML_PAGE)
 
+@app.route("/telegram_notify", methods=["POST"])
+def telegram_notify():
+    data = request.json or {}
+    text = data.get("text", "🔔 NEO Autorisierung angefordert.")
+    if not TG_STATE.get("chat_id"):
+        return jsonify({"ok": False, "error": "Bitte sende zuerst 'Hallo' an deinen Bot in Telegram!"})
+    sent = send_telegram_auth(text, with_buttons=True)
+    return jsonify({"ok": sent})
+
 @app.route("/avatar")
 def avatar():
     base_dir = os.path.dirname(os.path.abspath(__file__))
-    # 1. Kontrollo emrat standardë (pa dallim shkronjash të mëdha/të vogla)
     for f in os.listdir(base_dir):
         if f.lower().startswith("neo_avatar") and f.lower().endswith((".jpg", ".jpeg", ".png", ".webp")):
             return send_file(os.path.join(base_dir, f))
-    # 2. Nëse e ke ngarkuar me emrin origjinal nga telefoni, merr çdo .jpg/.png në dosje
     for f in os.listdir(base_dir):
         if f.lower().endswith((".jpg", ".jpeg", ".png", ".webp")) and not f.lower().startswith("icon"):
             return send_file(os.path.join(base_dir, f))
@@ -1464,25 +1615,25 @@ def chat():
         msg = data.get("message", "")
         local_time_str = data.get("local_time_str", datetime.now().strftime("%d.%m.%Y %H:%M"))
 
-        calendar_info = ""
-        lower_msg = msg.lower()
-        if "audio" in data or any(w in lower_msg for w in ["kalender", "termin", "heute", "morgen", "woche", "statusbericht", "plan", "besichtigung", "fahre", "los", "nächste"]):
-            calendar_info = get_ical_events()
-
+        calendar_info = get_ical_events()
         client = genai.Client(api_key=api_key)
         contents = []
+
+        lower_msg = msg.lower()
+        needs_search = any(w in lower_msg for w in ["wetter", "temperatur", "regen", "stau", "verkehr", "nachrichten", "news", "suche", "google", "preis", "öffnungszeiten"])
+        active_tools = [{"google_search": {}}] if needs_search else []
 
         if "image" in data:
             contents.append(types.Part.from_bytes(data=base64.b64decode(data["image"]), mime_type="image/jpeg"))
             contents.append(msg or "Erstelle anhand dieses Fotos einen professionellen Objekt-Mängelbericht.")
         elif "audio" in data:
             contents.append(types.Part.from_bytes(data=base64.b64decode(data["audio"]), mime_type=data.get("mime_type", "audio/webm")))
-            contents.append("Fokussiere dich NUR auf die direkte Hauptstimme von Margil und ignoriere leise Hintergrundstimmen im Raum oder vom Fernseher/Telefon.")
+            contents.append("Fokussiere dich NUR auf die direkte Hauptstimme von Margil und ignoriere Hintergrundstimmen.")
         else:
             contents.append(msg)
 
         context_str = (
-            f"Kalender-Termine:\n{calendar_info}\n"
+            f"Kalender:\n{calendar_info}\n"
             f"Notizen: {json.dumps(data.get('memory', []), ensure_ascii=False)} | "
             f"Material: {json.dumps(data.get('materials', []), ensure_ascii=False)} | "
             f"Tasks: {json.dumps(data.get('tasks', []), ensure_ascii=False)} | "
@@ -1490,18 +1641,25 @@ def chat():
         )
         contents.append(context_str)
 
+        config_args = {
+            "system_instruction": SYSTEM_PROMPT.format(mode=mode, local_time=local_time_str),
+            "temperature": 0.4
+        }
+        if active_tools:
+            config_args["tools"] = active_tools
+
         response = client.models.generate_content(
             model="gemini-3.8-flash",
             contents=contents,
-            config=types.GenerateContentConfig(
-                system_instruction=SYSTEM_PROMPT.format(mode=mode, local_time=local_time_str),
-                tools=[{"google_search": {}}]
-            )
+            config=types.GenerateContentConfig(**config_args)
         )
 
         result = extract_json(response.text)
         if result.get("ignore_background"):
             return jsonify({"ignore_background": True})
+
+        if result.get("telegram_alert"):
+            send_telegram_auth(f"🔔 NEO Hinweis:\n{result['telegram_alert']}", with_buttons=True)
 
         reply = result.get("reply", "Zu Befehl, Margil.")
         voice_lang = result.get("voice_lang", "de")
