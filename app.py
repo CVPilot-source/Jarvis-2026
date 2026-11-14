@@ -31,10 +31,9 @@ MANIFEST_JSON = {
 
 ICON_SVG = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <rect width="512" height="512" rx="120" fill="#000000"/>
-  <ellipse cx="256" cy="245" rx="115" ry="150" fill="none" stroke="#00F5D4" stroke-width="5" stroke-dasharray="8 12"/>
-  <circle cx="215" cy="220" r="10" fill="#00F5D4"/>
-  <circle cx="297" cy="220" r="10" fill="#00F5D4"/>
-  <path d="M 225 305 Q 256 320 287 305" fill="none" stroke="#00BBF9" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="256" cy="256" r="165" fill="none" stroke="#00F5D4" stroke-width="6" stroke-dasharray="12 16"/>
+  <circle cx="256" cy="256" r="115" fill="none" stroke="#00BBF9" stroke-width="4"/>
+  <circle cx="256" cy="256" r="24" fill="#00F5D4"/>
 </svg>"""
 
 HTML_PAGE = """
@@ -316,7 +315,7 @@ HTML_PAGE = """
             <span id="stateLabel">NEO • STANDBY</span>
         </div>
         <div class="top-pills">
-            <div class="mode-tag" id="visualBtn" onclick="toggleVisual()">KOPF 3D</div>
+            <div class="mode-tag" id="visualBtn" onclick="toggleVisual()">JARVIS</div>
             <div class="mode-tag" id="modeBtn" onclick="toggleMode()">ARBEIT</div>
         </div>
     </div>
@@ -359,18 +358,20 @@ HTML_PAGE = """
     <audio id="player" playsinline></audio>
 
     <script>
-        /* --- Self-Contained High-Density 3D Cyber-Bust / Head (Zero External Files!) --- */
+        /* --- Ultra-Clean Luxury 3D Engine (JARVIS CORE / PLASMA ORB / MATRIX) --- */
         let audioEnergy = 0;
         let currentState = 'idle';
-        let visualMode = localStorage.getItem('neo_visual') || 'KOPF 3D';
+        const visualModes = ['JARVIS', 'PLASMA', 'MATRIX'];
+        let visualMode = localStorage.getItem('neo_visual_v2') || 'JARVIS';
+        if (!visualModes.includes(visualMode)) visualMode = 'JARVIS';
         document.getElementById('visualBtn').innerText = visualMode;
 
         const container = document.getElementById('threeContainer');
         const scene = new THREE.Scene();
         const w = container.clientWidth || window.innerWidth;
         const h = container.clientHeight || (window.innerHeight * 0.65);
-        const camera = new THREE.PerspectiveCamera(36, w / h, 0.1, 1000);
-        camera.position.set(0, 0.4, 33);
+        const camera = new THREE.PerspectiveCamera(38, w / h, 0.1, 1000);
+        camera.position.z = 30;
 
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(w, h);
@@ -379,24 +380,25 @@ HTML_PAGE = """
 
         function createGlowSprite() {
             const c = document.createElement('canvas');
-            c.width = 32; c.height = 32;
+            c.width = 64; c.height = 64;
             const g = c.getContext('2d');
-            const grad = g.createRadialGradient(16, 16, 0, 16, 16, 16);
+            const grad = g.createRadialGradient(32, 32, 0, 32, 32, 32);
             grad.addColorStop(0, 'rgba(255,255,255,1)');
-            grad.addColorStop(0.35, 'rgba(255,255,255,0.75)');
+            grad.addColorStop(0.25, 'rgba(255,255,255,0.85)');
+            grad.addColorStop(0.6, 'rgba(255,255,255,0.2)');
             grad.addColorStop(1, 'rgba(255,255,255,0)');
             g.fillStyle = grad;
-            g.fillRect(0, 0, 32, 32);
+            g.fillRect(0, 0, 64, 64);
             return new THREE.CanvasTexture(c);
         }
         const glowTex = createGlowSprite();
 
-        const pointsMat = new THREE.PointsMaterial({
+        const coreMat = new THREE.PointsMaterial({
             color: 0x00F5D4,
-            size: 0.32,
+            size: 0.36,
             map: glowTex,
             transparent: true,
-            opacity: 0.92,
+            opacity: 0.95,
             blending: THREE.AdditiveBlending,
             depthWrite: false
         });
@@ -405,150 +407,87 @@ HTML_PAGE = """
             color: 0x00BBF9,
             wireframe: true,
             transparent: true,
-            opacity: 0.08,
+            opacity: 0.12,
             blending: THREE.AdditiveBlending
         });
 
-        const eyeMat = new THREE.MeshBasicMaterial({
-            color: 0xE0FFFF,
+        const ringMat1 = new THREE.MeshBasicMaterial({
+            color: 0x00F5D4,
             transparent: true,
-            opacity: 0.95,
+            opacity: 0.55,
             blending: THREE.AdditiveBlending
         });
 
-        // Sculpted High-Res 3D Cyber-Bust Mesh (3.200+ Vertices, 100% Instant!)
-        function createSculptedHeadGeometry() {
-            const geo = new THREE.SphereGeometry(7.2, 72, 72);
-            const pos = geo.attributes.position;
+        const ringMat2 = new THREE.MeshBasicMaterial({
+            color: 0x00BBF9,
+            transparent: true,
+            opacity: 0.35,
+            blending: THREE.AdditiveBlending
+        });
 
-            for (let i = 0; i < pos.count; i++) {
-                let x = pos.getX(i);
-                let y = pos.getY(i);
-                let z = pos.getZ(i);
+        /* --- 1. JARVIS CORE (Gyroscopic Energy Core + Particle Cloud) --- */
+        const jarvisGroup = new THREE.Group();
+        const innerGeo = new THREE.IcosahedronGeometry(4.2, 4);
+        const innerOrig = Float32Array.from(innerGeo.attributes.position.array);
+        jarvisGroup.add(new THREE.Points(innerGeo, coreMat));
+        jarvisGroup.add(new THREE.Mesh(innerGeo, wireMat));
 
-                // Normierte Koordinaten (-1 bis +1)
-                const nx = x / 7.2;
-                const ny = y / 7.2;
-                const nz = z / 7.2;
+        const gyro1 = new THREE.Mesh(new THREE.TorusGeometry(6.2, 0.05, 16, 120), ringMat1);
+        const gyro2 = new THREE.Mesh(new THREE.TorusGeometry(7.3, 0.04, 16, 120), ringMat2);
+        const gyro3 = new THREE.Mesh(new THREE.TorusGeometry(8.4, 0.03, 16, 120), ringMat1);
+        gyro1.rotation.x = Math.PI / 3;
+        gyro2.rotation.y = Math.PI / 4;
+        gyro3.rotation.x = -Math.PI / 5;
+        jarvisGroup.add(gyro1, gyro2, gyro3);
 
-                // 1. Schädel- & Gesichts-Proportionen (höher als breit, tiefer nach hinten)
-                x *= 0.80;
-                y *= 1.15;
-                z *= 0.94;
-
-                // Hinterkopf etwas voller machen
-                if (nz < 0 && ny > -0.2) {
-                    z += nz * 0.9;
-                }
-
-                // 2. Kiefer- & Kinn-Verjüngung (untere Gesichtshälfte)
-                if (ny < 0.05 && ny >= -0.78) {
-                    const jawT = Math.abs(ny - 0.05) / 0.83;
-                    x *= (1 - jawT * 0.36);
-                    if (nz > 0) {
-                        z *= (1 - jawT * 0.16);
-                    } else {
-                        // Nacken-Einzug hinten
-                        z *= (1 - jawT * 0.45);
-                    }
-                }
-
-                // 3. Hals & Schulter-Ansatz ganz unten (ny < -0.78)
-                if (ny < -0.78) {
-                    const neckT = Math.min(1, (-0.78 - ny) / 0.22);
-                    x *= (0.58 + neckT * 0.65);
-                    z *= (0.56 + neckT * 0.15);
-                    y -= neckT * 1.4;
-                }
-
-                // 4. Anatomische Gesichts-Details (Vorderseite nz > 0.15)
-                if (nz > 0.15 && ny > -0.76) {
-                    // Augenbrauen-Bogen
-                    const browDist = Math.abs(ny - 0.24);
-                    if (browDist < 0.08 && Math.abs(nx) < 0.56) {
-                        z += (1 - browDist / 0.08) * 0.55;
-                    }
-
-                    // Tiefe Augenhöhlen (links & rechts)
-                    const eyeL = Math.hypot((nx + 0.28) * 1.15, (ny - 0.11) * 1.9);
-                    const eyeR = Math.hypot((nx - 0.28) * 1.15, (ny - 0.11) * 1.9);
-                    if (eyeL < 0.18) z -= Math.cos((eyeL / 0.18) * (Math.PI / 2)) * 0.85;
-                    if (eyeR < 0.18) z -= Math.cos((eyeR / 0.18) * (Math.PI / 2)) * 0.85;
-
-                    // Markanter Nasenrücken & Nasenspitze
-                    if (ny > -0.22 && ny < 0.22 && Math.abs(nx) < 0.16) {
-                        const noseY = 1 - Math.abs(ny + 0.03) / 0.25;
-                        const noseX = Math.cos((nx / 0.16) * (Math.PI / 2));
-                        if (noseY > 0) {
-                            z += Math.pow(noseY, 0.75) * noseX * 1.55;
-                        }
-                    }
-
-                    // Wangenknochen
-                    const cheekL = Math.hypot((nx + 0.38) * 1.2, (ny + 0.04) * 1.4);
-                    const cheekR = Math.hypot((nx - 0.38) * 1.2, (ny + 0.04) * 1.4);
-                    if (cheekL < 0.26) z += (1 - cheekL / 0.26) * 0.45;
-                    if (cheekR < 0.26) z += (1 - cheekR / 0.26) * 0.45;
-
-                    // Ober- und Unterlippe
-                    if (Math.abs(nx) < 0.26) {
-                        const lipX = Math.cos((nx / 0.26) * (Math.PI / 2));
-                        const upperLip = Math.abs(ny + 0.32);
-                        const lowerLip = Math.abs(ny + 0.41);
-                        if (upperLip < 0.045) z += (1 - upperLip / 0.045) * lipX * 0.65;
-                        if (lowerLip < 0.05) z += (1 - lowerLip / 0.05) * lipX * 0.60;
-                    }
-
-                    // Kinn-Kontur
-                    const chin = Math.hypot(nx * 1.8, (ny + 0.64) * 1.6);
-                    if (chin < 0.25) {
-                        z += (1 - chin / 0.25) * 0.65;
-                    }
-                }
-
-                pos.setXYZ(i, x, y, z);
-            }
-            geo.computeVertexNormals();
-            return geo;
+        // Äußere schwebende Partikel-Aura
+        const auraCount = 450;
+        const auraPositions = new Float32Array(auraCount * 3);
+        for (let i = 0; i < auraCount; i++) {
+            const r = 7.0 + Math.random() * 3.2;
+            const theta = Math.random() * Math.PI * 2;
+            const phi = Math.acos(2 * Math.random() - 1);
+            auraPositions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+            auraPositions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+            auraPositions[i * 3 + 2] = r * Math.cos(phi);
         }
+        const auraGeo = new THREE.BufferGeometry();
+        auraGeo.setAttribute('position', new THREE.BufferAttribute(auraPositions, 3));
+        const auraPts = new THREE.Points(auraGeo, coreMat);
+        jarvisGroup.add(auraPts);
+        scene.add(jarvisGroup);
 
-        const headGeo = createSculptedHeadGeometry();
-        const headOrigPositions = Float32Array.from(headGeo.attributes.position.array);
+        /* --- 2. PLASMA ORB (High-Density Liquid Sphere) --- */
+        const plasmaGroup = new THREE.Group();
+        const pGeo = new THREE.SphereGeometry(7.6, 64, 64);
+        const pOrig = Float32Array.from(pGeo.attributes.position.array);
+        plasmaGroup.add(new THREE.Points(pGeo, coreMat));
+        plasmaGroup.visible = false;
+        scene.add(plasmaGroup);
 
-        const headGroup = new THREE.Group();
-        headGroup.add(new THREE.Points(headGeo, pointsMat));
-        headGroup.add(new THREE.Mesh(headGeo, wireMat));
-
-        // Leuchtende Cyber-Augen in den Augenhöhlen
-        const eyeGeo = new THREE.SphereGeometry(0.32, 16, 16);
-        const leftEye = new THREE.Mesh(eyeGeo, eyeMat);
-        leftEye.position.set(-1.62, 0.90, 5.45);
-        const rightEye = new THREE.Mesh(eyeGeo, eyeMat);
-        rightEye.position.set(1.62, 0.90, 5.45);
-        headGroup.add(leftEye);
-        headGroup.add(rightEye);
-
-        // Hologramm-Scan-Ringe um den Hals/Basis
-        const ringGeo = new THREE.RingGeometry(5.6, 5.75, 64);
-        const ringMat = new THREE.MeshBasicMaterial({ color: 0x00F5D4, side: THREE.DoubleSide, transparent: true, opacity: 0.35 });
-        const baseRing = new THREE.Mesh(ringGeo, ringMat);
-        baseRing.rotation.x = Math.PI / 2;
-        baseRing.position.y = -7.8;
-        headGroup.add(baseRing);
-
-        scene.add(headGroup);
-
-        // Alternative: Klassische Sphäre
-        const sphereGroup = new THREE.Group();
-        const sGeo = new THREE.IcosahedronGeometry(8.5, 5);
-        sphereGroup.add(new THREE.Points(sGeo, pointsMat));
-        sphereGroup.add(new THREE.Mesh(sGeo, wireMat));
-        sphereGroup.visible = false;
-        scene.add(sphereGroup);
+        /* --- 3. MATRIX CORE (3D Energy Helix) --- */
+        const matrixGroup = new THREE.Group();
+        const helixCount = 700;
+        const hPos = new Float32Array(helixCount * 3);
+        for (let i = 0; i < helixCount; i++) {
+            const t = (i / helixCount) * Math.PI * 6;
+            const strand = (i % 2 === 0) ? 1 : -1;
+            const y = ((i / helixCount) - 0.5) * 16;
+            const r = 4.2 + Math.sin(i * 0.2) * 0.4;
+            hPos[i * 3] = Math.cos(t) * r * strand;
+            hPos[i * 3 + 1] = y;
+            hPos[i * 3 + 2] = Math.sin(t) * r * strand;
+        }
+        const hGeo = new THREE.BufferGeometry();
+        hGeo.setAttribute('position', new THREE.BufferAttribute(hPos, 3));
+        matrixGroup.add(new THREE.Points(hGeo, coreMat));
+        matrixGroup.visible = false;
+        scene.add(matrixGroup);
 
         function toggleVisual() {
-            visualMode = (visualMode === 'KOPF 3D') ? 'SPHÄRE' : 'KOPF 3D';
-            localStorage.setItem('neo_visual', visualMode);
+            const idx = (visualModes.indexOf(visualMode) + 1) % visualModes.length;
+            visualMode = visualModes[idx];
+            localStorage.setItem('neo_visual_v2', visualMode);
             document.getElementById('visualBtn').innerText = visualMode;
         }
 
@@ -563,69 +502,72 @@ HTML_PAGE = """
             requestAnimationFrame(animate3D);
             const t = Date.now() * 0.002;
 
-            headGroup.visible = (visualMode === 'KOPF 3D');
-            sphereGroup.visible = (visualMode !== 'KOPF 3D');
+            jarvisGroup.visible = (visualMode === 'JARVIS');
+            plasmaGroup.visible = (visualMode === 'PLASMA');
+            matrixGroup.visible = (visualMode === 'MATRIX');
 
+            let pulse = 0;
             if (currentState === 'listening') {
-                pointsMat.color.setHex(0x00FF88);
+                coreMat.color.setHex(0x00FF88);
                 wireMat.color.setHex(0x00FF88);
-                eyeMat.color.setHex(0xAAFFCC);
-                ringMat.color.setHex(0x00FF88);
-                pointsMat.size = 0.34 + (audioEnergy * 0.003);
+                ringMat1.color.setHex(0x00FF88);
+                ringMat2.color.setHex(0x00FF88);
+                pulse = audioEnergy * 0.028;
             } else if (currentState === 'thinking') {
-                pointsMat.color.setHex(0xF59E0B);
+                coreMat.color.setHex(0xF59E0B);
                 wireMat.color.setHex(0xF59E0B);
-                eyeMat.color.setHex(0xFDE68A);
-                ringMat.color.setHex(0xF59E0B);
-                pointsMat.size = 0.35;
+                ringMat1.color.setHex(0xF59E0B);
+                ringMat2.color.setHex(0xFBBF24);
+                pulse = 0.45;
             } else if (currentState === 'speaking') {
-                pointsMat.color.setHex(0x38BDF8);
+                coreMat.color.setHex(0x38BDF8);
                 wireMat.color.setHex(0x00F5D4);
-                eyeMat.color.setHex(0xFFFFFF);
-                ringMat.color.setHex(0x38BDF8);
-                pointsMat.size = 0.33 + Math.abs(Math.sin(t * 7)) * 0.10;
+                ringMat1.color.setHex(0x38BDF8);
+                ringMat2.color.setHex(0x00F5D4);
+                pulse = Math.abs(Math.sin(t * 7.5)) * 0.85 + Math.abs(Math.cos(t * 4.2)) * 0.35;
             } else {
-                pointsMat.color.setHex(0x00F5D4);
+                coreMat.color.setHex(0x00F5D4);
                 wireMat.color.setHex(0x00BBF9);
-                eyeMat.color.setHex(0xCFFAFE);
-                ringMat.color.setHex(0x00F5D4);
-                pointsMat.size = 0.30;
+                ringMat1.color.setHex(0x00F5D4);
+                ringMat2.color.setHex(0x00BBF9);
                 audioEnergy *= 0.85;
+                pulse = Math.sin(t * 1.5) * 0.12;
             }
 
-            if (headGroup.visible) {
-                if (currentState === 'thinking') {
-                    headGroup.rotation.y += 0.032;
-                } else {
-                    const targetY = Math.sin(t * 0.65) * 0.36;
-                    const targetX = Math.sin(t * 0.45) * 0.07;
-                    headGroup.rotation.y += (targetY - headGroup.rotation.y) * 0.06;
-                    headGroup.rotation.x += (targetX - headGroup.rotation.x) * 0.06;
-                }
+            if (jarvisGroup.visible) {
+                const spin = currentState === 'thinking' ? 0.04 : 0.01;
+                gyro1.rotation.x += spin * 1.2;
+                gyro1.rotation.y += spin * 0.8;
+                gyro2.rotation.y -= spin * 1.4;
+                gyro2.rotation.z += spin * 0.6;
+                gyro3.rotation.x -= spin * 0.9;
+                gyro3.rotation.z -= spin * 1.1;
+                auraPts.rotation.y += 0.004;
 
-                // Lip-Sync & Unterkiefer-Animation beim Sprechen
-                const pos = headGeo.attributes.position.array;
-                const speakPulse = currentState === 'speaking'
-                    ? (Math.abs(Math.sin(t * 8.5)) * 0.65 + Math.abs(Math.cos(t * 4.5)) * 0.35)
-                    : (audioEnergy * 0.012);
-
+                const pos = innerGeo.attributes.position.array;
                 for (let i = 0; i < pos.length; i += 3) {
-                    const ox = headOrigPositions[i];
-                    const oy = headOrigPositions[i + 1];
-                    const oz = headOrigPositions[i + 2];
-
-                    if (oy < -2.2 && oy > -5.5 && oz > 2.5 && Math.abs(ox) < 2.6) {
-                        pos[i + 1] = oy - speakPulse * 0.52;
-                        pos[i + 2] = oz + speakPulse * 0.18;
-                    } else {
-                        pos[i + 1] = oy;
-                        pos[i + 2] = oz;
-                    }
+                    const ox = innerOrig[i], oy = innerOrig[i + 1], oz = innerOrig[i + 2];
+                    const wave = 1 + Math.sin(t * 3 + ox * 0.8 + oy * 0.8) * (0.04 + pulse * 0.14);
+                    pos[i] = ox * wave;
+                    pos[i + 1] = oy * wave;
+                    pos[i + 2] = oz * wave;
                 }
-                headGeo.attributes.position.needsUpdate = true;
+                innerGeo.attributes.position.needsUpdate = true;
+            } else if (plasmaGroup.visible) {
+                plasmaGroup.rotation.y += (currentState === 'thinking' ? 0.035 : 0.008);
+                const pos = pGeo.attributes.position.array;
+                for (let i = 0; i < pos.length; i += 3) {
+                    const ox = pOrig[i], oy = pOrig[i + 1], oz = pOrig[i + 2];
+                    const ripple = 1 + Math.sin(t * 2.5 + oy * 0.7 + ox * 0.5) * (0.03 + pulse * 0.12);
+                    pos[i] = ox * ripple;
+                    pos[i + 1] = oy * ripple;
+                    pos[i + 2] = oz * ripple;
+                }
+                pGeo.attributes.position.needsUpdate = true;
             } else {
-                sphereGroup.rotation.y += (currentState === 'thinking' ? 0.035 : 0.008);
-                sphereGroup.rotation.x += 0.003;
+                matrixGroup.rotation.y += (currentState === 'thinking' ? 0.045 : 0.014);
+                const s = 1 + pulse * 0.15;
+                matrixGroup.scale.set(s, 1, s);
             }
 
             renderer.render(scene, camera);
