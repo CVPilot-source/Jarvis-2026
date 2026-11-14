@@ -81,7 +81,6 @@ HTML_PAGE = """
             position: relative;
         }
 
-        /* Subtle HUD Grid Overlay */
         body::before {
             content: "";
             position: fixed;
@@ -94,7 +93,6 @@ HTML_PAGE = """
             z-index: 0;
         }
 
-        /* Outer Visor Frame */
         .visor-frame {
             position: fixed;
             inset: 6px;
@@ -105,7 +103,6 @@ HTML_PAGE = """
             box-shadow: inset 0 0 35px rgba(0, 212, 255, 0.08);
         }
 
-        /* --- TOP HUD BAR --- */
         .hud-top {
             display: flex;
             justify-content: space-between;
@@ -182,7 +179,6 @@ HTML_PAGE = """
             text-transform: uppercase;
         }
 
-        /* --- MAIN HUD STAGE --- */
         .hud-stage {
             flex: 1;
             display: grid;
@@ -260,7 +256,6 @@ HTML_PAGE = """
             display: block;
         }
 
-        /* --- CENTER TARGET RETICLE --- */
         .reticle-wrap {
             position: relative;
             width: 240px;
@@ -345,7 +340,6 @@ HTML_PAGE = """
         @keyframes spinCCW { from { transform: rotate(360deg); } to { transform: rotate(0deg); } }
         @keyframes corePulse { from { transform: scale(0.95); } to { transform: scale(1.16); } }
 
-        /* --- ACTION BAR & VOICE WAVEFORM --- */
         .action-bar {
             min-height: 36px;
             display: flex;
@@ -404,7 +398,6 @@ HTML_PAGE = """
             margin: 0 10px;
         }
 
-        /* Bottom Navigation Dock (Matching Reference Image!) */
         .hud-dock {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
@@ -438,7 +431,6 @@ HTML_PAGE = """
             box-shadow: 0 0 10px rgba(0, 245, 212, 0.25);
         }
 
-        /* Mobile Responsive Adjustment */
         @media (max-width: 680px) {
             .hud-stage {
                 grid-template-columns: 1fr;
@@ -462,7 +454,6 @@ HTML_PAGE = """
             .ring-inner { width: 106px; height: 106px; }
         }
 
-        /* Drawer */
         .drawer {
             position: fixed;
             inset: 0;
@@ -584,7 +575,6 @@ HTML_PAGE = """
 <body>
     <div class="visor-frame"></div>
 
-    <!-- TOP BAR -->
     <div class="hud-top">
         <div class="hud-chip" onclick="toggleWakeWord()">
             <div class="pulse-dot"></div>
@@ -605,15 +595,13 @@ HTML_PAGE = """
         </div>
     </div>
 
-    <!-- CENTER HUD STAGE -->
     <div class="hud-stage">
-        <!-- LEFT PANELS -->
         <div class="hud-side-col">
             <div class="hud-card">
                 <div class="hud-card-title"><span>SYSTEM STATUS</span><span>ONLINE</span></div>
                 <div class="stat-row"><span>GEMINI 3.8</span><div class="bar-track"><div class="bar-fill" style="width:96%"></div></div></div>
                 <div class="stat-row"><span>VOICE GATE</span><div class="bar-track"><div class="bar-fill" style="width:92%"></div></div></div>
-                <div class="stat-row"><span>CALENDAR</span><div class="bar-track"><div class="bar-fill" style="width:100%"></div></div></div>
+                <div class="stat-row"><span>MODULES</span><div class="bar-track"><div class="bar-fill" style="width:100%"></div></div></div>
             </div>
 
             <div class="hud-card">
@@ -625,7 +613,6 @@ HTML_PAGE = """
             </div>
         </div>
 
-        <!-- CENTER TARGET RETICLE -->
         <div class="reticle-wrap" onclick="toggleDirectRecord()">
             <div class="reticle-label" id="reticleStatus">NEURAL CORE • READY</div>
             <div class="ring ring-outer"></div>
@@ -634,13 +621,12 @@ HTML_PAGE = """
             <div class="core-eye" id="coreEye">NEO</div>
         </div>
 
-        <!-- RIGHT PANELS -->
         <div class="hud-side-col">
-            <div class="hud-card" onclick="quickCmd('Erkläre mir ausführlich meine Termine im Kalender für heute und die nächsten Tage.')" style="cursor:pointer;">
-                <div class="hud-card-title"><span>MISSION / KALENDER</span><span>LIVE</span></div>
+            <div class="hud-card" onclick="quickCmd('Ich fahre jetzt los zum nächsten Termin. Gib mir das Auto-Briefing mit Codes und starte die Navigation.')" style="cursor:pointer;">
+                <div class="hud-card-title"><span>AUTO-BRIEFING</span><span>GO</span></div>
                 <div style="font-size:11.5px; color:var(--text-main); line-height:1.35;">
-                    • Termine abrufen<br>
-                    • Objekte & Codes<br>
+                    • Nächster Termin + Codes<br>
+                    • Direkt-Navi starten<br>
                     • Offene Tasks: <strong id="hud-task" style="color:var(--hud-cyan);">0</strong>
                 </div>
             </div>
@@ -655,25 +641,23 @@ HTML_PAGE = """
         </div>
     </div>
 
-    <!-- DYNAMIC ACTION BUTTONS (Kopieren / WhatsApp / Maps) -->
     <div class="action-bar" id="actionBar"></div>
 
-    <!-- BOTTOM VOICE WAVE & HUD DOCK -->
     <div class="hud-bottom">
         <div class="voice-wave-box">
             <span class="voice-tag" id="waveLabel">VOICE ASSISTANT</span>
             <canvas id="waveCanvas" width="420" height="40"></canvas>
-            <span class="voice-tag" style="color:var(--hud-cyan);">DE-FL</span>
+            <span class="voice-tag" style="color:var(--hud-cyan);">DE / SQ</span>
         </div>
 
         <div class="hud-dock">
-            <div class="dock-btn" onclick="findParking()">
+            <div class="dock-btn" onclick="quickCmd('Ich fahre los zum nächsten Termin im Kalender. Gib mir das Briefing und starte die Navigation.')">
                 <span class="ico">🧭</span>
-                <span>NAVIGATION</span>
+                <span>LOSFAHREN</span>
             </div>
             <div class="dock-btn" onclick="document.getElementById('camInput').click()">
                 <span class="ico">📷</span>
-                <span>ANALYSIS</span>
+                <span>MÄNGEL-CAM</span>
             </div>
             <div class="dock-btn" onclick="quickCmd('Erkläre mir ausführlich meine Termine im Kalender für heute und die nächsten Tage.')">
                 <span class="ico">📅</span>
@@ -692,7 +676,6 @@ HTML_PAGE = """
 
     <input type="file" id="camInput" accept="image/*" capture="environment" style="display:none" onchange="handleImage(event)">
 
-    <!-- SYSTEM DRAWER -->
     <div class="drawer" id="drawer">
         <div>
             <div class="drawer-header">
@@ -710,7 +693,7 @@ HTML_PAGE = """
         <div class="drawer-body" id="drawerBody"></div>
 
         <div class="text-dock">
-            <input type="text" id="msg" placeholder="Befehl oder Notiz eingeben..." onkeypress="if(event.key==='Enter'){closeDrawer();sendText();}">
+            <input type="text" id="msg" placeholder="Befehl, Kalkulation oder Übersetzung..." onkeypress="if(event.key==='Enter'){closeDrawer();sendText();}">
             <button onclick="closeDrawer();sendText();">SEND</button>
         </div>
     </div>
@@ -718,7 +701,6 @@ HTML_PAGE = """
     <audio id="player" playsinline></audio>
 
     <script>
-        /* --- Live HUD Clock --- */
         function updateHudClock() {
             const now = new Date();
             document.getElementById('hudClock').innerText = now.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
@@ -727,7 +709,6 @@ HTML_PAGE = """
         updateHudClock();
         setInterval(updateHudClock, 10000);
 
-        /* --- Voice Waveform Visualizer --- */
         const waveCanvas = document.getElementById('waveCanvas');
         const wCtx = waveCanvas.getContext('2d');
         let audioEnergy = 0;
@@ -785,7 +766,6 @@ HTML_PAGE = """
             } catch (e) {}
         }
 
-        /* --- Directional Voice-Isolation Engine (Unchanged & Stable!) --- */
         const actionBar = document.getElementById('actionBar');
         const stateLabel = document.getElementById('stateLabel');
         const reticleStatus = document.getElementById('reticleStatus');
@@ -1056,7 +1036,6 @@ HTML_PAGE = """
             if (wakeEnabled) setTimeout(() => startWakeListener(), 850);
         };
 
-        /* --- Drawer & Tools --- */
         let activeTab = 'tools';
         function openDrawer() { document.getElementById('drawer').classList.add('open'); switchTab(activeTab); }
         function closeDrawer() { document.getElementById('drawer').classList.remove('open'); }
@@ -1069,11 +1048,12 @@ HTML_PAGE = """
             if (tab === 'tools') {
                 body.innerHTML = `
                     <div class="quick-grid">
+                        <div class="q-btn" onclick="closeDrawer();quickCmd('Ich fahre los zum nächsten Termin im Kalender. Gib mir das Auto-Briefing mit Objekt-Codes und starte die Navigation.')">🚗 Auto-Briefing & Navi</div>
                         <div class="q-btn" onclick="closeDrawer();quickCmd('Erkläre mir ausführlich meine Termine im Kalender für heute und die nächsten Tage.')">📅 Kalender erklären</div>
-                        <div class="q-btn" onclick="closeDrawer();quickCmd('Gib mir meinen Statusbericht für heute mit Kalender und Aufgaben.')">📋 Statusbericht</div>
-                        <div class="q-btn" onclick="closeDrawer();quickCmd('Wie wird das Wetter heute in Hamburg?')">🌤️ Wetter Hamburg</div>
+                        <div class="q-btn" onclick="closeDrawer();quickCmd('Kalkuliere ein Reinigungsangebot für 600 Quadratmeter Büro, zweimal pro Woche, und mach die WhatsApp-Nachricht fertig.')">💶 Angebots-Rechner</div>
+                        <div class="q-btn" onclick="closeDrawer();document.getElementById('camInput').click()">📷 Mängelbericht Foto</div>
                         <div class="q-btn" onclick="closeDrawer();saveParking()">🅿️ Parkplatz merken</div>
-                        <div class="q-btn" onclick="closeDrawer();findParking()">🚗 Auto finden</div>
+                        <div class="q-btn" onclick="closeDrawer();findParking()">🧭 Auto finden (GPS)</div>
                     </div>`;
                 return;
             }
@@ -1123,7 +1103,7 @@ HTML_PAGE = """
                     canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
                     sendToNeo({
                         image: canvas.toDataURL('image/jpeg', 0.7).split(',')[1],
-                        message: note || "Analysiere dieses Bild und erkläre es kurz."
+                        message: note || "Erstelle anhand dieses Fotos einen professionellen Objekt-Mängelbericht mit Datum und Uhrzeit für den Kunden und mach ihn für WhatsApp fertig."
                     });
                 };
                 img.src = e.target.result;
@@ -1281,7 +1261,7 @@ def get_ical_events():
                 if dt_obj and dt_obj >= now:
                     title = title_m.group(1).strip().replace("\\,", ",")
                     loc = loc_m.group(1).strip().replace("\\,", ",") if loc_m else ""
-                    desc = desc_m.group(1).strip().replace("\\n", " ")[:100] if desc_m else ""
+                    desc = desc_m.group(1).strip().replace("\\n", " ")[:120] if desc_m else ""
                     entry = f"- {dt_str}: {title}"
                     if loc:
                         entry += f" (Ort: {loc})"
@@ -1298,35 +1278,46 @@ def get_ical_events():
 
 SYSTEM_PROMPT = """Du bist NEO, der hochintelligente, ruhige KI-Assistent von Sir (Kundenbetreuer in einer Gebäudereinigung in Hamburg).
 Aktueller Modus: {mode} | Aktuelle Zeit: {local_time}
-Antworte IMMER auf perfektem Deutsch, höflich, ohne Sternchen/Markdown, und nenne den Nutzer 'Sir'.
+Antworte höflich, ohne Sternchen/Markdown, und nenne den Nutzer 'Sir'. Standard-Sprache ist Deutsch (außer bei Übersetzungen ins Albanische).
 
-WICHTIGE REGELN FÜR STIMMEN-FOKUS & KALENDER:
+WICHTIGE REGELN & 4 SPEZIAL-MODULE:
 1. NUR DIREKTE STIMME BEACHTEN (SEHR WICHTIG):
-   - Konzentriere dich ausschließlich auf die lauteste, nahe Hauptstimme (Sir), die direkt mit dir spricht.
-   - Ignoriere leise Stimmen im Hintergrund, andere Personen im Raum, Fernseher, Radio oder Telefongeräusche!
-   - Wenn im Audio KEINE klare direkte Anfrage an dich zu hören ist (nur Raumgeräusche oder Hintergrundgespräche), antworte mit `"ignore_background": true` und leerem `"reply": ""`.
-2. KALENDER & TERMINE:
-   - Wenn Sir nach seinem Kalender, Terminen, Objektbesichtigungen oder seinem Tagesplan fragt: Nutze die bereitgestellten 'Kalender-Termine' und ERKLÄRE ihm die Termine klar, vollständig und verständlich in 3 bis 5 Sätzen (nenne Datum, genaue Uhrzeit, Titel des Termins und Ort/Objekt).
-3. ALLGEMEINE ANTWORTEN:
-   - Bei normalen Befehlen antworte präzise in 1-2 Sätzen.
-4. WHATSAPP (ANDROID NATIVE INTENT — NIEMALS web.whatsapp.com!):
-   - Nummer bekannt: "https://wa.me/49176...?text=URL_ENCODED"
-   - Nummer NICHT bekannt:
-     * Modus ARBEIT: "intent://send?text=URL_ENCODED#Intent;scheme=whatsapp;package=com.whatsapp.w4b;end"
-     * Modus PRIVAT: "intent://send?text=URL_ENCODED#Intent;scheme=whatsapp;package=com.whatsapp;end"
-5. MAPS & APPS:
-   - Maps: "https://www.google.com/maps/search/?api=1&query=URL_ENCODED"
-   - Social Media Post: Text in 'copy_text', action_url auf Instagram/TikTok/LinkedIn/Facebook.
-6. LISTEN:
-   - 'new_memory' / 'delete_memory': Objekt-Codes, Notizen, Nummern
-   - 'new_material' / 'delete_material': Material/Einkauf
-   - 'new_task' / 'delete_task': Aufgaben
-7. GESPRÄCH ENDE:
-   - Bei "Danke", "Stopp", "Fertig", "Das war's": setze "end_conversation": true.
+   - Konzentriere dich ausschließlich auf die lauteste, nahe Hauptstimme (Sir). Ignoriere Hintergrundstimmen im Raum, TV, Radio oder Telefon!
+   - Wenn keine klare direkte Anfrage vorliegt, setze `"ignore_background": true` und `"reply": ""`.
+
+2. MODUL A — AUTO-BRIEFING & NAVIGATION ("Ich fahre los", "Nächster Termin", "Losfahren"):
+   - Lies den nächsten anstehenden Termin aus 'Kalender-Termine'.
+   - Prüfe in 'Notizen' (memory), ob es Türcodes, Schlüssel-Infos oder Ansprechpartner zu diesem Objekt/Kunden gibt!
+   - Fasse beides (Termin + Codes/Notizen) in 2-3 klaren Sätzen zusammen und setze `action_url` auf Google Maps Navigation: `"https://www.google.com/maps/dir/?api=1&destination=ADRESSE_URL_ENCODED&travelmode=driving"` mit `action_label`: `"Navigation starten"`.
+
+3. MODUL B — ZWEISPRACHIGER DOLMETSCHER DEUTSCH <-> ALBANISCH ("Übersetze...", "Përktheje..."):
+   - Wenn Sir sagt "Übersetze für das Team..." oder auf Deutsch spricht und Albanisch will: Übersetze den Satz in natürliches, freundliches Albanisch, setze `reply` auf die albanische Übersetzung (damit NEO es laut vorliest!), `voice_lang`: `"sq"` und schreibe die Übersetzung zusätzlich in `copy_text`.
+   - Wenn Sir auf Albanisch spricht und die deutsche Übersetzung für einen Kunden braucht: Setze `reply` auf die höfliche deutsche Übersetzung, `voice_lang`: `"de"` und schreibe sie in `copy_text`.
+
+4. MODUL C — ANGEBOTS- & STUNDEN-KALKULATOR ("Kalkuliere...", "Angebot berechnen..."):
+   - Nutze realistische Richtwerte der Gebäudereinigung in Deutschland:
+     * Büroreinigung: ca. 220 m²/Stunde | Unterhaltsreinigung / Praxis: ca. 160 m²/Stunde | Treppenhaus: ca. 180 m²/Stunde | Glasreinigung: ca. 45 m²/Stunde.
+     * Verrechnungssatz: ca. 31,50 € netto/Stunde (4,33 Wochen pro Monat).
+   - Nenne in `reply` die geschätzten Stunden pro Einsatz, die monatlichen Stunden und den monatlichen Netto-Preis in 2-3 Sätzen.
+   - Erstelle ein fertiges, professionelles Angebots-Kurzschreiben in `copy_text` und bereite den WhatsApp-Business-Intent in `action_url` vor (`action_label`: `"Angebot per WhatsApp"`).
+
+5. MODUL D — OBJEKT-MÄNGELBERICHT MIT KAMERA:
+   - Wenn ein Bild gesendet wird: Beschreibe den Zustand/Mangel sachlich und professionell in 2 Sätzen für Sir.
+   - Schreibe einen formellen Mängelbericht (inkl. Datum & Uhrzeit `{local_time}`, Befund und Maßnahme) in `copy_text` und setze `action_url` auf den WhatsApp-Intent (`action_label`: `"Bericht senden"`).
+
+6. KALENDER & ALLGEMEINES:
+   - Bei allgemeinen Kalenderfragen erkläre die Termine in 3-5 Sätzen mit Datum, Uhrzeit und Ort.
+   - WHATSAPP (ANDROID NATIVE INTENT — NIEMALS web.whatsapp.com!):
+     * Nummer bekannt: `"https://wa.me/49176...?text=URL_ENCODED"`
+     * Nummer NICHT bekannt (ARBEIT): `"intent://send?text=URL_ENCODED#Intent;scheme=whatsapp;package=com.whatsapp.w4b;end"`
+     * Nummer NICHT bekannt (PRIVAT): `"intent://send?text=URL_ENCODED#Intent;scheme=whatsapp;package=com.whatsapp;end"`
+   - LISTEN: `new_memory`/`delete_memory` (Codes/Notizen), `new_material`/`delete_material` (Material), `new_task`/`delete_task` (Aufgaben).
+   - GESPRÄCH ENDE: Bei "Danke", "Stopp", "Fertig", "Das war's": `"end_conversation": true`.
 
 Antworte AUSSCHLIESSLICH als gültiges JSON-Objekt (ohne Markdown-Codeblöcke):
 {{
-  "reply": "Deine vollständige gesprochene Antwort an Sir",
+  "reply": "Deine gesprochene Antwort an Sir",
+  "voice_lang": "de",
   "ignore_background": false,
   "copy_text": "",
   "new_memory": "",
@@ -1348,9 +1339,10 @@ def extract_json(raw_text):
         return json.loads(match.group(0))
     return {"reply": clean}
 
-async def make_voice(text):
+async def make_voice(text, voice_lang="de"):
     clean_text = text.replace("*", "").replace("#", "").replace("...", ".").strip()
-    communicate = edge_tts.Communicate(clean_text, "de-DE-FlorianMultilingualNeural", rate="+6%")
+    voice_name = "sq-AL-IlirNeural" if voice_lang == "sq" else "de-DE-FlorianMultilingualNeural"
+    communicate = edge_tts.Communicate(clean_text, voice_name, rate="+5%")
     audio_bytes = b""
     async for chunk in communicate.stream():
         if chunk["type"] == "audio":
@@ -1383,7 +1375,7 @@ def chat():
 
         calendar_info = ""
         lower_msg = msg.lower()
-        if "audio" in data or any(w in lower_msg for w in ["kalender", "termin", "heute", "morgen", "woche", "statusbericht", "plan", "besichtigung"]):
+        if "audio" in data or any(w in lower_msg for w in ["kalender", "termin", "heute", "morgen", "woche", "statusbericht", "plan", "besichtigung", "fahre", "los", "nächste"]):
             calendar_info = get_ical_events()
 
         client = genai.Client(api_key=api_key)
@@ -1391,7 +1383,7 @@ def chat():
 
         if "image" in data:
             contents.append(types.Part.from_bytes(data=base64.b64decode(data["image"]), mime_type="image/jpeg"))
-            contents.append(msg or "Analysiere dieses Bild und erkläre es kurz.")
+            contents.append(msg or "Erstelle anhand dieses Fotos einen professionellen Objekt-Mängelbericht.")
         elif "audio" in data:
             contents.append(types.Part.from_bytes(data=base64.b64decode(data["audio"]), mime_type=data.get("mime_type", "audio/webm")))
             contents.append("Fokussiere dich NUR auf die direkte Hauptstimme von Sir und ignoriere leise Hintergrundstimmen im Raum oder vom Fernseher/Telefon.")
@@ -1421,7 +1413,8 @@ def chat():
             return jsonify({"ignore_background": True})
 
         reply = result.get("reply", "Zu Befehl, Sir.")
-        audio_b64 = asyncio.run(make_voice(reply))
+        voice_lang = result.get("voice_lang", "de")
+        audio_b64 = asyncio.run(make_voice(reply, voice_lang))
 
         return jsonify({
             "reply": reply,
