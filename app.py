@@ -15,9 +15,10 @@ app = Flask(__name__)
 ICAL_CACHE = {"ts": 0, "events": []}
 
 ICON_SVG = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="115" fill="#060913"/>
-  <circle cx="256" cy="256" r="150" fill="none" stroke="#38BDF8" stroke-width="12"/>
-  <circle cx="256" cy="256" r="26" fill="#38BDF8"/>
+  <rect width="512" height="512" rx="120" fill="#09090B"/>
+  <circle cx="256" cy="256" r="155" fill="none" stroke="#F59E0B" stroke-width="10"/>
+  <circle cx="256" cy="256" r="110" fill="none" stroke="#22D3EE" stroke-width="5" stroke-dasharray="20 12"/>
+  <circle cx="256" cy="256" r="24" fill="#F59E0B"/>
 </svg>"""
 
 HTML_PAGE = """<!DOCTYPE html>
@@ -27,168 +28,324 @@ HTML_PAGE = """<!DOCTYPE html>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#060913">
+    <meta name="theme-color" content="#09090B">
     <link rel="manifest" href="/manifest.json">
-    <title>NEO</title>
+    <title>NEO Executive</title>
     <style>
         :root {
-            --accent: #38BDF8;
-            --bg: #060913;
-            --card: #101726;
-            --border: rgba(255,255,255,0.1);
-            --text: #F8FAFC;
-            --muted: #94A3B8;
+            --gold: #F59E0B;
+            --cyan: #22D3EE;
+            --active: #F59E0B;
+            --bg: #09090B;
+            --surface: #141417;
+            --surface-2: #1E1E24;
+            --border: rgba(255, 255, 255, 0.08);
+            --text: #FAFAFA;
+            --muted: #A1A1AA;
         }
-        body.listening { --accent: #10B981; }
-        body.thinking  { --accent: #F59E0B; }
-        body.speaking  { --accent: #A855F7; }
+        body.listening { --active: #10B981; }
+        body.thinking  { --active: #22D3EE; }
+        body.speaking  { --active: #A855F7; }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
         body {
             margin: 0 auto;
-            max-width: 520px;
+            max-width: 500px;
             height: 100dvh;
-            background: var(--bg);
+            background: radial-gradient(circle at 50% 18%, #1C1917 0%, #09090B 62%);
             color: var(--text);
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
             padding: 12px 14px;
-            gap: 10px;
+            gap: 9px;
         }
-        .row-between { display: flex; justify-content: space-between; align-items: center; }
-        .chip {
-            background: var(--card); border: 1px solid var(--border); color: var(--text);
-            padding: 7px 13px; border-radius: 999px; font-size: 12px; font-weight: 700; cursor: pointer;
+
+        /* HEADER */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
-        .hero {
-            background: var(--card); border: 1px solid var(--border); border-radius: 18px;
-            padding: 12px; display: flex; align-items: center; gap: 12px;
+        .pill-tag {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 6px 12px;
+            border-radius: 999px;
+            font-size: 11.5px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
-        .avatar {
-            width: 68px; height: 76px; border-radius: 14px; overflow: hidden;
-            border: 2px solid var(--accent); flex-shrink: 0; cursor: pointer;
+        .indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--active);
+            box-shadow: 0 0 8px var(--active);
         }
-        .avatar img { width: 100%; height: 114%; object-fit: cover; object-position: center 12%; display: block; }
-        .badge {
-            display: inline-block; background: rgba(56,189,248,0.12); color: var(--accent);
-            border-radius: 6px; padding: 3px 8px; font-size: 11px; font-weight: 700; margin-top: 5px;
+        .brand {
+            font-size: 13px;
+            font-weight: 900;
+            letter-spacing: 4px;
+            color: var(--gold);
         }
-        .box {
-            background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 11px 13px;
+
+        /* CENTER ORB / AVATAR */
+        .core-stage {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 4px 0;
         }
-        .lbl { font-size: 10px; font-weight: 800; color: var(--accent); text-transform: uppercase; letter-spacing: 0.8px; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; flex: 1; }
-        .tile {
-            background: var(--card); border: 1px solid var(--border); border-radius: 15px;
-            padding: 12px; display: flex; flex-direction: column; justify-content: center; cursor: pointer;
+        .orb-wrap {
+            width: 112px;
+            height: 112px;
+            border-radius: 50%;
+            padding: 3px;
+            background: linear-gradient(135deg, var(--active), var(--cyan));
+            box-shadow: 0 0 26px rgba(245, 158, 11, 0.25);
+            cursor: pointer;
+            transition: transform 0.15s;
         }
-        .tile:active { border-color: var(--accent); }
-        .t-main { font-size: 14px; font-weight: 700; }
-        .t-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
-        .act-bar { display: flex; gap: 8px; justify-content: center; min-height: 30px; }
-        .pill {
-            background: var(--accent); color: #060913; border: none; border-radius: 999px;
-            padding: 7px 15px; font-size: 12px; font-weight: 800; text-decoration: none; cursor: pointer;
+        .orb-wrap:active { transform: scale(0.95); }
+        .orb-img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            overflow: hidden;
+            background: #09090B;
         }
-        .dock {
-            background: var(--card); border: 1px solid var(--border); border-radius: 18px;
-            padding: 10px; display: flex; flex-direction: column; gap: 8px;
+        .orb-img img {
+            width: 100%;
+            height: 114%;
+            object-fit: cover;
+            object-position: center 12%;
+            display: block;
         }
-        .mic-row { display: flex; align-items: center; gap: 10px; }
-        .mic {
-            width: 50px; height: 50px; border-radius: 50%; background: #0B1324;
-            border: 2px solid var(--accent); color: #FFF; font-size: 20px; cursor: pointer; flex-shrink: 0;
+        .core-title {
+            font-size: 16px;
+            font-weight: 800;
+            margin-top: 8px;
         }
-        .inp-row { display: flex; gap: 6px; }
-        .inp-row input {
-            flex: 1; background: #060913; border: 1px solid var(--border); border-radius: 10px;
-            color: #FFF; padding: 9px 10px; font-size: 14px; outline: none;
+        .core-sub {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--active);
+            margin-top: 2px;
         }
-        .inp-row button {
-            background: var(--accent); color: #060913; border: none; border-radius: 10px;
-            padding: 0 14px; font-weight: 800; cursor: pointer;
+        .meta-strip {
+            display: flex;
+            gap: 6px;
+            margin-top: 6px;
         }
+        .meta-chip {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 7px;
+            padding: 3px 8px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--muted);
+            cursor: pointer;
+        }
+
+        /* CARDS */
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 10px 12px;
+        }
+        .card-head {
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--gold);
+            margin-bottom: 3px;
+        }
+        .card-body {
+            font-size: 13px;
+            line-height: 1.4;
+            color: #F4F4F5;
+        }
+
+        /* 4 COMPACT BUTTONS */
+        .tools-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 7px;
+        }
+        .tool-btn {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 13px;
+            padding: 10px 4px;
+            text-align: center;
+            cursor: pointer;
+        }
+        .tool-btn:active { border-color: var(--gold); background: var(--surface-2); }
+        .tool-ico { font-size: 17px; display: block; margin-bottom: 3px; }
+        .tool-lbl { font-size: 10.5px; font-weight: 700; color: var(--text); }
+
+        /* ACTION BAR */
+        .act-bar {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            min-height: 28px;
+        }
+        .gold-pill {
+            background: var(--gold);
+            color: #09090B;
+            border: none;
+            border-radius: 999px;
+            padding: 6px 15px;
+            font-size: 12px;
+            font-weight: 800;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        /* BOTTOM CONSOLE */
+        .console {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 8px;
+            display: flex;
+            gap: 7px;
+            align-items: center;
+        }
+        .mic-btn {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            background: var(--surface-2);
+            border: 1px solid var(--active);
+            color: #FFF;
+            font-size: 18px;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        .console input {
+            flex: 1;
+            background: #09090B;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: #FFF;
+            padding: 9px 10px;
+            font-size: 13.5px;
+            outline: none;
+        }
+        .send-btn {
+            background: var(--gold);
+            color: #09090B;
+            border: none;
+            border-radius: 10px;
+            padding: 9px 13px;
+            font-size: 12px;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        /* NOTES MODAL */
         .modal {
-            position: fixed; inset: 0; background: #060913; z-index: 50;
-            display: none; flex-direction: column; padding: 16px;
+            position: fixed;
+            inset: 0;
+            background: #09090B;
+            z-index: 50;
+            display: none;
+            flex-direction: column;
+            padding: 16px;
         }
         .modal.open { display: flex; }
-        .note-row {
-            display: flex; justify-content: space-between; align-items: center;
-            background: var(--card); padding: 10px 12px; border-radius: 10px; margin-bottom: 8px; font-size: 13px;
+        .note-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 10px 12px;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            font-size: 13px;
         }
     </style>
 </head>
 <body>
-    <div class="row-between">
-        <button type="button" class="chip" id="wBtn" onclick="toggleWake()">Voice: AN</button>
-        <strong style="letter-spacing:2px; font-size:12px; color:var(--accent);">NEO</strong>
-        <button type="button" class="chip" id="mBtn" onclick="toggleMode()">Arbeit</button>
+    <div class="header">
+        <button type="button" class="pill-tag" onclick="toggleWake()">
+            <span class="indicator"></span>
+            <span id="wBtn">Voice AN</span>
+        </button>
+        <div class="brand">NEO</div>
+        <button type="button" class="pill-tag" id="mBtn" onclick="toggleMode()">Arbeit</button>
     </div>
 
-    <div class="hero">
-        <div class="avatar" onclick="toggleRec()"><img src="/avatar" alt="NEO" onerror="this.src='/icon.svg'"></div>
-        <div>
-            <div style="font-size:18px; font-weight:800;">Hallo, Margil</div>
-            <div>
-                <span class="badge" id="clock">--:--</span>
-                <span class="badge" id="weather">Hamburg</span>
-                <span class="badge" onclick="openList()" style="cursor:pointer;">Notizen: <span id="nCount">0</span></span>
-            </div>
+    <div class="core-stage">
+        <div class="orb-wrap" onclick="toggleRec()">
+            <div class="orb-img"><img src="/avatar" alt="NEO" onerror="this.src='/icon.svg'"></div>
+        </div>
+        <div class="core-title">Hallo, Margil</div>
+        <div class="core-sub" id="stTxt" onclick="toggleRec()">Tippen oder „Hey Neo“ sagen</div>
+        <div class="meta-strip">
+            <span class="meta-chip" id="clock">--:--</span>
+            <span class="meta-chip" id="weather">Hamburg</span>
+            <span class="meta-chip" onclick="openList()">Codes: <span id="nCount">0</span></span>
         </div>
     </div>
 
-    <div class="box" onclick="quickCmd('Erkläre mir kurz meine nächsten Termine im Kalender.')" style="cursor:pointer;">
-        <div class="lbl">Nächster Termin</div>
-        <div id="nextEv" style="font-size:13.5px; font-weight:700; margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Kalender wird geladen...</div>
+    <div class="card" onclick="quickCmd('Erkläre mir kurz meine nächsten Termine im Kalender.')" style="cursor:pointer;">
+        <div class="card-head">Nächster Termin • Kalender</div>
+        <div class="card-body" id="nextEv" style="font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Wird synchronisiert...</div>
     </div>
 
-    <div class="box" style="min-height:58px;">
-        <div class="lbl">Antwort</div>
-        <div id="replyBox" style="font-size:13px; margin-top:3px; color:#E2E8F0;">Bereit für deine Befehle, Margil.</div>
+    <div class="card" style="flex:1; display:flex; flex-direction:column; justify-content:center;">
+        <div class="card-head">NEO Antwort</div>
+        <div class="card-body" id="replyBox">System bereit, Margil.</div>
     </div>
 
-    <div class="grid">
-        <div class="tile" onclick="quickCmd('Ich fahre los zum nächsten Termin. Gib mir das Briefing mit Codes und starte Navigation.')">
-            <div class="t-main">Auto-Briefing</div>
-            <div class="t-sub">Codes & Route</div>
+    <div class="tools-row">
+        <div class="tool-btn" onclick="quickCmd('Ich fahre los zum nächsten Termin. Gib mir das Briefing mit Codes und starte Navigation.')">
+            <span class="tool-ico">🧭</span>
+            <span class="tool-lbl">Briefing</span>
         </div>
-        <div class="tile" onclick="quickCmd('Kalkuliere 600 qm Büro, 2x pro Woche, mit WhatsApp-Angebot.')">
-            <div class="t-main">Angebot Rechner</div>
-            <div class="t-sub">m² & Preis</div>
+        <div class="tool-btn" onclick="quickCmd('Kalkuliere 600 qm Büro, 2x pro Woche, mit WhatsApp-Angebot.')">
+            <span class="tool-ico">📐</span>
+            <span class="tool-lbl">Angebot</span>
         </div>
-        <div class="tile" onclick="document.getElementById('cam').click()">
-            <div class="t-main">Mängel-Foto</div>
-            <div class="t-sub">Kamera Bericht</div>
+        <div class="tool-btn" onclick="document.getElementById('cam').click()">
+            <span class="tool-ico">📸</span>
+            <span class="tool-lbl">Mängel</span>
         </div>
-        <div class="tile" onclick="sendTg()">
-            <div class="t-main">Telegram Alert</div>
-            <div class="t-sub">Autorisierung</div>
+        <div class="tool-btn" onclick="sendTg()">
+            <span class="tool-ico">✈️</span>
+            <span class="tool-lbl">Telegram</span>
         </div>
     </div>
 
     <div class="act-bar" id="actBar"></div>
 
-    <div class="dock">
-        <div class="mic-row">
-            <button type="button" class="mic" onclick="toggleRec()">🎙️</button>
-            <div id="stTxt" onclick="toggleRec()" style="flex:1; font-size:13px; font-weight:700; color:var(--accent); cursor:pointer;">Tippen oder „Hey Neo“ sagen</div>
-            <button type="button" class="chip" onclick="openList()">Listen</button>
-        </div>
-        <div class="inp-row">
-            <input type="text" id="msg" placeholder="Befehl oder Übersetzung..." onkeypress="if(event.key==='Enter')sendTxt()">
-            <button type="button" onclick="sendTxt()">Senden</button>
-        </div>
+    <div class="console">
+        <button type="button" class="mic-btn" onclick="toggleRec()">🎙️</button>
+        <input type="text" id="msg" placeholder="Befehl oder Übersetzung..." onkeypress="if(event.key==='Enter')sendTxt()">
+        <button type="button" class="send-btn" onclick="sendTxt()">Go</button>
     </div>
 
     <input type="file" id="cam" accept="image/*" capture="environment" style="display:none" onchange="handleImg(event)">
 
     <div class="modal" id="modal">
-        <div class="row-between" style="margin-bottom:12px;">
-            <strong>Notizen & Objekt-Codes</strong>
-            <button type="button" class="chip" onclick="closeList()">✕ Schließen</button>
+        <div class="header" style="margin-bottom:12px;">
+            <strong style="color:var(--gold);">Objekt-Codes & Notizen</strong>
+            <button type="button" class="pill-tag" onclick="closeList()">✕ Schließen</button>
         </div>
         <div id="listBody" style="flex:1; overflow-y:auto;"></div>
     </div>
@@ -207,7 +364,7 @@ HTML_PAGE = """<!DOCTYPE html>
             }).catch(()=>{});
 
         fetch('/calendar_preview').then(r => r.json()).then(d => {
-            document.getElementById('nextEv').innerText = (d.events && d.events.length) ? (d.events[0].time + " – " + d.events[0].title) : "Keine Termine";
+            document.getElementById('nextEv').innerText = (d.events && d.events.length) ? (d.events[0].time + " – " + d.events[0].title) : "Keine Termine eingetragen";
         }).catch(()=>{});
 
         let mem = JSON.parse(localStorage.getItem('neo_memory') || '[]');
@@ -228,13 +385,13 @@ HTML_PAGE = """<!DOCTYPE html>
         function toggleMode() { mode = mode === 'ARBEIT' ? 'PRIVAT' : 'ARBEIT'; saveState(); }
         function setSt(s) {
             document.body.className = s || '';
-            stTxt.innerText = s === 'listening' ? 'Hört zu...' : (s === 'thinking' ? 'NEO denkt nach...' : (s === 'speaking' ? 'NEO spricht...' : 'Tippen oder „Hey Neo“ sagen'));
+            stTxt.innerText = s === 'listening' ? 'Hört zu, Margil...' : (s === 'thinking' ? 'NEO analysiert...' : (s === 'speaking' ? 'NEO spricht...' : 'Tippen oder „Hey Neo“ sagen'));
         }
 
         function stopWake() { if (wakeRec) { try { wakeRec.onend = null; wakeRec.abort(); } catch(e){} wakeRec = null; } }
         function toggleWake() {
             wakeOn = !wakeOn;
-            document.getElementById('wBtn').innerText = wakeOn ? 'Voice: AN' : 'Voice: AUS';
+            document.getElementById('wBtn').innerText = wakeOn ? 'Voice AN' : 'Voice AUS';
             if (wakeOn) startWake(); else stopWake();
         }
         function startWake() {
@@ -290,7 +447,7 @@ HTML_PAGE = """<!DOCTYPE html>
 
         function openList() {
             document.getElementById('modal').classList.add('open');
-            document.getElementById('listBody').innerHTML = mem.length ? mem.map((x,i) => `<div class="note-row"><span>${x}</span><button type="button" class="pill" onclick="mem.splice(${i},1);saveState();openList();">✓</button></div>`).join('') : '<p style="color:#94A3B8">Keine Notizen vorhanden.</p>';
+            document.getElementById('listBody').innerHTML = mem.length ? mem.map((x,i) => `<div class="note-item"><span>${x}</span><button type="button" class="gold-pill" onclick="mem.splice(${i},1);saveState();openList();">✓</button></div>`).join('') : '<p style="color:#A1A1AA">Keine Notizen gespeichert.</p>';
         }
         function closeList() { document.getElementById('modal').classList.remove('open'); }
 
@@ -331,13 +488,13 @@ HTML_PAGE = """<!DOCTYPE html>
                 if (d.new_memory) { mem.push(d.new_memory); saveState(); }
                 document.getElementById('replyBox').innerText = d.reply;
                 if (d.copy_text) {
-                    const b = document.createElement('button'); b.type = 'button'; b.className = 'pill'; b.innerText = 'Text kopieren';
+                    const b = document.createElement('button'); b.type = 'button'; b.className = 'gold-pill'; b.innerText = 'Text kopieren';
                     b.onclick = () => { navigator.clipboard.writeText(d.copy_text); b.innerText = '✓ Kopiert'; };
                     document.getElementById('actBar').appendChild(b);
                 }
                 if (d.action_url) {
                     inConv = false;
-                    const a = document.createElement('a'); a.href = d.action_url; a.className = 'pill'; a.innerText = d.action_label || 'Öffnen';
+                    const a = document.createElement('a'); a.href = d.action_url; a.className = 'gold-pill'; a.innerText = d.action_label || 'Öffnen';
                     document.getElementById('actBar').appendChild(a);
                 }
                 if (d.audio) {
@@ -427,8 +584,8 @@ def manifest():
         "short_name": "NEO",
         "start_url": "/",
         "display": "standalone",
-        "background_color": "#060913",
-        "theme_color": "#060913",
+        "background_color": "#09090B",
+        "theme_color": "#09090B",
         "icons": [{"src": "/icon.svg", "sizes": "any", "type": "image/svg+xml"}]
     })
 
