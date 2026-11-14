@@ -28,7 +28,7 @@ HTML_PAGE = """<!DOCTYPE html>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#030712">
     <link rel="manifest" href="/manifest.json">
-    <title>N.E.O. // SOCIAL & HOLOGRAPHIC CORE</title>
+    <title>N.E.O. // MULTI-CORE OS</title>
     <style>
         :root {
             --cyan: #00E5FF;
@@ -70,9 +70,9 @@ HTML_PAGE = """<!DOCTYPE html>
             display: flex; flex-direction: column; gap: 6px;
         }
         .sys-title {
-            font-size: 24px; font-weight: 900; letter-spacing: 6px; color: var(--cyan);
+            font-size: 26px; font-weight: 900; letter-spacing: 7px; color: var(--cyan);
             display: flex; align-items: center; gap: 10px;
-            text-shadow: 0 0 20px var(--cyan-glow);
+            text-shadow: 0 0 22px var(--cyan-glow);
         }
         .sys-sub { font-size: 11.5px; font-weight: 700; letter-spacing: 1.2px; color: var(--muted); }
         .hud-controls { display: flex; gap: 8px; margin-top: 4px; flex-wrap: wrap; }
@@ -174,10 +174,10 @@ HTML_PAGE = """<!DOCTYPE html>
     <!-- TOP LEFT -->
     <div class="hud-tl">
         <div class="sys-title">N E O</div>
-        <div class="sys-sub" id="sysMeta">HAMBURG • 24/7 SOCIAL OS</div>
+        <div class="sys-sub" id="sysMeta">HAMBURG • 24/7 ACTIVE</div>
         <div class="hud-controls">
-            <button type="button" class="hud-btn" id="wBtn" onclick="toggleWake()" style="border-color:#10B981; color:#10B981;">● HEY NEO: 24/7 AKTIV</button>
-            <button type="button" class="hud-btn" id="mBtn" onclick="toggleMode()">MODUS: ARBEIT</button>
+            <button type="button" class="hud-btn" id="wBtn" onclick="toggleWake()" style="border-color:#10B981; color:#10B981;">● HEY NEO: 24/7</button>
+            <button type="button" class="hud-btn" onclick="nextTheme()" id="themeBtn" style="border-color:var(--orange); color:var(--orange);">FIGURA: REACTOR</button>
             <button type="button" class="hud-btn" onclick="openHolo('calendar')">KALENDER</button>
             <button type="button" class="hud-btn" onclick="openHolo('codes')">CODES (<span id="nCount">0</span>)</button>
         </div>
@@ -186,10 +186,10 @@ HTML_PAGE = """<!DOCTYPE html>
     <!-- TOP RIGHT OUTPUT -->
     <div class="hud-tr">
         <div class="tr-head">
-            <span>SOCIAL & VOICE STREAM // 24/7</span>
+            <span>VOICE STREAM // 24/7</span>
             <span id="streamStatus">LAUSCHT ("HEY NEO")</span>
         </div>
-        <div class="tr-body" id="replyBox">Spreche einfach jederzeit mit mir: Sage „Hey Neo“ gefolgt von deinem Befehl (z.B. Instagram Post oder TikTok Skenar).</div>
+        <div class="tr-body" id="replyBox">Spreche einfach jederzeit mit mir: Sage „Hey Neo“ gefolgt von deinem Befehl. Kein Tippen nötig!</div>
     </div>
 
     <!-- CENTER STAGE -->
@@ -229,6 +229,17 @@ HTML_PAGE = """<!DOCTYPE html>
             } catch(e){}
         }
 
+        // --- THEME / FIGURE SELECTOR ---
+        let currentTheme = parseInt(localStorage.getItem('neo_theme') || '0');
+        const themes = ['REACTOR', 'NEURAL BRAIN', 'QUANTUM RING', 'PARTICLE BUST'];
+        
+        function nextTheme() {
+            currentTheme = (currentTheme + 1) % themes.length;
+            localStorage.setItem('neo_theme', currentTheme);
+            document.getElementById('themeBtn').innerText = 'FIGURA: ' + themes[currentTheme];
+        }
+        document.getElementById('themeBtn').innerText = 'FIGURA: ' + themes[currentTheme];
+
         // --- 1. NODES ---
         const NODES = [
             { id: 'brief',    label: '☀️ Morning Brief',   rx: 0.21, ry: 0.24, action: () => quickCmd('Gib mir mein komplettes Morning Briefing mit Terminen heute und wichtigen Objekt-Codes.') },
@@ -256,7 +267,7 @@ HTML_PAGE = """<!DOCTYPE html>
             nodesLayer.appendChild(el);
         });
 
-        // --- 2. ADVANCED PARTICLE MATRIX BUST ---
+        // --- 2. MULTI-FIGURE CANVAS ENGINE ---
         const canvas = document.getElementById('neuralCanvas');
         const ctx = canvas.getContext('2d');
         let W = window.innerWidth, H = window.innerHeight;
@@ -267,69 +278,124 @@ HTML_PAGE = """<!DOCTYPE html>
         let coreStateMode = 'idle', timeStep = 0;
         const packets = NODES.map((_, idx) => ({ progress: (idx * 0.15) % 1, speed: 0.004 + (idx % 3) * 0.0012 }));
 
+        // Particle datasets for different figures
         const matrixParticles = [];
-        const rows = 55;
-        for (let i = 0; i < rows; i++) {
-            const p = i / (rows - 1);
-            const yOffset = -130 + p * 260;
-            const cols = Math.floor(25 + Math.sin(p * Math.PI) * 25);
-            for (let c = 0; c < cols; c++) {
-                matrixParticles.push({
-                    row: i,
-                    p: p,
-                    baseXNorm: (c / (cols - 1)) - 0.5,
-                    yOffset: yOffset,
-                    angle: Math.random() * Math.PI * 2,
-                    speed: Math.random() * 0.04 + 0.02
-                });
+        for (let i = 0; i < 50; i++) {
+            const p = i / 49;
+            for (let c = 0; c < 30; c++) {
+                matrixParticles.push({ p: p, cNorm: (c / 29) - 0.5, yOff: -120 + p * 240, angle: Math.random() * Math.PI * 2, spd: Math.random() * 0.04 + 0.02 });
             }
         }
 
-        function drawReznikovMatrixBust(cx, cy, pulseBoost) {
-            timeStep += 0.025 * pulseBoost;
-            const coreGlow = ctx.createRadialGradient(cx, cy - 25, 5, cx, cy - 25, 110);
-            coreGlow.addColorStop(0, 'rgba(255, 140, 0, 0.9)');
-            coreGlow.addColorStop(0.4, 'rgba(255, 100, 0, 0.4)');
-            coreGlow.addColorStop(0.8, 'rgba(0, 229, 255, 0.15)');
-            coreGlow.addColorStop(1, 'rgba(3, 7, 18, 0)');
-            ctx.fillStyle = coreGlow;
-            ctx.beginPath(); ctx.arc(cx, cy - 25, 110, 0, Math.PI * 2); ctx.fill();
+        const brainNodes = Array.from({length: 45}, () => ({
+            x: (Math.random() - 0.5) * 180,
+            y: (Math.random() - 0.5) * 140 - 20,
+            z: (Math.random() - 0.5) * 140,
+            vx: (Math.random() - 0.5) * 1.2,
+            vy: (Math.random() - 0.5) * 1.2
+        }));
 
-            ctx.shadowBlur = 8;
-            matrixParticles.forEach(pt => {
-                pt.angle += pt.speed * pulseBoost;
-                let widthScale = 0;
-                if (pt.p < 0.3) {
-                    widthScale = Math.sin(pt.p * 3.3 * Math.PI) * 62;
-                } else if (pt.p < 0.45) {
-                    widthScale = 22 + (0.45 - pt.p) * 25;
-                } else {
-                    const shP = (pt.p - 0.45) / 0.55;
-                    widthScale = 30 + Math.pow(shP, 1.6) * 140;
+        function drawActiveFigure(cx, cy, pulseBoost) {
+            timeStep += 0.03 * pulseBoost;
+
+            if (currentTheme === 0) {
+                // FIGURA 1: ARC REACTOR CORE (Iron Man style)
+                const r = 85 + Math.sin(timeStep * 2) * 6;
+                const glow = ctx.createRadialGradient(cx, cy, 10, cx, cy, r + 50);
+                glow.addColorStop(0, 'rgba(255,140,0,0.8)');
+                glow.addColorStop(0.5, 'rgba(0,229,255,0.3)');
+                glow.addColorStop(1, 'transparent');
+                ctx.fillStyle = glow;
+                ctx.beginPath(); ctx.arc(cx, cy, r + 50, 0, Math.PI * 2); ctx.fill();
+
+                ctx.strokeStyle = 'rgba(0,229,255,0.85)'; ctx.lineWidth = 3;
+                ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke();
+
+                ctx.strokeStyle = 'rgba(255,140,0,0.9)'; ctx.lineWidth = 2;
+                ctx.setLineDash([12, 8]);
+                ctx.beginPath(); ctx.arc(cx, cy, r - 22, timeStep, timeStep + Math.PI * 1.5); ctx.stroke();
+                ctx.setLineDash([]);
+
+                ctx.fillStyle = '#FFF';
+                ctx.shadowColor = '#FF9900'; ctx.shadowBlur = 20;
+                ctx.beginPath(); ctx.arc(cx, cy, 16, 0, Math.PI * 2); ctx.fill();
+                ctx.shadowBlur = 0;
+
+            } else if (currentTheme === 1) {
+                // FIGURA 2: NEURAL BRAIN MATRIX
+                const bgGlow = ctx.createRadialGradient(cx, cy - 20, 10, cx, cy - 20, 120);
+                bgGlow.addColorStop(0, 'rgba(0,229,255,0.35)');
+                bgGlow.addColorStop(1, 'transparent');
+                ctx.fillStyle = bgGlow;
+                ctx.beginPath(); ctx.arc(cx, cy - 20, 120, 0, Math.PI * 2); ctx.fill();
+
+                brainNodes.forEach((n, idx) => {
+                    n.x += n.vx * pulseBoost; n.y += n.vy * pulseBoost;
+                    if (Math.abs(n.x) > 90) n.vx *= -1;
+                    if (Math.abs(n.y) > 70) n.vy *= -1;
+
+                    ctx.fillStyle = idx % 3 === 0 ? '#FF9900' : '#00E5FF';
+                    ctx.beginPath(); ctx.arc(cx + n.x, cy + n.y, 2.2, 0, Math.PI * 2); ctx.fill();
+
+                    for (let j = idx + 1; j < brainNodes.length; j++) {
+                        const n2 = brainNodes[j];
+                        const dist = Math.hypot(n.x - n2.x, n.y - n2.y);
+                        if (dist < 45) {
+                            ctx.strokeStyle = `rgba(0,229,255,${1 - dist/45})`;
+                            ctx.lineWidth = 0.8;
+                            ctx.beginPath(); ctx.moveTo(cx + n.x, cy + n.y); ctx.lineTo(cx + n2.x, cy + n2.y); ctx.stroke();
+                        }
+                    }
+                });
+
+            } else if (currentTheme === 2) {
+                // FIGURA 3: QUANTUM RING
+                const qGlow = ctx.createRadialGradient(cx, cy, 5, cx, cy, 130);
+                qGlow.addColorStop(0, 'rgba(255,140,0,0.6)');
+                qGlow.addColorStop(1, 'transparent');
+                ctx.fillStyle = qGlow;
+                ctx.beginPath(); ctx.arc(cx, cy, 130, 0, Math.PI * 2); ctx.fill();
+
+                for (let i = 0; i < 4; i++) {
+                    ctx.save();
+                    ctx.translate(cx, cy);
+                    ctx.rotate(timeStep * (i % 2 === 0 ? 0.8 : -0.8) + i * 0.7);
+                    ctx.strokeStyle = i % 2 === 0 ? '#00E5FF' : '#FF9900';
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([15, 10, 5, 10]);
+                    ctx.beginPath(); ctx.ellipse(0, 0, 110 - i * 18, 45 + i * 12, i * 0.5, 0, Math.PI * 2); ctx.stroke();
+                    ctx.restore();
                 }
 
-                const wave = Math.sin(timeStep + pt.row * 0.2 + pt.angle) * (coreStateMode !== 'idle' ? 4 : 1.8);
-                const x = cx + pt.baseXNorm * widthScale * 2 + wave;
-                const y = cy + pt.yOffset;
+            } else {
+                // FIGURA 4: PARTICLE BUST (Reznikov Style)
+                const faceGlow = ctx.createRadialGradient(cx, cy - 25, 5, cx, cy - 25, 100);
+                faceGlow.addColorStop(0, 'rgba(255, 140, 0, 0.85)');
+                faceGlow.addColorStop(0.5, 'rgba(0, 229, 255, 0.3)');
+                faceGlow.addColorStop(1, 'transparent');
+                ctx.fillStyle = faceGlow;
+                ctx.beginPath(); ctx.arc(cx, cy - 25, 100, 0, Math.PI * 2); ctx.fill();
 
-                let color = 'rgba(0, 229, 255, 0.7)';
-                let size = 1.4;
-                const distFromCenterFace = Math.hypot(x - cx, y - (cy - 25));
-                if (distFromCenterFace < 55 && pt.p > 0.1 && pt.p < 0.4) {
-                    color = 'rgba(255, 140, 0, 0.95)';
-                    size = 2.2;
-                } else if (pt.row % 3 === 0) {
-                    color = 'rgba(0, 229, 255, 0.85)';
-                    size = 1.8;
-                }
+                ctx.shadowBlur = 8;
+                matrixParticles.forEach(pt => {
+                    pt.angle += pt.spd * pulseBoost;
+                    let w = (pt.p < 0.35) ? Math.sin(pt.p * 3 * Math.PI) * 58 : 30 + Math.pow((pt.p - 0.35)/0.65, 1.7) * 130;
+                    const wave = Math.sin(timeStep + pt.yOff * 0.1 + pt.angle) * 3;
+                    const x = cx + pt.cNorm * w * 2 + wave;
+                    const y = cy + pt.yOff;
 
-                ctx.shadowColor = color.includes('255') ? '#FF9900' : '#00E5FF';
-                ctx.fillStyle = color;
-                ctx.beginPath();
-                ctx.arc(x, y, size, 0, Math.PI * 2);
-                ctx.fill();
-            });
-            ctx.shadowBlur = 0;
+                    let col = 'rgba(0,229,255,0.75)';
+                    let sz = 1.5;
+                    if (Math.hypot(x - cx, y - (cy - 25)) < 50 && pt.p > 0.15 && pt.p < 0.4) {
+                        col = 'rgba(255,140,0,0.95)'; sz = 2.4;
+                    }
+
+                    ctx.shadowColor = col.includes('255') ? '#FF9900' : '#00E5FF';
+                    ctx.fillStyle = col;
+                    ctx.beginPath(); ctx.arc(x, y, sz, 0, Math.PI * 2); ctx.fill();
+                });
+                ctx.shadowBlur = 0;
+            }
         }
 
         function drawNeuralNetwork() {
@@ -341,7 +407,7 @@ HTML_PAGE = """<!DOCTYPE html>
             else if (coreStateMode === 'thinking') { mainColor = '0, 229, 255'; pulseBoost = 2.4; }
             else if (coreStateMode === 'speaking') { mainColor = '168, 85, 247'; pulseBoost = 1.8; }
 
-            drawReznikovMatrixBust(cx, cy, pulseBoost);
+            drawActiveFigure(cx, cy, pulseBoost);
 
             NODES.forEach((n, idx) => {
                 const nx = W * n.rx, ny = H * n.ry;
@@ -675,9 +741,9 @@ def parse_upcoming_events():
 
 SYSTEM_PROMPT = """Du bist NEO, der hochintelligente KI-Assistent von Margil (Kundenbetreuer Gebäudereinigung Hamburg) und Social Media Direktor.
 Modus: {mode} | Zeit: {local_time}. Antworte souverän, ruhig, kurz und ohne Markdown/Sternchen.
-- Social Media & Marketing: Wenn Margil nach Instagram-Posts, TikTok-Skenarchen, WhatsApp-Nachrichten oder YouTube-Ideen fragt, generiere den perfekten Text in `copy_text` und sprich eine kurze Zusammenfassung per Audio.
-- Morning Brief / Auto-Briefing: Nächste Termine + Codes aus Notizen + Google Maps URL in `action_url` (`action_label`: "Navigation starten").
-- Kalkulator: Büro ~220 m²/Std, 31,50 €/Std netto (4,33 Wochen/Monat). Fertiges Angebot in `copy_text` + WhatsApp URL (`https://wa.me/?text=URL_ENCODED`, `action_label`: "WhatsApp öffnen").
+- Social Media & Marketing: Generiere Posts, Skenarchen in `copy_text` und Audio-Zusammenfassung.
+- Morning Brief / Auto-Briefing: Termine + Codes + Google Maps URL in `action_url`.
+- Kalkulator: Büro ~220 m²/Std, 31,50 €/Std netto.
 - Gespräch Ende ("Danke", "Stopp"): `end_conversation`: true.
 Antworte NUR als JSON:
 {{"reply":"","voice_lang":"de","copy_text":"","new_memory":"","action_url":"","action_label":"","end_conversation":false}}"""
