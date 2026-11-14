@@ -28,7 +28,7 @@ HTML_PAGE = """<!DOCTYPE html>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#030712">
     <link rel="manifest" href="/manifest.json">
-    <title>N.E.O. // REZNIKOV MATRIX CORE</title>
+    <title>N.E.O. // SOCIAL & HOLOGRAPHIC CORE</title>
     <style>
         :root {
             --cyan: #00E5FF;
@@ -174,7 +174,7 @@ HTML_PAGE = """<!DOCTYPE html>
     <!-- TOP LEFT -->
     <div class="hud-tl">
         <div class="sys-title">N E O</div>
-        <div class="sys-sub" id="sysMeta">HAMBURG • 24/7 AKTIV</div>
+        <div class="sys-sub" id="sysMeta">HAMBURG • 24/7 SOCIAL OS</div>
         <div class="hud-controls">
             <button type="button" class="hud-btn" id="wBtn" onclick="toggleWake()" style="border-color:#10B981; color:#10B981;">● HEY NEO: 24/7 AKTIV</button>
             <button type="button" class="hud-btn" id="mBtn" onclick="toggleMode()">MODUS: ARBEIT</button>
@@ -186,10 +186,10 @@ HTML_PAGE = """<!DOCTYPE html>
     <!-- TOP RIGHT OUTPUT -->
     <div class="hud-tr">
         <div class="tr-head">
-            <span>VOICE STREAM // 24/7</span>
+            <span>SOCIAL & VOICE STREAM // 24/7</span>
             <span id="streamStatus">LAUSCHT ("HEY NEO")</span>
         </div>
-        <div class="tr-body" id="replyBox">Spreche einfach jederzeit mit mir: Sage „Hey Neo“ gefolgt von deinem Befehl. Kein Tippen nötig!</div>
+        <div class="tr-body" id="replyBox">Spreche einfach jederzeit mit mir: Sage „Hey Neo“ gefolgt von deinem Befehl (z.B. Instagram Post oder TikTok Skenar).</div>
     </div>
 
     <!-- CENTER STAGE -->
@@ -256,7 +256,7 @@ HTML_PAGE = """<!DOCTYPE html>
             nodesLayer.appendChild(el);
         });
 
-        // --- 2. ADVANCED PARTICLE MATRIX BUST (REZNIKOV PHOTO STYLE) ---
+        // --- 2. ADVANCED PARTICLE MATRIX BUST ---
         const canvas = document.getElementById('neuralCanvas');
         const ctx = canvas.getContext('2d');
         let W = window.innerWidth, H = window.innerHeight;
@@ -267,20 +267,17 @@ HTML_PAGE = """<!DOCTYPE html>
         let coreStateMode = 'idle', timeStep = 0;
         const packets = NODES.map((_, idx) => ({ progress: (idx * 0.15) % 1, speed: 0.004 + (idx % 3) * 0.0012 }));
 
-        // Generate dense matrix particles forming head, face, shoulders & crown
         const matrixParticles = [];
         const rows = 55;
         for (let i = 0; i < rows; i++) {
-            const p = i / (rows - 1); // 0 (top crown) to 1 (shoulders bottom)
+            const p = i / (rows - 1);
             const yOffset = -130 + p * 260;
             const cols = Math.floor(25 + Math.sin(p * Math.PI) * 25);
-            
             for (let c = 0; c < cols; c++) {
-                const xNorm = (c / (cols - 1)) - 0.5; // -0.5 to 0.5
                 matrixParticles.push({
                     row: i,
                     p: p,
-                    baseXNorm: xNorm,
+                    baseXNorm: (c / (cols - 1)) - 0.5,
                     yOffset: yOffset,
                     angle: Math.random() * Math.PI * 2,
                     speed: Math.random() * 0.04 + 0.02
@@ -290,8 +287,6 @@ HTML_PAGE = """<!DOCTYPE html>
 
         function drawReznikovMatrixBust(cx, cy, pulseBoost) {
             timeStep += 0.025 * pulseBoost;
-
-            // 1. Intense glowing orange core in the face/head zone
             const coreGlow = ctx.createRadialGradient(cx, cy - 25, 5, cx, cy - 25, 110);
             coreGlow.addColorStop(0, 'rgba(255, 140, 0, 0.9)');
             coreGlow.addColorStop(0.4, 'rgba(255, 100, 0, 0.4)');
@@ -300,20 +295,15 @@ HTML_PAGE = """<!DOCTYPE html>
             ctx.fillStyle = coreGlow;
             ctx.beginPath(); ctx.arc(cx, cy - 25, 110, 0, Math.PI * 2); ctx.fill();
 
-            // 2. Render particle matrix points with glow & lines
             ctx.shadowBlur = 8;
             matrixParticles.forEach(pt => {
                 pt.angle += pt.speed * pulseBoost;
-
                 let widthScale = 0;
                 if (pt.p < 0.3) {
-                    // Head shape
                     widthScale = Math.sin(pt.p * 3.3 * Math.PI) * 62;
                 } else if (pt.p < 0.45) {
-                    // Neck
                     widthScale = 22 + (0.45 - pt.p) * 25;
                 } else {
-                    // Shoulders sweeping out
                     const shP = (pt.p - 0.45) / 0.55;
                     widthScale = 30 + Math.pow(shP, 1.6) * 140;
                 }
@@ -322,10 +312,8 @@ HTML_PAGE = """<!DOCTYPE html>
                 const x = cx + pt.baseXNorm * widthScale * 2 + wave;
                 const y = cy + pt.yOffset;
 
-                // Color mapping: Orange/Gold near center face, Cyan on outer edges and shoulders
                 let color = 'rgba(0, 229, 255, 0.7)';
                 let size = 1.4;
-
                 const distFromCenterFace = Math.hypot(x - cx, y - (cy - 25));
                 if (distFromCenterFace < 55 && pt.p > 0.1 && pt.p < 0.4) {
                     color = 'rgba(255, 140, 0, 0.95)';
@@ -341,7 +329,7 @@ HTML_PAGE = """<!DOCTYPE html>
                 ctx.arc(x, y, size, 0, Math.PI * 2);
                 ctx.fill();
             });
-            ctx.shadowBlur = 0; // Reset
+            ctx.shadowBlur = 0;
         }
 
         function drawNeuralNetwork() {
@@ -685,10 +673,10 @@ def parse_upcoming_events():
     except Exception:
         return ICAL_CACHE["events"]
 
-SYSTEM_PROMPT = """Du bist NEO, der hochintelligente KI-Assistent von Margil (Kundenbetreuer Gebäudereinigung Hamburg).
+SYSTEM_PROMPT = """Du bist NEO, der hochintelligente KI-Assistent von Margil (Kundenbetreuer Gebäudereinigung Hamburg) und Social Media Direktor.
 Modus: {mode} | Zeit: {local_time}. Antworte souverän, ruhig, kurz und ohne Markdown/Sternchen.
+- Social Media & Marketing: Wenn Margil nach Instagram-Posts, TikTok-Skenarchen, WhatsApp-Nachrichten oder YouTube-Ideen fragt, generiere den perfekten Text in `copy_text` und sprich eine kurze Zusammenfassung per Audio.
 - Morning Brief / Auto-Briefing: Nächste Termine + Codes aus Notizen + Google Maps URL in `action_url` (`action_label`: "Navigation starten").
-- Dolmetscher DE <-> SQ: Bei Übersetzung ins Albanische `voice_lang`: "sq" und Übersetzung in `copy_text`, sonst "de".
 - Kalkulator: Büro ~220 m²/Std, 31,50 €/Std netto (4,33 Wochen/Monat). Fertiges Angebot in `copy_text` + WhatsApp URL (`https://wa.me/?text=URL_ENCODED`, `action_label`: "WhatsApp öffnen").
 - Gespräch Ende ("Danke", "Stopp"): `end_conversation`: true.
 Antworte NUR als JSON:
@@ -782,7 +770,7 @@ def chat():
 
         parts = []
         if "image" in data:
-            parts.append(types.Part.from_bytes(data=base64.b64decode(data["image"], mime_type="image/jpeg")))
+            parts.append(types.Part.from_bytes(data=base64.b64decode(data["image"]), mime_type="image/jpeg"))
             parts.append(data.get("message", "Mängelbericht erstellen."))
         elif "audio" in data:
             parts.append(types.Part.from_bytes(data=base64.b64decode(data["audio"]), mime_type=data.get("mime_type", "audio/webm")))
