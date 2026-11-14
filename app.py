@@ -17,8 +17,8 @@ MANIFEST_JSON = {
     "short_name": "NEO",
     "start_url": "/",
     "display": "standalone",
-    "background_color": "#000000",
-    "theme_color": "#000000",
+    "background_color": "#02060D",
+    "theme_color": "#02060D",
     "icons": [
         {
             "src": "/icon.svg",
@@ -30,10 +30,10 @@ MANIFEST_JSON = {
 }
 
 ICON_SVG = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="120" fill="#000000"/>
-  <circle cx="256" cy="256" r="165" fill="none" stroke="#00F5D4" stroke-width="6" stroke-dasharray="12 16"/>
-  <circle cx="256" cy="256" r="115" fill="none" stroke="#00BBF9" stroke-width="4"/>
-  <circle cx="256" cy="256" r="24" fill="#00F5D4"/>
+  <rect width="512" height="512" rx="120" fill="#02060D"/>
+  <circle cx="256" cy="256" r="165" fill="none" stroke="#00D4FF" stroke-width="8" stroke-dasharray="28 14"/>
+  <circle cx="256" cy="256" r="115" fill="none" stroke="#00F5D4" stroke-width="4"/>
+  <circle cx="256" cy="256" r="24" fill="#00D4FF"/>
 </svg>"""
 
 HTML_PAGE = """
@@ -44,167 +44,435 @@ HTML_PAGE = """
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#000000">
+    <meta name="theme-color" content="#02060D">
     <link rel="manifest" href="/manifest.json">
     <link rel="icon" type="image/svg+xml" href="/icon.svg">
-    <title>NEO</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <title>NEO HUD</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@400;500;600;700&display=swap');
 
         :root {
-            --accent: #00F5D4;
-            --text-main: #F8FAFC;
-            --text-muted: rgba(248, 250, 252, 0.45);
+            --hud-blue: #00D4FF;
+            --hud-cyan: #00F5D4;
+            --hud-bg: #02060D;
+            --panel-bg: rgba(4, 18, 34, 0.65);
+            --panel-border: rgba(0, 212, 255, 0.35);
+            --text-main: #E0F7FF;
+            --text-dim: rgba(160, 225, 255, 0.6);
         }
 
-        body.listening { --accent: #00FF88; }
-        body.thinking { --accent: #F59E0B; }
-        body.speaking { --accent: #38BDF8; }
+        body.listening { --hud-blue: #00FF88; --hud-cyan: #00FF88; --panel-border: rgba(0, 255, 136, 0.55); }
+        body.thinking { --hud-blue: #F59E0B; --hud-cyan: #FBBF24; --panel-border: rgba(245, 158, 11, 0.55); }
+        body.speaking { --hud-blue: #38BDF8; --hud-cyan: #00F5D4; --panel-border: rgba(56, 189, 248, 0.65); }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
         body {
             margin: 0;
-            background-color: #000000;
+            background: radial-gradient(circle at 50% 45%, #07192E 0%, #02060D 72%, #000205 100%);
             color: var(--text-main);
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-family: 'Rajdhani', sans-serif;
+            height: 100dvh;
+            overflow: hidden;
             display: flex;
             flex-direction: column;
-            align-items: center;
             justify-content: space-between;
-            height: 100dvh;
-            padding: 20px 18px 24px;
-            overflow: hidden;
+            padding: 10px 12px 14px;
+            position: relative;
         }
 
-        .top-minimal {
-            width: 100%;
-            max-width: 440px;
+        /* Subtle HUD Grid Overlay */
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(0, 212, 255, 0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 212, 255, 0.04) 1px, transparent 1px);
+            background-size: 36px 36px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Outer Visor Frame */
+        .visor-frame {
+            position: fixed;
+            inset: 6px;
+            border: 1px solid rgba(0, 212, 255, 0.22);
+            border-radius: 22px;
+            pointer-events: none;
+            z-index: 1;
+            box-shadow: inset 0 0 35px rgba(0, 212, 255, 0.08);
+        }
+
+        /* --- TOP HUD BAR --- */
+        .hud-top {
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            align-items: flex-start;
             z-index: 5;
+            position: relative;
         }
 
-        .status-dot-wrap {
+        .hud-chip {
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            padding: 5px 10px;
+            border-radius: 8px;
+            font-size: 11px;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
             display: flex;
             align-items: center;
-            gap: 8px;
-            font-size: 11px;
-            letter-spacing: 2.5px;
-            text-transform: uppercase;
-            color: var(--text-muted);
-            font-weight: 600;
-        }
-
-        .status-dot {
-            width: 7px;
-            height: 7px;
-            border-radius: 50%;
-            background: var(--accent);
-            box-shadow: 0 0 10px var(--accent);
-            transition: background 0.2s;
-        }
-
-        .top-pills {
-            display: flex;
             gap: 6px;
-        }
-
-        .mode-tag {
-            font-size: 10px;
-            letter-spacing: 1.4px;
-            text-transform: uppercase;
-            color: var(--text-muted);
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.09);
-            padding: 5px 10px;
-            border-radius: 20px;
+            box-shadow: 0 0 12px rgba(0, 212, 255, 0.12);
             cursor: pointer;
         }
 
-        .hologram-center {
-            position: relative;
+        .pulse-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--hud-blue);
+            box-shadow: 0 0 8px var(--hud-blue);
+        }
+
+        .neo-header-center {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: -2px;
+        }
+
+        .neo-title-badge {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 900;
+            font-size: 18px;
+            letter-spacing: 6px;
+            color: #FFFFFF;
+            text-shadow: 0 0 14px var(--hud-blue), 0 0 28px var(--hud-blue);
+            background: linear-gradient(180deg, rgba(0, 212, 255, 0.18), rgba(0, 212, 255, 0.04));
+            border: 1px solid var(--panel-border);
+            border-top: 2px solid var(--hud-blue);
+            padding: 4px 26px 5px 32px;
+            clip-path: polygon(10% 0%, 90% 0%, 100% 100%, 0% 100%);
+        }
+
+        .hud-clock-box {
+            text-align: center;
+            margin-top: 4px;
+            background: rgba(2, 12, 24, 0.6);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            padding: 3px 14px;
+            border-radius: 6px;
+        }
+
+        .hud-time {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 17px;
+            font-weight: 700;
+            color: var(--text-main);
+            letter-spacing: 1.5px;
+        }
+
+        .hud-date {
+            font-size: 9.5px;
+            letter-spacing: 1.5px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+        }
+
+        /* --- MAIN HUD STAGE --- */
+        .hud-stage {
             flex: 1;
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            align-items: center;
+            gap: 8px;
+            z-index: 4;
+            position: relative;
             width: 100%;
+            max-width: 960px;
+            margin: 0 auto;
+        }
+
+        .hud-side-col {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .hud-card {
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            border-left: 3px solid var(--hud-blue);
+            border-radius: 8px;
+            padding: 8px 10px;
+            backdrop-filter: blur(8px);
+            box-shadow: 0 0 18px rgba(0, 212, 255, 0.08);
+        }
+
+        .hud-card-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 9.5px;
+            letter-spacing: 1.5px;
+            color: var(--hud-blue);
+            margin-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(0, 212, 255, 0.18);
+            padding-bottom: 3px;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 11px;
+            margin: 4px 0;
+            color: var(--text-dim);
+        }
+
+        .bar-track {
+            width: 54%;
+            height: 5px;
+            background: rgba(0, 212, 255, 0.12);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--hud-blue), var(--hud-cyan));
+            box-shadow: 0 0 8px var(--hud-blue);
+            transition: width 0.5s ease;
+        }
+
+        .env-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 5px;
+            font-size: 11px;
+        }
+        .env-item strong {
+            color: #FFFFFF;
+            font-size: 13px;
+            display: block;
+        }
+
+        /* --- CENTER TARGET RETICLE --- */
+        .reticle-wrap {
+            position: relative;
+            width: 240px;
+            height: 240px;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
             user-select: none;
-            overflow: hidden;
         }
 
-        #threeContainer {
-            width: 100%;
-            height: 100%;
+        .reticle-label {
+            position: absolute;
+            top: -12px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 9px;
+            letter-spacing: 2px;
+            color: var(--hud-blue);
+            background: rgba(2, 12, 24, 0.8);
+            padding: 2px 10px;
+            border: 1px solid var(--panel-border);
+            border-radius: 10px;
+        }
+
+        .ring {
+            position: absolute;
+            border-radius: 50%;
+            pointer-events: none;
+            transition: border-color 0.25s, box-shadow 0.25s;
+        }
+
+        .ring-outer {
+            width: 228px;
+            height: 228px;
+            border: 2px dashed var(--hud-blue);
+            opacity: 0.55;
+            animation: spinCW 24s linear infinite;
+        }
+
+        .ring-mid {
+            width: 178px;
+            height: 178px;
+            border: 3px solid transparent;
+            border-top-color: var(--hud-blue);
+            border-bottom-color: var(--hud-cyan);
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.25);
+            animation: spinCCW 10s linear infinite;
+        }
+
+        .ring-inner {
+            width: 124px;
+            height: 124px;
+            border: 1.5px solid var(--hud-cyan);
+            opacity: 0.8;
+            animation: spinCW 6s linear infinite;
+        }
+
+        .core-eye {
+            width: 68px;
+            height: 68px;
+            border-radius: 50%;
+            background: radial-gradient(circle, var(--hud-cyan) 0%, rgba(0, 212, 255, 0.25) 55%, transparent 75%);
+            border: 2px solid var(--hud-blue);
+            box-shadow: 0 0 25px var(--hud-blue), inset 0 0 15px var(--hud-cyan);
             display: flex;
             align-items: center;
             justify-content: center;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            color: #FFFFFF;
+            transition: transform 0.12s ease;
         }
 
+        body.listening .ring-mid { animation-duration: 3s; }
+        body.thinking .ring-outer { animation-duration: 4s; }
+        body.thinking .ring-mid { animation-duration: 1.8s; }
+        body.speaking .core-eye { animation: corePulse 0.45s infinite alternate; }
+
+        @keyframes spinCW { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes spinCCW { from { transform: rotate(360deg); } to { transform: rotate(0deg); } }
+        @keyframes corePulse { from { transform: scale(0.95); } to { transform: scale(1.16); } }
+
+        /* --- ACTION BAR & VOICE WAVEFORM --- */
         .action-bar {
-            min-height: 44px;
+            min-height: 36px;
             display: flex;
-            gap: 10px;
+            gap: 8px;
             justify-content: center;
             align-items: center;
-            margin-bottom: 12px;
-            z-index: 5;
+            z-index: 6;
         }
 
         .action-pill {
-            padding: 9px 18px;
-            border-radius: 20px;
-            background: rgba(0, 245, 212, 0.14);
-            border: 1px solid var(--accent);
-            color: var(--accent);
-            font-size: 13px;
+            padding: 6px 16px;
+            border-radius: 16px;
+            background: rgba(0, 212, 255, 0.18);
+            border: 1px solid var(--hud-blue);
+            color: #FFFFFF;
+            font-size: 12.5px;
             font-weight: 600;
+            letter-spacing: 1px;
             text-decoration: none;
             cursor: pointer;
+            box-shadow: 0 0 14px rgba(0, 212, 255, 0.25);
         }
 
-        .bottom-controls {
+        .hud-bottom {
             width: 100%;
-            max-width: 440px;
+            max-width: 960px;
+            margin: 0 auto;
             display: flex;
-            justify-content: space-between;
-            align-items: center;
+            flex-direction: column;
+            gap: 8px;
             z-index: 5;
         }
 
-        .circle-btn {
-            width: 46px;
-            height: 46px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: rgba(255, 255, 255, 0.75);
-            font-size: 18px;
+        .voice-wave-box {
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: 8px;
+            padding: 4px 10px;
             display: flex;
             align-items: center;
-            justify-content: center;
-            cursor: pointer;
-        }
-        .circle-btn.active {
-            border-color: var(--accent);
-            color: var(--accent);
-            box-shadow: 0 0 14px rgba(0, 245, 212, 0.25);
+            justify-content: space-between;
+            height: 36px;
         }
 
+        .voice-tag {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 9px;
+            letter-spacing: 1.5px;
+            color: var(--hud-blue);
+            white-space: nowrap;
+        }
+
+        #waveCanvas {
+            flex: 1;
+            height: 26px;
+            margin: 0 10px;
+        }
+
+        /* Bottom Navigation Dock (Matching Reference Image!) */
+        .hud-dock {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 6px;
+            background: rgba(4, 18, 34, 0.85);
+            border: 1px solid var(--panel-border);
+            border-radius: 12px;
+            padding: 6px;
+        }
+
+        .dock-btn {
+            background: rgba(0, 212, 255, 0.06);
+            border: 1px solid rgba(0, 212, 255, 0.22);
+            border-radius: 8px;
+            padding: 6px 2px;
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+            cursor: pointer;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 8.5px;
+            letter-spacing: 0.8px;
+        }
+        .dock-btn span.ico { font-size: 15px; }
+        .dock-btn.active {
+            border-color: var(--hud-cyan);
+            background: rgba(0, 245, 212, 0.16);
+            box-shadow: 0 0 10px rgba(0, 245, 212, 0.25);
+        }
+
+        /* Mobile Responsive Adjustment */
+        @media (max-width: 680px) {
+            .hud-stage {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto 1fr auto;
+            }
+            .hud-side-col {
+                flex-direction: row;
+                justify-content: space-between;
+            }
+            .hud-card {
+                flex: 1;
+                padding: 6px 8px;
+            }
+            .reticle-wrap {
+                width: 205px;
+                height: 205px;
+                margin: 0 auto;
+            }
+            .ring-outer { width: 196px; height: 196px; }
+            .ring-mid { width: 152px; height: 152px; }
+            .ring-inner { width: 106px; height: 106px; }
+        }
+
+        /* Drawer */
         .drawer {
             position: fixed;
             inset: 0;
-            background: rgba(0, 0, 0, 0.94);
-            backdrop-filter: blur(22px);
-            -webkit-backdrop-filter: blur(22px);
-            z-index: 20;
+            background: rgba(2, 6, 13, 0.96);
+            backdrop-filter: blur(20px);
+            z-index: 30;
             display: none;
             flex-direction: column;
             justify-content: space-between;
-            padding: 20px 18px 24px;
+            padding: 18px;
         }
         .drawer.open { display: flex; }
 
@@ -212,29 +480,32 @@ HTML_PAGE = """
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding-bottom: 12px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--panel-border);
+            font-family: 'Orbitron', sans-serif;
+            letter-spacing: 2px;
         }
 
         .tabs {
             display: flex;
             gap: 8px;
-            margin: 14px 0;
+            margin: 12px 0;
             overflow-x: auto;
         }
         .tab {
             padding: 7px 13px;
-            border-radius: 16px;
-            background: rgba(255, 255, 255, 0.06);
-            color: #CBD5E1;
+            border-radius: 8px;
+            background: rgba(0, 212, 255, 0.08);
+            border: 1px solid rgba(0, 212, 255, 0.25);
+            color: var(--text-main);
             font-size: 12px;
             font-weight: 600;
             cursor: pointer;
             white-space: nowrap;
         }
         .tab.active {
-            background: var(--accent);
-            color: #000000;
+            background: var(--hud-blue);
+            color: #02060D;
         }
 
         .drawer-body {
@@ -247,19 +518,20 @@ HTML_PAGE = """
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: rgba(255, 255, 255, 0.05);
-            padding: 11px 14px;
-            border-radius: 14px;
+            background: rgba(0, 212, 255, 0.06);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            padding: 10px 14px;
+            border-radius: 8px;
             margin-bottom: 8px;
             font-size: 14px;
         }
 
         .check-btn {
-            background: rgba(0, 245, 212, 0.18);
-            color: var(--accent);
-            border: none;
-            border-radius: 10px;
-            padding: 5px 10px;
+            background: rgba(0, 245, 212, 0.2);
+            color: var(--hud-cyan);
+            border: 1px solid var(--hud-cyan);
+            border-radius: 6px;
+            padding: 4px 10px;
             font-weight: 700;
             cursor: pointer;
         }
@@ -268,15 +540,14 @@ HTML_PAGE = """
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: 8px;
-            margin-bottom: 14px;
         }
         .q-btn {
             padding: 11px;
-            border-radius: 14px;
-            background: rgba(255, 255, 255, 0.06);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            color: #F8FAFC;
-            font-size: 12.5px;
+            border-radius: 8px;
+            background: rgba(0, 212, 255, 0.08);
+            border: 1px solid var(--panel-border);
+            color: var(--text-main);
+            font-size: 13px;
             text-align: left;
             cursor: pointer;
         }
@@ -284,9 +555,10 @@ HTML_PAGE = """
         .text-dock {
             display: flex;
             gap: 8px;
-            background: rgba(255, 255, 255, 0.07);
+            background: rgba(0, 212, 255, 0.08);
+            border: 1px solid var(--panel-border);
             padding: 6px 8px;
-            border-radius: 24px;
+            border-radius: 10px;
         }
         .text-dock input {
             flex: 1;
@@ -294,50 +566,138 @@ HTML_PAGE = """
             border: none;
             color: white;
             font-size: 15px;
-            padding: 8px;
+            padding: 6px;
             outline: none;
         }
         .text-dock button {
-            background: var(--accent);
-            color: #000000;
+            background: var(--hud-blue);
+            color: #02060D;
             border: none;
-            border-radius: 18px;
+            border-radius: 8px;
             padding: 8px 16px;
+            font-family: 'Orbitron', sans-serif;
             font-weight: 700;
             cursor: pointer;
         }
     </style>
 </head>
 <body>
-    <div class="top-minimal">
-        <div class="status-dot-wrap">
-            <div class="status-dot"></div>
-            <span id="stateLabel">NEO • STANDBY</span>
+    <div class="visor-frame"></div>
+
+    <!-- TOP BAR -->
+    <div class="hud-top">
+        <div class="hud-chip" onclick="toggleWakeWord()">
+            <div class="pulse-dot"></div>
+            <span id="stateLabel">VOICE ACTIVE</span>
         </div>
-        <div class="top-pills">
-            <div class="mode-tag" id="visualBtn" onclick="toggleVisual()">GALAXIE</div>
-            <div class="mode-tag" id="modeBtn" onclick="toggleMode()">ARBEIT</div>
+
+        <div class="neo-header-center">
+            <div class="neo-title-badge">NEO</div>
+            <div class="hud-clock-box">
+                <div class="hud-time" id="hudClock">00:00</div>
+                <div class="hud-date" id="hudDate">HAMBURG • SYSTEM ONLINE</div>
+            </div>
+        </div>
+
+        <div class="hud-chip" id="modeBtn" onclick="toggleMode()">
+            <span>ARBEIT</span>
+            <span style="color:var(--hud-cyan);">100%</span>
         </div>
     </div>
 
-    <div class="hologram-center" onclick="toggleDirectRecord()">
-        <div id="threeContainer"></div>
+    <!-- CENTER HUD STAGE -->
+    <div class="hud-stage">
+        <!-- LEFT PANELS -->
+        <div class="hud-side-col">
+            <div class="hud-card">
+                <div class="hud-card-title"><span>SYSTEM STATUS</span><span>ONLINE</span></div>
+                <div class="stat-row"><span>GEMINI 3.8</span><div class="bar-track"><div class="bar-fill" style="width:96%"></div></div></div>
+                <div class="stat-row"><span>VOICE GATE</span><div class="bar-track"><div class="bar-fill" style="width:92%"></div></div></div>
+                <div class="stat-row"><span>CALENDAR</span><div class="bar-track"><div class="bar-fill" style="width:100%"></div></div></div>
+            </div>
+
+            <div class="hud-card">
+                <div class="hud-card-title"><span>ENVIRONMENT</span><span>HAMBURG</span></div>
+                <div class="env-grid">
+                    <div class="env-item"><span>NOTIZEN</span><strong id="hud-mem">0</strong></div>
+                    <div class="env-item"><span>MATERIAL</span><strong id="hud-mat">0</strong></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CENTER TARGET RETICLE -->
+        <div class="reticle-wrap" onclick="toggleDirectRecord()">
+            <div class="reticle-label" id="reticleStatus">NEURAL CORE • READY</div>
+            <div class="ring ring-outer"></div>
+            <div class="ring ring-mid"></div>
+            <div class="ring ring-inner"></div>
+            <div class="core-eye" id="coreEye">NEO</div>
+        </div>
+
+        <!-- RIGHT PANELS -->
+        <div class="hud-side-col">
+            <div class="hud-card" onclick="quickCmd('Erkläre mir ausführlich meine Termine im Kalender für heute und die nächsten Tage.')" style="cursor:pointer;">
+                <div class="hud-card-title"><span>MISSION / KALENDER</span><span>LIVE</span></div>
+                <div style="font-size:11.5px; color:var(--text-main); line-height:1.35;">
+                    • Termine abrufen<br>
+                    • Objekte & Codes<br>
+                    • Offene Tasks: <strong id="hud-task" style="color:var(--hud-cyan);">0</strong>
+                </div>
+            </div>
+
+            <div class="hud-card" onclick="findParking()" style="cursor:pointer;">
+                <div class="hud-card-title"><span>LOCATION</span><span>GPS</span></div>
+                <div style="font-size:11.5px; color:var(--text-dim);">
+                    HAMBURG, DE<br>
+                    <span style="color:var(--hud-cyan);">Tippen für Auto-GPS</span>
+                </div>
+            </div>
+        </div>
     </div>
 
+    <!-- DYNAMIC ACTION BUTTONS (Kopieren / WhatsApp / Maps) -->
     <div class="action-bar" id="actionBar"></div>
 
-    <div class="bottom-controls">
-        <button class="circle-btn active" id="wakeBtn" onclick="toggleWakeWord()" title="Hey Neo">🎙️</button>
-        <button class="circle-btn" onclick="document.getElementById('camInput').click()" title="Kamera">📷</button>
-        <button class="circle-btn" onclick="openDrawer()" title="Menü & Listen">☰</button>
-        <input type="file" id="camInput" accept="image/*" capture="environment" style="display:none" onchange="handleImage(event)">
+    <!-- BOTTOM VOICE WAVE & HUD DOCK -->
+    <div class="hud-bottom">
+        <div class="voice-wave-box">
+            <span class="voice-tag" id="waveLabel">VOICE ASSISTANT</span>
+            <canvas id="waveCanvas" width="420" height="40"></canvas>
+            <span class="voice-tag" style="color:var(--hud-cyan);">DE-FL</span>
+        </div>
+
+        <div class="hud-dock">
+            <div class="dock-btn" onclick="findParking()">
+                <span class="ico">🧭</span>
+                <span>NAVIGATION</span>
+            </div>
+            <div class="dock-btn" onclick="document.getElementById('camInput').click()">
+                <span class="ico">📷</span>
+                <span>ANALYSIS</span>
+            </div>
+            <div class="dock-btn" onclick="quickCmd('Erkläre mir ausführlich meine Termine im Kalender für heute und die nächsten Tage.')">
+                <span class="ico">📅</span>
+                <span>CALENDAR</span>
+            </div>
+            <div class="dock-btn active" id="wakeBtn" onclick="toggleWakeWord()">
+                <span class="ico">🎙️</span>
+                <span>VOICE</span>
+            </div>
+            <div class="dock-btn" onclick="openDrawer()">
+                <span class="ico">⚙️</span>
+                <span>SYSTEM</span>
+            </div>
+        </div>
     </div>
 
+    <input type="file" id="camInput" accept="image/*" capture="environment" style="display:none" onchange="handleImage(event)">
+
+    <!-- SYSTEM DRAWER -->
     <div class="drawer" id="drawer">
         <div>
             <div class="drawer-header">
-                <span style="font-weight:700; letter-spacing:2px; font-size:13px;">NEO SYSTEM</span>
-                <button class="circle-btn" style="width:36px;height:36px;" onclick="closeDrawer()">✕</button>
+                <span>NEO COMMAND SYSTEM</span>
+                <button class="hud-chip" onclick="closeDrawer()">✕ SCHLIESSEN</button>
             </div>
             <div class="tabs">
                 <div class="tab active" id="tab-tools" onclick="switchTab('tools')">Aktionen</div>
@@ -350,253 +710,63 @@ HTML_PAGE = """
         <div class="drawer-body" id="drawerBody"></div>
 
         <div class="text-dock">
-            <input type="text" id="msg" placeholder="Befehl oder Notiz schreiben..." onkeypress="if(event.key==='Enter'){closeDrawer();sendText();}">
-            <button onclick="closeDrawer();sendText();">Send</button>
+            <input type="text" id="msg" placeholder="Befehl oder Notiz eingeben..." onkeypress="if(event.key==='Enter'){closeDrawer();sendText();}">
+            <button onclick="closeDrawer();sendText();">SEND</button>
         </div>
     </div>
 
     <audio id="player" playsinline></audio>
 
     <script>
-        /* --- 3D Milky Way Spiral Galaxy + JARVIS + PLASMA Engine --- */
+        /* --- Live HUD Clock --- */
+        function updateHudClock() {
+            const now = new Date();
+            document.getElementById('hudClock').innerText = now.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+            document.getElementById('hudDate').innerText = now.toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase();
+        }
+        updateHudClock();
+        setInterval(updateHudClock, 10000);
+
+        /* --- Voice Waveform Visualizer --- */
+        const waveCanvas = document.getElementById('waveCanvas');
+        const wCtx = waveCanvas.getContext('2d');
         let audioEnergy = 0;
         let currentState = 'idle';
-        const visualModes = ['GALAXIE', 'JARVIS', 'PLASMA'];
-        let visualMode = localStorage.getItem('neo_visual_v3') || 'GALAXIE';
-        if (!visualModes.includes(visualMode)) visualMode = 'GALAXIE';
-        document.getElementById('visualBtn').innerText = visualMode;
 
-        const container = document.getElementById('threeContainer');
-        const scene = new THREE.Scene();
-        const w = container.clientWidth || window.innerWidth;
-        const h = container.clientHeight || (window.innerHeight * 0.65);
-        const camera = new THREE.PerspectiveCamera(42, w / h, 0.1, 1000);
-        camera.position.set(0, 7.5, 23);
-        camera.lookAt(0, 0, 0);
+        function drawWaveform() {
+            wCtx.clearRect(0, 0, waveCanvas.width, waveCanvas.height);
+            const midY = waveCanvas.height / 2;
+            const t = Date.now() * 0.008;
 
-        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-        renderer.setSize(w, h);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        container.appendChild(renderer.domElement);
-
-        function createGlowSprite() {
-            const c = document.createElement('canvas');
-            c.width = 64; c.height = 64;
-            const g = c.getContext('2d');
-            const grad = g.createRadialGradient(32, 32, 0, 32, 32, 32);
-            grad.addColorStop(0, 'rgba(255,255,255,1)');
-            grad.addColorStop(0.25, 'rgba(255,255,255,0.85)');
-            grad.addColorStop(0.6, 'rgba(255,255,255,0.2)');
-            grad.addColorStop(1, 'rgba(255,255,255,0)');
-            g.fillStyle = grad;
-            g.fillRect(0, 0, 64, 64);
-            return new THREE.CanvasTexture(c);
-        }
-        const glowTex = createGlowSprite();
-
-        /* --- 1. MILCHSTRASSE / 3D SPIRAL GALAXY (3.400 Sterne & Nebel) --- */
-        const galaxyGroup = new THREE.Group();
-        const starCount = 3400;
-        const gPositions = new Float32Array(starCount * 3);
-        const gOrigPositions = new Float32Array(starCount * 3);
-        const gColors = new Float32Array(starCount * 3);
-        const gRadii = new Float32Array(starCount);
-
-        const branches = 4;
-        const maxRadius = 12.5;
-        const spinFactor = 1.35;
-
-        const colorInside = new THREE.Color(0xFFFFFF);
-        const colorMid = new THREE.Color(0x00F5D4);
-        const colorOutside = new THREE.Color(0x3B82F6);
-
-        for (let i = 0; i < starCount; i++) {
-            const i3 = i * 3;
-            const radius = Math.pow(Math.random(), 1.65) * maxRadius;
-            gRadii[i] = radius;
-
-            const spinAngle = radius * spinFactor;
-            const branchAngle = ((i % branches) / branches) * Math.PI * 2;
-
-            // Dichte Spiral-Streuung (enger im Zentrum, breiter außen)
-            const scatter = Math.pow(Math.random(), 2.2) * (Math.random() < 0.5 ? 1 : -1) * (0.45 + radius * 0.14);
-            const randomY = Math.pow(Math.random(), 2.8) * (Math.random() < 0.5 ? 1 : -1) * (1.4 - radius * 0.08);
-            const scatterZ = Math.pow(Math.random(), 2.2) * (Math.random() < 0.5 ? 1 : -1) * (0.45 + radius * 0.14);
-
-            const x = Math.cos(branchAngle + spinAngle) * radius + scatter;
-            const y = randomY;
-            const z = Math.sin(branchAngle + spinAngle) * radius + scatterZ;
-
-            gPositions[i3] = x;
-            gPositions[i3 + 1] = y;
-            gPositions[i3 + 2] = z;
-
-            gOrigPositions[i3] = x;
-            gOrigPositions[i3 + 1] = y;
-            gOrigPositions[i3 + 2] = z;
-
-            // Farbverlauf vom hellen galaktischen Kern bis zu den blauen Außenarmen
-            const mixedColor = colorInside.clone();
-            if (radius < 3.5) {
-                mixedColor.lerp(colorMid, radius / 3.5);
-            } else {
-                mixedColor.copy(colorMid).lerp(colorOutside, (radius - 3.5) / (maxRadius - 3.5));
-            }
-
-            gColors[i3] = mixedColor.r;
-            gColors[i3 + 1] = mixedColor.g;
-            gColors[i3 + 2] = mixedColor.b;
-        }
-
-        const galaxyGeo = new THREE.BufferGeometry();
-        galaxyGeo.setAttribute('position', new THREE.BufferAttribute(gPositions, 3));
-        galaxyGeo.setAttribute('color', new THREE.BufferAttribute(gColors, 3));
-
-        const galaxyMat = new THREE.PointsMaterial({
-            size: 0.34,
-            map: glowTex,
-            vertexColors: true,
-            transparent: true,
-            opacity: 0.95,
-            blending: THREE.AdditiveBlending,
-            depthWrite: false
-        });
-
-        const galaxyPoints = new THREE.Points(galaxyGeo, galaxyMat);
-        galaxyGroup.add(galaxyPoints);
-        galaxyGroup.rotation.x = 0.28;
-        galaxyGroup.rotation.z = -0.18;
-        scene.add(galaxyGroup);
-
-        /* --- 2. JARVIS CORE --- */
-        const coreMat = new THREE.PointsMaterial({
-            color: 0x00F5D4,
-            size: 0.36,
-            map: glowTex,
-            transparent: true,
-            opacity: 0.95,
-            blending: THREE.AdditiveBlending,
-            depthWrite: false
-        });
-        const wireMat = new THREE.MeshBasicMaterial({
-            color: 0x00BBF9,
-            wireframe: true,
-            transparent: true,
-            opacity: 0.12,
-            blending: THREE.AdditiveBlending
-        });
-        const ringMat = new THREE.MeshBasicMaterial({
-            color: 0x00F5D4,
-            transparent: true,
-            opacity: 0.5,
-            blending: THREE.AdditiveBlending
-        });
-
-        const jarvisGroup = new THREE.Group();
-        const innerGeo = new THREE.IcosahedronGeometry(3.8, 4);
-        jarvisGroup.add(new THREE.Points(innerGeo, coreMat));
-        jarvisGroup.add(new THREE.Mesh(innerGeo, wireMat));
-        const gyro1 = new THREE.Mesh(new THREE.TorusGeometry(5.6, 0.045, 16, 120), ringMat);
-        const gyro2 = new THREE.Mesh(new THREE.TorusGeometry(6.7, 0.035, 16, 120), ringMat);
-        gyro1.rotation.x = Math.PI / 3;
-        gyro2.rotation.y = Math.PI / 4;
-        jarvisGroup.add(gyro1, gyro2);
-        jarvisGroup.visible = false;
-        scene.add(jarvisGroup);
-
-        /* --- 3. PLASMA ORB --- */
-        const plasmaGroup = new THREE.Group();
-        const pGeo = new THREE.SphereGeometry(6.8, 60, 60);
-        const pOrig = Float32Array.from(pGeo.attributes.position.array);
-        plasmaGroup.add(new THREE.Points(pGeo, coreMat));
-        plasmaGroup.visible = false;
-        scene.add(plasmaGroup);
-
-        function toggleVisual() {
-            const idx = (visualModes.indexOf(visualMode) + 1) % visualModes.length;
-            visualMode = visualModes[idx];
-            localStorage.setItem('neo_visual_v3', visualMode);
-            document.getElementById('visualBtn').innerText = visualMode;
-        }
-
-        window.addEventListener('resize', () => {
-            if (!container.clientWidth || !container.clientHeight) return;
-            camera.aspect = container.clientWidth / container.clientHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(container.clientWidth, container.clientHeight);
-        });
-
-        function animate3D() {
-            requestAnimationFrame(animate3D);
-            const t = Date.now() * 0.002;
-
-            galaxyGroup.visible = (visualMode === 'GALAXIE');
-            jarvisGroup.visible = (visualMode === 'JARVIS');
-            plasmaGroup.visible = (visualMode === 'PLASMA');
-
-            let pulse = 0;
-            let tintHex = 0xFFFFFF;
+            let amp = 2.5;
+            let color = '#00D4FF';
 
             if (currentState === 'listening') {
-                tintHex = 0x55FFAA;
-                coreMat.color.setHex(0x00FF88);
-                ringMat.color.setHex(0x00FF88);
-                pulse = audioEnergy * 0.03;
+                amp = 4 + audioEnergy * 0.42;
+                color = '#00FF88';
             } else if (currentState === 'thinking') {
-                tintHex = 0xFFCC66;
-                coreMat.color.setHex(0xF59E0B);
-                ringMat.color.setHex(0xF59E0B);
-                pulse = 0.45;
+                amp = 8;
+                color = '#F59E0B';
             } else if (currentState === 'speaking') {
-                tintHex = 0x88E5FF;
-                coreMat.color.setHex(0x38BDF8);
-                ringMat.color.setHex(0x38BDF8);
-                pulse = Math.abs(Math.sin(t * 7.5)) * 0.85 + Math.abs(Math.cos(t * 4.2)) * 0.35;
+                amp = 7 + Math.abs(Math.sin(t * 1.4)) * 10;
+                color = '#38BDF8';
             } else {
-                tintHex = 0xFFFFFF;
-                coreMat.color.setHex(0x00F5D4);
-                ringMat.color.setHex(0x00F5D4);
                 audioEnergy *= 0.85;
-                pulse = Math.sin(t * 1.4) * 0.1;
             }
 
-            if (galaxyGroup.visible) {
-                galaxyMat.color.setHex(tintHex);
-                galaxyMat.size = 0.33 + pulse * 0.08;
-                galaxyGroup.rotation.y += (currentState === 'thinking' ? 0.022 : 0.0045);
-
-                // Sanfte Gravitations-Welle durch die Spiralarme beim Sprechen/Zuhören
-                const pos = galaxyGeo.attributes.position.array;
-                for (let i = 0; i < starCount; i++) {
-                    const i3 = i * 3;
-                    const r = gRadii[i];
-                    const wave = Math.sin(t * 3.2 - r * 0.85) * (0.08 + pulse * 0.48);
-                    pos[i3 + 1] = gOrigPositions[i3 + 1] + wave;
-                }
-                galaxyGeo.attributes.position.needsUpdate = true;
-            } else if (jarvisGroup.visible) {
-                const spin = currentState === 'thinking' ? 0.04 : 0.01;
-                gyro1.rotation.x += spin * 1.2;
-                gyro1.rotation.y += spin * 0.8;
-                gyro2.rotation.y -= spin * 1.4;
-                const s = 1 + pulse * 0.14;
-                jarvisGroup.scale.set(s, s, s);
-            } else {
-                plasmaGroup.rotation.y += 0.008;
-                const pos = pGeo.attributes.position.array;
-                for (let i = 0; i < pos.length; i += 3) {
-                    const ox = pOrig[i], oy = pOrig[i + 1], oz = pOrig[i + 2];
-                    const ripple = 1 + Math.sin(t * 2.5 + oy * 0.7 + ox * 0.5) * (0.03 + pulse * 0.12);
-                    pos[i] = ox * ripple;
-                    pos[i + 1] = oy * ripple;
-                    pos[i + 2] = oz * ripple;
-                }
-                pGeo.attributes.position.needsUpdate = true;
+            wCtx.beginPath();
+            wCtx.strokeStyle = color;
+            wCtx.lineWidth = 2;
+            for (let x = 0; x < waveCanvas.width; x += 3) {
+                const env = Math.sin((x / waveCanvas.width) * Math.PI);
+                const y = midY + Math.sin(x * 0.06 + t) * amp * env;
+                if (x === 0) wCtx.moveTo(x, y);
+                else wCtx.lineTo(x, y);
             }
-
-            renderer.render(scene, camera);
+            wCtx.stroke();
+            requestAnimationFrame(drawWaveform);
         }
-        animate3D();
+        drawWaveform();
 
         function playTone(freq1, freq2) {
             try {
@@ -615,9 +785,11 @@ HTML_PAGE = """
             } catch (e) {}
         }
 
-        /* --- Directional Voice-Isolation Engine --- */
+        /* --- Directional Voice-Isolation Engine (Unchanged & Stable!) --- */
         const actionBar = document.getElementById('actionBar');
         const stateLabel = document.getElementById('stateLabel');
+        const reticleStatus = document.getElementById('reticleStatus');
+        const coreEye = document.getElementById('coreEye');
         const player = document.getElementById('player');
 
         let mediaRecorder = null;
@@ -647,23 +819,37 @@ HTML_PAGE = """
             document.getElementById('c-mem').innerText = userMemory.length;
             document.getElementById('c-mat').innerText = userMaterials.length;
             document.getElementById('c-task').innerText = userTasks.length;
-            document.getElementById('modeBtn').innerText = workMode;
+            document.getElementById('hud-mem').innerText = userMemory.length;
+            document.getElementById('hud-mat').innerText = userMaterials.length;
+            document.getElementById('hud-task').innerText = userTasks.length;
+            document.getElementById('modeBtn').innerHTML = `<span>${workMode}</span><span style="color:var(--hud-cyan);">100%</span>`;
         }
         updateBadges();
 
         function toggleMode() {
             workMode = (workMode === 'ARBEIT') ? 'PRIVAT' : 'ARBEIT';
             updateBadges();
-            stateLabel.innerText = "NEO • " + workMode;
         }
 
         function setState(state) {
             currentState = state || 'idle';
             document.body.classList.remove('listening', 'thinking', 'speaking');
-            if (state === 'listening') { document.body.classList.add('listening'); stateLabel.innerText = "NEO • HÖRT ZU"; }
-            else if (state === 'thinking') { document.body.classList.add('thinking'); stateLabel.innerText = "NEO • ANALYSIERT"; }
-            else if (state === 'speaking') { document.body.classList.add('speaking'); stateLabel.innerText = "NEO • SPRICHT"; }
-            else { stateLabel.innerText = wakeEnabled ? "NEO • STANDBY" : "NEO • PAUSIERT"; }
+            if (state === 'listening') {
+                document.body.classList.add('listening');
+                stateLabel.innerText = "LISTENING...";
+                reticleStatus.innerText = "AUDIO INPUT • ACTIVE";
+            } else if (state === 'thinking') {
+                document.body.classList.add('thinking');
+                stateLabel.innerText = "PROCESSING...";
+                reticleStatus.innerText = "TARGET ANALYSIS";
+            } else if (state === 'speaking') {
+                document.body.classList.add('speaking');
+                stateLabel.innerText = "NEO SPEAKING";
+                reticleStatus.innerText = "VOICE OUTPUT • LIVE";
+            } else {
+                stateLabel.innerText = wakeEnabled ? "VOICE ACTIVE" : "VOICE MUTED";
+                reticleStatus.innerText = "NEURAL CORE • READY";
+            }
         }
 
         function stopWakeListener() {
@@ -725,6 +911,7 @@ HTML_PAGE = """
             if (!isRecording) return;
             isRecording = false;
             audioEnergy = 0;
+            coreEye.style.transform = 'scale(1)';
             if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null; }
             if (animFrame) { cancelAnimationFrame(animFrame); animFrame = null; }
             if (audioCtx) { audioCtx.close().catch(() => {}); audioCtx = null; }
@@ -826,6 +1013,7 @@ HTML_PAGE = """
                     for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
                     const avg = sum / dataArray.length;
                     audioEnergy = avg;
+                    coreEye.style.transform = `scale(${1 + Math.min(0.28, avg * 0.005)})`;
 
                     if (avg > 26) {
                         hasSpoken = true;
@@ -908,13 +1096,13 @@ HTML_PAGE = """
             navigator.geolocation.getCurrentPosition(pos => {
                 const time = new Date().toLocaleTimeString('de-DE', {hour:'2-digit', minute:'2-digit'});
                 localStorage.setItem('neo_parking', JSON.stringify({lat: pos.coords.latitude, lng: pos.coords.longitude, time}));
-                stateLabel.innerText = "PARKPLATZ GESPEICHERT";
+                reticleStatus.innerText = "GPS PARKPLATZ GESPEICHERT";
             });
         }
 
         function findParking() {
             const p = JSON.parse(localStorage.getItem('neo_parking') || 'null');
-            if (!p) return;
+            if (!p) { saveParking(); return; }
             window.location.href = `https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}&travelmode=walking`;
         }
 
@@ -975,7 +1163,7 @@ HTML_PAGE = """
                 if (data.error) {
                     inConversation = false;
                     setState(null);
-                    stateLabel.innerText = "FEHLER";
+                    reticleStatus.innerText = "SYSTEM ERROR";
                     if (wakeEnabled) setTimeout(() => startWakeListener(), 1000);
                     return;
                 }
