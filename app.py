@@ -28,22 +28,22 @@ HTML_PAGE = """<!DOCTYPE html>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#030712">
     <link rel="manifest" href="/manifest.json">
-    <title>N.E.O. // HOLOGRAPHIC REACTOR CORE</title>
+    <title>N.E.O. // REZNIKOV HOLOGRAPHIC CORE</title>
     <style>
         :root {
             --cyan: #00E5FF;
-            --cyan-glow: rgba(0, 229, 255, 0.4);
+            --cyan-glow: rgba(0, 229, 255, 0.5);
             --orange: #FF9900;
-            --orange-glow: rgba(255, 153, 0, 0.6);
+            --orange-glow: rgba(255, 153, 0, 0.7);
             --bg: #030712;
-            --panel: rgba(8, 15, 30, 0.82);
-            --border: rgba(0, 229, 255, 0.18);
+            --panel: rgba(8, 15, 30, 0.85);
+            --border: rgba(0, 229, 255, 0.2);
             --text: #F8FAFC;
             --muted: #94A3B8;
         }
-        body.listening { --cyan: #10B981; --cyan-glow: rgba(16, 185, 129, 0.5); }
-        body.thinking  { --cyan: #00E5FF; --cyan-glow: rgba(0, 229, 255, 0.6); }
-        body.speaking  { --cyan: #A855F7; --cyan-glow: rgba(168, 85, 247, 0.6); }
+        body.listening { --cyan: #10B981; }
+        body.thinking  { --cyan: #00E5FF; }
+        body.speaking  { --cyan: #A855F7; }
 
         * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
 
@@ -51,12 +51,12 @@ HTML_PAGE = """<!DOCTYPE html>
             margin: 0; padding: 0; width: 100vw; height: 100vh; overflow: hidden;
             background-color: var(--bg);
             background-image:
-                radial-gradient(circle at 50% 46%, rgba(14, 30, 62, 0.82) 0%, rgba(3, 7, 18, 0.98) 70%),
-                linear-gradient(rgba(0, 229, 255, 0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0, 229, 255, 0.03) 1px, transparent 1px);
+                radial-gradient(circle at 50% 46%, rgba(14, 30, 62, 0.9) 0%, rgba(3, 7, 18, 0.99) 70%),
+                linear-gradient(rgba(0, 229, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 229, 255, 0.02) 1px, transparent 1px);
             background-size: 100% 100%, 32px 32px, 32px 32px;
             color: var(--text);
-            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+            font-family: 'Segoe UI', -apple-system, sans-serif;
         }
 
         #neuralCanvas {
@@ -99,27 +99,19 @@ HTML_PAGE = """<!DOCTYPE html>
             max-height: 150px; overflow-y: auto; user-select: text;
         }
 
-        /* CENTER HOLOGRAPHIC BUST REACTOR */
+        /* CENTER INTERACTIVE STAGE */
         .core-trigger {
             position: fixed; top: 48%; left: 50%; transform: translate(-50%, -50%);
-            width: 280px; height: 280px; border-radius: 50%; z-index: 8;
+            width: 320px; height: 360px; border-radius: 50%; z-index: 8;
             cursor: pointer; display: flex; flex-direction: column;
-            align-items: center; justify-content: center; text-align: center;
-        }
-        .holo-bust {
-            width: 100%; height: 100%;
-            fill: none; stroke-width: 1.5;
-            filter: drop-shadow(0 0 10px var(--cyan-glow));
-            animation: pulseCore 4s ease-in-out infinite alternate;
-        }
-        @keyframes pulseCore {
-            0% { opacity: 0.8; transform: scale(0.95); filter: drop-shadow(0 0 8px var(--cyan-glow)); }
-            100% { opacity: 1; transform: scale(1); filter: drop-shadow(0 0 12px var(--cyan-glow)); }
+            align-items: center; justify-content: flex-end; text-align: center;
+            padding-bottom: 10px;
         }
         .core-sub {
-            position: absolute; bottom: -10px;
             font-size: 11px; font-weight: 800; letter-spacing: 2.5px;
-            color: #FFF; text-shadow: 0 0 12px #FFF;
+            color: #FFF; text-shadow: 0 0 12px var(--cyan);
+            background: rgba(3, 7, 18, 0.8); padding: 4px 12px; border-radius: 99px;
+            border: 1px solid var(--border);
         }
 
         /* NODES */
@@ -163,13 +155,6 @@ HTML_PAGE = """<!DOCTYPE html>
             border-left: 3px solid var(--orange); border-radius: 7px; margin-bottom: 7px;
         }
 
-        /* BOTTOM ACTION STRIP */
-        .bottom-dock {
-            position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%);
-            width: 600px; max-width: 94vw; z-index: 12;
-            display: flex; flex-direction: column; gap: 8px; align-items: center;
-        }
-        .act-strip { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
         .gold-pill {
             background: var(--orange); color: #030712; border: none; border-radius: 999px;
             padding: 8px 18px; font-size: 12px; font-weight: 800; text-decoration: none;
@@ -180,7 +165,6 @@ HTML_PAGE = """<!DOCTYPE html>
             .hud-tr { top: auto; bottom: 24px; right: 12px; left: 12px; width: auto; max-width: none; }
             .node-item { padding: 6px 10px; }
             .node-title { font-size: 11px; }
-            .core-trigger { width: 200px; height: 200px; }
         }
     </style>
 </head>
@@ -189,7 +173,7 @@ HTML_PAGE = """<!DOCTYPE html>
 
     <!-- TOP LEFT -->
     <div class="hud-tl">
-        <div class="sys-title">N E O <span style="font-size:11px; color:var(--orange); letter-spacing:2px;">HOLOGRAPHIC OS</span></div>
+        <div class="sys-title">N E O <span style="font-size:11px; color:var(--orange); letter-spacing:2px;">REZNIKOV OS</span></div>
         <div class="sys-sub" id="sysMeta">HAMBURG • 24/7 AKTIV</div>
         <div class="hud-controls">
             <button type="button" class="hud-btn" id="wBtn" onclick="toggleWake()" style="border-color:#10B981; color:#10B981;">● HEY NEO: 24/7 AKTIV</button>
@@ -205,47 +189,11 @@ HTML_PAGE = """<!DOCTYPE html>
             <span>VOICE STREAM // 24/7</span>
             <span id="streamStatus">LAUSCHT ("HEY NEO")</span>
         </div>
-        <div class="tr-body" id="replyBox">Spreche einfach jederzeit me mit mir: Sage „Hey Neo“ gefolgt von deinem Befehl. Kein Tippen nötig!</div>
+        <div class="tr-body" id="replyBox">Spreche einfach jederzeit mit mir: Sage „Hey Neo“ gefolgt von deinem Befehl. Kein Tippen nötig!</div>
     </div>
 
-    <!-- CENTER REACTOR - REZNIKOV STYLE HOLOGRAM -->
+    <!-- CENTER INTERACTIVE STAGE -->
     <div class="core-trigger" onclick="manualListenTrigger()">
-        <svg class="holo-bust" viewBox="0 0 300 300">
-            <!-- Baze e rrjetes -->
-            <defs>
-                <linearGradient id="gradCore" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" style="stop-color:var(--cyan);stop-opacity:1" />
-                    <stop offset="50%" style="stop-color:var(--orange);stop-opacity:1" />
-                    <stop offset="100%" style="stop-color:var(--cyan);stop-opacity:1" />
-                </linearGradient>
-            </defs>
-            <!-- Shtresa e jashtme e linjave cyan (fibra te ftohta) -->
-            <g stroke="var(--cyan)" opacity="0.7">
-                <path d="M50,200 Q100,150 150,150 Q200,150 250,200" />
-                <path d="M60,215 Q100,175 150,175 Q200,175 240,215" />
-                <path d="M70,230 Q100,200 150,200 Q200,200 230,230" />
-                <path d="M80,245 Q100,225 150,225 Q200,225 220,245" />
-            </g>
-            <!-- Shtresa e mesme (lidhjet e qafes) -->
-            <g stroke="var(--cyan)" opacity="0.9">
-                <path d="M130,150 L130,100" />
-                <path d="M170,150 L170,100" />
-                <path d="M140,125 Q150,130 160,125" />
-            </g>
-            <!-- Shtresa e kokes (unaza energjie) -->
-            <g stroke="url(#gradCore)" stroke-width="2" opacity="0.9">
-                <ellipse cx="150" cy="80" rx="25" ry="10" />
-                <path d="M125,80 Q135,50 150,45 Q165,50 175,80" fill="none" />
-                <!-- Pika ne kulm -->
-                <circle cx="150" cy="45" r="3" fill="var(--orange)" stroke="none"/>
-            </g>
-            <!-- Qendra e nxehte (portokalli) e pulsuar -->
-            <circle cx="150" cy="185" r="18" fill="var(--orange)" opacity="0.6" filter="blur(8px)">
-                <animate attributeName="r" values="18;22;18" dur="2s" repeatCount="indefinite" />
-                <animate attributeName="opacity" values="0.6;0.8;0.6" dur="2s" repeatCount="indefinite" />
-            </circle>
-            <circle cx="150" cy="185" r="8" fill="#FFF" opacity="0.9" filter="blur(2px)"/>
-        </svg>
         <div class="core-sub" id="coreState">SAY "HEY NEO"</div>
     </div>
 
@@ -259,11 +207,6 @@ HTML_PAGE = """<!DOCTYPE html>
             <button type="button" class="hud-btn" onclick="closeHolo()">✕ Schließen</button>
         </div>
         <div class="holo-content" id="holoBody"></div>
-    </div>
-
-    <!-- BOTTOM ACTION STRIP -->
-    <div class="bottom-dock">
-        <div class="act-strip" id="actBar"></div>
     </div>
 
     <input type="file" id="cam" accept="image/*" style="display:none" onchange="handleImg(event)">
@@ -313,7 +256,7 @@ HTML_PAGE = """<!DOCTYPE html>
             nodesLayer.appendChild(el);
         });
 
-        // --- 2. CANVAS ANIMATION ---
+        // --- 2. REZNIKOV HOLOGRAPHIC BUST CANVAS ENGINE ---
         const canvas = document.getElementById('neuralCanvas');
         const ctx = canvas.getContext('2d');
         let W = window.innerWidth, H = window.innerHeight;
@@ -321,20 +264,96 @@ HTML_PAGE = """<!DOCTYPE html>
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
 
-        let coreStateMode = 'idle', angle1 = 0, angle2 = 0;
+        let coreStateMode = 'idle', timeStep = 0;
         const packets = NODES.map((_, idx) => ({ progress: (idx * 0.15) % 1, speed: 0.004 + (idx % 3) * 0.0012 }));
+
+        // Generate particle dust above head
+        const dust = Array.from({length: 80}, () => ({
+            x: (Math.random() - 0.5) * 160,
+            y: -140 - Math.random() * 80,
+            size: Math.random() * 2 + 0.5,
+            speed: Math.random() * 0.6 + 0.2
+        }));
+
+        function drawReznikovBust(cx, cy, pulseBoost) {
+            timeStep += 0.03 * pulseBoost;
+
+            // 1. Warm orange face/core glow (Reznikov style center heat)
+            const faceGlow = ctx.createRadialGradient(cx, cy - 10, 10, cx, cy - 10, 110);
+            faceGlow.addColorStop(0, 'rgba(255, 153, 0, 0.45)');
+            faceGlow.addColorStop(0.5, 'rgba(0, 229, 255, 0.15)');
+            faceGlow.addColorStop(1, 'rgba(3, 7, 18, 0)');
+            ctx.fillStyle = faceGlow;
+            ctx.beginPath(); ctx.arc(cx, cy - 10, 110, 0, Math.PI * 2); ctx.fill();
+
+            // 2. Horizontal contour lines forming the wireframe bust & shoulders
+            const linesCount = 42;
+            for (let i = 0; i < linesCount; i++) {
+                const yNorm = (i / linesCount) * 2 - 1; // -1 to 1 (top to bottom)
+                const y = cy + yNorm * 130;
+
+                // Calculate head/shoulder width profile based on vertical position
+                let widthFactor = 0;
+                if (yNorm < -0.6) {
+                    // Crown / top particles
+                    widthFactor = Math.cos((yNorm + 0.6) * Math.PI * 1.2) * 55;
+                } else if (yNorm < 0.1) {
+                    // Head / face
+                    widthFactor = 70 + Math.sin(yNorm * Math.PI * 3) * 15;
+                } else if (yNorm < 0.4) {
+                    // Neck
+                    widthFactor = 30 + (yNorm * 15);
+                } else {
+                    // Shoulders sweeping out wide
+                    widthFactor = 50 + Math.pow((yNorm - 0.4) * 3, 2) * 75;
+                }
+
+                if (widthFactor < 0) widthFactor = 0;
+
+                ctx.beginPath();
+                const points = 30;
+                for (let j = 0; j <= points; j++) {
+                    const xNorm = (j / points) * 2 - 1; // -1 to 1
+                    const wave = Math.sin(timeStep + i * 0.4 + j * 0.3) * (coreStateMode !== 'idle' ? 4 : 1.5);
+                    const x = cx + xNorm * widthFactor + wave * (1 - Math.abs(xNorm));
+
+                    if (j === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+
+                // Color gradient: Cyan on edges/shoulders, orange-gold in center face
+                const lineAlpha = 0.25 + Math.abs(yNorm) * 0.35;
+                ctx.strokeStyle = i % 3 === 0 ? `rgba(255, 153, 0, ${lineAlpha * 0.9})` : `rgba(0, 229, 255, ${lineAlpha})`;
+                ctx.lineWidth = i % 4 === 0 ? 1.5 : 1;
+                ctx.stroke();
+            }
+
+            // 3. Floating particle dust cloud at the crown (Reznikov top burst)
+            ctx.fillStyle = 'rgba(0, 229, 255, 0.75)';
+            dust.forEach(d => {
+                d.y -= d.speed * pulseBoost;
+                if (d.y < -190) d.y = -130;
+                const alpha = Math.max(0, 1 - Math.abs(d.y + 160) / 70);
+                ctx.fillStyle = `rgba(0, 229, 255, ${alpha})`;
+                ctx.beginPath();
+                ctx.arc(cx + d.x, cy + d.y, d.size, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
 
         function drawNeuralNetwork() {
             ctx.clearRect(0, 0, W, H);
             const cx = W * 0.5, cy = H * 0.48;
 
-            let mainColor = '0, 229, 255', secColor = '255, 153, 0', rotSpeed = 0.005, pulseBoost = 1;
-            if (coreStateMode === 'listening') { mainColor = '16, 185, 129'; rotSpeed = 0.012; pulseBoost = 1.8; }
-            else if (coreStateMode === 'thinking') { mainColor = '0, 229, 255'; rotSpeed = 0.020; pulseBoost = 2.5; }
-            else if (coreStateMode === 'speaking') { mainColor = '168, 85, 247'; rotSpeed = 0.010; pulseBoost = 2.0; }
+            let mainColor = '0, 229, 255', secColor = '255, 153, 0', pulseBoost = 1;
+            if (coreStateMode === 'listening') { mainColor = '16, 185, 129'; pulseBoost = 1.6; }
+            else if (coreStateMode === 'thinking') { mainColor = '0, 229, 255'; pulseBoost = 2.4; }
+            else if (coreStateMode === 'speaking') { mainColor = '168, 85, 247'; pulseBoost = 1.8; }
 
-            angle1 += rotSpeed; angle2 -= rotSpeed * 0.7;
+            // Draw Reznikov Holographic Bust in center
+            drawReznikovBust(cx, cy, pulseBoost);
 
+            // Draw neural network connecting nodes
             NODES.forEach((n, idx) => {
                 const nx = W * n.rx, ny = H * n.ry;
                 const midX = (cx + nx) * 0.5, midY = (cy + ny) * 0.5 + (idx % 2 === 0 ? -20 : 20);
@@ -342,7 +361,7 @@ HTML_PAGE = """<!DOCTYPE html>
                 ctx.beginPath();
                 ctx.moveTo(cx, cy);
                 ctx.quadraticCurveTo(midX, midY, nx, ny);
-                ctx.strokeStyle = `rgba(${secColor}, 0.18)`;
+                ctx.strokeStyle = `rgba(${secColor}, 0.15)`;
                 ctx.lineWidth = 1.2;
                 ctx.stroke();
 
@@ -355,17 +374,9 @@ HTML_PAGE = """<!DOCTYPE html>
 
                 ctx.beginPath();
                 ctx.arc(px, py, 2.5, 0, Math.PI * 2);
-                ctx.fillStyle = `rgba(${mainColor}, 0.9)` ;
+                ctx.fillStyle = `rgba(${mainColor}, 0.9)`;
                 ctx.fill();
             });
-
-            ctx.save(); ctx.translate(cx, cy); ctx.rotate(angle1);
-            ctx.strokeStyle = `rgba(${secColor}, 0.4)`; ctx.lineWidth = 1.5; ctx.setLineDash([16, 8, 4, 8]);
-            ctx.beginPath(); ctx.arc(0, 0, 165, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
-
-            ctx.save(); ctx.translate(cx, cy); ctx.rotate(angle2);
-            ctx.strokeStyle = `rgba(${mainColor}, 0.7)`; ctx.lineWidth = 2.5; ctx.setLineDash([10, 10]);
-            ctx.beginPath(); ctx.arc(0, 0, 125, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
 
             requestAnimationFrame(drawNeuralNetwork);
         }
@@ -423,14 +434,14 @@ HTML_PAGE = """<!DOCTYPE html>
                 title.innerText = 'ANGEBOTS-KALKULATOR (31,50 €/Std)';
                 body.innerHTML = `
                     <div style="display:flex;flex-direction:column;gap:10px;">
-                        <input id="cQm" type="number" placeholder="Fläche në m² (z.B. 600)" value="600" style="background:#030712;border:1px solid var(--border);color:#fff;padding:9px;border-radius:7px;">
+                        <input id="cQm" type="number" placeholder="Fläche in m² (z.B. 600)" value="600" style="background:#030712;border:1px solid var(--border);color:#fff;padding:9px;border-radius:7px;">
                         <select id="cFreq" style="background:#030712;border:1px solid var(--border);color:#fff;padding:9px;border-radius:7px;">
                             <option value="1x pro Woche">1x pro Woche</option>
                             <option value="2x pro Woche" selected>2x pro Woche</option>
                             <option value="3x pro Woche">3x pro Woche</option>
                             <option value="5x pro Woche">5x pro Woche</option>
                         </select>
-                        <button type="button" class="gold-pill" onclick="const q=document.getElementById('cQm').value||600;const f=document.getElementById('cFreq').value;closeHolo();quickCmd('Kalkuliere ein Reinigungsangebot für '+q+' Quadratmeter Büro, '+f+', dhe erstelle den Angebotstext.');">JETZT BERECHNEN</button>
+                        <button type="button" class="gold-pill" onclick="const q=document.getElementById('cQm').value||600;const f=document.getElementById('cFreq').value;closeHolo();quickCmd('Kalkuliere ein Reinigungsangebot für '+q+' Quadratmeter Büro, '+f+', und erstelle den Angebotstext.');">JETZT BERECHNEN</button>
                     </div>`;
             }
         }
@@ -438,7 +449,6 @@ HTML_PAGE = """<!DOCTYPE html>
 
         function setSt(s) {
             coreStateMode = s || 'idle';
-            document.body.className = s || '';
             const cSt = document.getElementById('coreState');
             const sSt = document.getElementById('streamStatus');
             if (s === 'listening') { cSt.innerText = 'ICH HÖRE ZU...'; sSt.innerText = 'SPRICH JETZT'; }
@@ -675,9 +685,9 @@ def parse_upcoming_events():
         return ICAL_CACHE["events"]
 
 SYSTEM_PROMPT = """Du bist NEO, der hochintelligente KI-Assistent von Margil (Kundenbetreuer Gebäudereinigung Hamburg).
-Modus: {mode} | Zeit: {local_time}. Antworte souverän, ruhig, kurz dhe ohne Markdown/Sternchen.
+Modus: {mode} | Zeit: {local_time}. Antworte souverän, ruhig, kurz und ohne Markdown/Sternchen.
 - Morning Brief / Auto-Briefing: Nächste Termine + Codes aus Notizen + Google Maps URL in `action_url` (`action_label`: "Navigation starten").
-- Dolmetscher DE <-> SQ: Bei Übersetzung ins Albanische `voice_lang`: "sq" dhe Übersetzung në `copy_text`, sonst "de".
+- Dolmetscher DE <-> SQ: Bei Übersetzung ins Albanische `voice_lang`: "sq" und Übersetzung in `copy_text`, sonst "de".
 - Kalkulator: Büro ~220 m²/Std, 31,50 €/Std netto (4,33 Wochen/Monat). Fertiges Angebot in `copy_text` + WhatsApp URL (`https://wa.me/?text=URL_ENCODED`, `action_label`: "WhatsApp öffnen").
 - Gespräch Ende ("Danke", "Stopp"): `end_conversation`: true.
 Antworte NUR als JSON:
@@ -748,7 +758,7 @@ def tg_notify():
         except Exception:
             pass
     if not chat_id:
-        return jsonify({"ok": False, "error": "Bitte sende zuerst 'Hallo' an deinen Bot në Telegram"})
+        return jsonify({"ok": False, "error": "Bitte sende zuerst 'Hallo' an deinen Bot in Telegram"})
     payload = json.dumps({
         "chat_id": chat_id,
         "text": (request.json or {}).get("text", "🔔 NEO Autorisierung"),
@@ -804,4 +814,4 @@ def chat():
         return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+    app.run("0.0.0.0", port=int(os.environ.get("PORT", 5000)))
