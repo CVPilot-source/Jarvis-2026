@@ -12,27 +12,15 @@ from google.genai import types
 import edge_tts
 
 app = Flask(__name__)
-
 ICAL_CACHE = {"ts": 0, "events": []}
 
-MANIFEST_JSON = {
-    "name": "NEO",
-    "short_name": "NEO",
-    "start_url": "/",
-    "display": "standalone",
-    "background_color": "#060913",
-    "theme_color": "#060913",
-    "icons": [{"src": "/icon.svg", "sizes": "any", "type": "image/svg+xml"}]
-}
-
 ICON_SVG = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="120" fill="#060913"/>
+  <rect width="512" height="512" rx="115" fill="#060913"/>
   <circle cx="256" cy="256" r="150" fill="none" stroke="#38BDF8" stroke-width="12"/>
-  <circle cx="256" cy="256" r="28" fill="#38BDF8"/>
+  <circle cx="256" cy="256" r="26" fill="#38BDF8"/>
 </svg>"""
 
-HTML_PAGE = """
-<!DOCTYPE html>
+HTML_PAGE = """<!DOCTYPE html>
 <html lang="de">
 <head>
     <meta charset="UTF-8">
@@ -46,7 +34,7 @@ HTML_PAGE = """
         :root {
             --accent: #38BDF8;
             --bg: #060913;
-            --card: #111827;
+            --card: #101726;
             --border: rgba(255,255,255,0.1);
             --text: #F8FAFC;
             --muted: #94A3B8;
@@ -55,33 +43,25 @@ HTML_PAGE = """
         body.thinking  { --accent: #F59E0B; }
         body.speaking  { --accent: #A855F7; }
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
-
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body {
-            margin: 0;
+            margin: 0 auto;
+            max-width: 520px;
+            height: 100dvh;
             background: var(--bg);
             color: var(--text);
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            height: 100dvh;
-            overflow: hidden;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
             padding: 12px 14px;
-            max-width: 520px;
-            margin-left: auto;
-            margin-right: auto;
             gap: 10px;
         }
-
-        .top { display: flex; justify-content: space-between; align-items: center; }
+        .row-between { display: flex; justify-content: space-between; align-items: center; }
         .chip {
             background: var(--card); border: 1px solid var(--border); color: var(--text);
-            padding: 6px 12px; border-radius: 999px; font-size: 12px; font-weight: 700;
-            display: flex; align-items: center; gap: 6px; cursor: pointer;
+            padding: 7px 13px; border-radius: 999px; font-size: 12px; font-weight: 700; cursor: pointer;
         }
-        .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
-
         .hero {
             background: var(--card); border: 1px solid var(--border); border-radius: 18px;
             padding: 12px; display: flex; align-items: center; gap: 12px;
@@ -91,120 +71,113 @@ HTML_PAGE = """
             border: 2px solid var(--accent); flex-shrink: 0; cursor: pointer;
         }
         .avatar img { width: 100%; height: 114%; object-fit: cover; object-position: center 12%; display: block; }
-        .title { font-size: 18px; font-weight: 800; }
-        .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
-        .tag {
-            background: rgba(56,189,248,0.12); color: var(--accent); border-radius: 6px;
-            padding: 3px 8px; font-size: 11px; font-weight: 700;
+        .badge {
+            display: inline-block; background: rgba(56,189,248,0.12); color: var(--accent);
+            border-radius: 6px; padding: 3px 8px; font-size: 11px; font-weight: 700; margin-top: 5px;
         }
-
-        .cal-box {
-            background: var(--card); border: 1px solid var(--border); border-left: 3px solid var(--accent);
-            border-radius: 14px; padding: 10px 12px; cursor: pointer;
+        .box {
+            background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 11px 13px;
         }
-        .cal-lbl { font-size: 10px; font-weight: 800; color: var(--accent); text-transform: uppercase; }
-        .cal-val { font-size: 13.5px; font-weight: 700; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
+        .lbl { font-size: 10px; font-weight: 800; color: var(--accent); text-transform: uppercase; letter-spacing: 0.8px; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; flex: 1; }
         .tile {
-            background: var(--card); border: 1px solid var(--border); border-radius: 16px;
-            padding: 12px; display: flex; flex-direction: column; justify-content: center;
-            cursor: pointer;
+            background: var(--card); border: 1px solid var(--border); border-radius: 15px;
+            padding: 12px; display: flex; flex-direction: column; justify-content: center; cursor: pointer;
         }
         .tile:active { border-color: var(--accent); }
-        .tile-t { font-size: 14px; font-weight: 700; }
-        .tile-s { font-size: 11px; color: var(--muted); margin-top: 2px; }
-
-        .action-bar { display: flex; gap: 8px; justify-content: center; min-height: 30px; }
+        .t-main { font-size: 14px; font-weight: 700; }
+        .t-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+        .act-bar { display: flex; gap: 8px; justify-content: center; min-height: 30px; }
         .pill {
             background: var(--accent); color: #060913; border: none; border-radius: 999px;
-            padding: 6px 14px; font-size: 12px; font-weight: 800; text-decoration: none; cursor: pointer;
+            padding: 7px 15px; font-size: 12px; font-weight: 800; text-decoration: none; cursor: pointer;
         }
-
         .dock {
             background: var(--card); border: 1px solid var(--border); border-radius: 18px;
             padding: 10px; display: flex; flex-direction: column; gap: 8px;
         }
-        .dock-top { display: flex; align-items: center; gap: 10px; }
+        .mic-row { display: flex; align-items: center; gap: 10px; }
         .mic {
             width: 50px; height: 50px; border-radius: 50%; background: #0B1324;
-            border: 2px solid var(--accent); color: #FFF; font-size: 20px;
-            display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0;
+            border: 2px solid var(--accent); color: #FFF; font-size: 20px; cursor: pointer; flex-shrink: 0;
         }
-        .status-txt { flex: 1; font-size: 13px; font-weight: 700; color: var(--accent); cursor: pointer; }
-        .input-row { display: flex; gap: 6px; }
-        .input-row input {
+        .inp-row { display: flex; gap: 6px; }
+        .inp-row input {
             flex: 1; background: #060913; border: 1px solid var(--border); border-radius: 10px;
-            color: #FFF; padding: 9px 10px; font-size: 13.5px; outline: none;
+            color: #FFF; padding: 9px 10px; font-size: 14px; outline: none;
         }
-        .input-row button {
+        .inp-row button {
             background: var(--accent); color: #060913; border: none; border-radius: 10px;
-            padding: 0 14px; font-weight: 800; font-size: 12.5px; cursor: pointer;
+            padding: 0 14px; font-weight: 800; cursor: pointer;
         }
-
         .modal {
-            position: fixed; inset: 0; background: #060913; z-index: 40;
+            position: fixed; inset: 0; background: #060913; z-index: 50;
             display: none; flex-direction: column; padding: 16px;
         }
         .modal.open { display: flex; }
-        .row {
+        .note-row {
             display: flex; justify-content: space-between; align-items: center;
             background: var(--card); padding: 10px 12px; border-radius: 10px; margin-bottom: 8px; font-size: 13px;
         }
     </style>
 </head>
 <body>
-    <div class="top">
-        <button type="button" class="chip" onclick="toggleWake()"><span class="dot"></span><span id="wLabel">Voice Aktiv</span></button>
-        <span style="font-weight:800; letter-spacing:2px; font-size:12px; color:var(--accent);">NEO</span>
+    <div class="row-between">
+        <button type="button" class="chip" id="wBtn" onclick="toggleWake()">Voice: AN</button>
+        <strong style="letter-spacing:2px; font-size:12px; color:var(--accent);">NEO</strong>
         <button type="button" class="chip" id="mBtn" onclick="toggleMode()">Arbeit</button>
     </div>
 
     <div class="hero">
         <div class="avatar" onclick="toggleRec()"><img src="/avatar" alt="NEO" onerror="this.src='/icon.svg'"></div>
         <div>
-            <div class="title">Hallo, Margil</div>
-            <div class="tags">
-                <span class="tag" id="clock">--:--</span>
-                <span class="tag" id="weather">Hamburg</span>
-                <span class="tag" onclick="openList()" style="cursor:pointer;">Notizen: <span id="nCount">0</span></span>
+            <div style="font-size:18px; font-weight:800;">Hallo, Margil</div>
+            <div>
+                <span class="badge" id="clock">--:--</span>
+                <span class="badge" id="weather">Hamburg</span>
+                <span class="badge" onclick="openList()" style="cursor:pointer;">Notizen: <span id="nCount">0</span></span>
             </div>
         </div>
     </div>
 
-    <div class="cal-box" onclick="quickCmd('Erkläre mir kurz meine nächsten Termine im Kalender.')">
-        <div class="cal-lbl">Nächster Termin</div>
-        <div class="cal-val" id="nextEv">Wird geladen...</div>
+    <div class="box" onclick="quickCmd('Erkläre mir kurz meine nächsten Termine im Kalender.')" style="cursor:pointer;">
+        <div class="lbl">Nächster Termin</div>
+        <div id="nextEv" style="font-size:13.5px; font-weight:700; margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Kalender wird geladen...</div>
+    </div>
+
+    <div class="box" style="min-height:58px;">
+        <div class="lbl">Antwort</div>
+        <div id="replyBox" style="font-size:13px; margin-top:3px; color:#E2E8F0;">Bereit für deine Befehle, Margil.</div>
     </div>
 
     <div class="grid">
         <div class="tile" onclick="quickCmd('Ich fahre los zum nächsten Termin. Gib mir das Briefing mit Codes und starte Navigation.')">
-            <div class="tile-t">Auto-Briefing</div>
-            <div class="tile-s">Codes & Route</div>
+            <div class="t-main">Auto-Briefing</div>
+            <div class="t-sub">Codes & Route</div>
         </div>
         <div class="tile" onclick="quickCmd('Kalkuliere 600 qm Büro, 2x pro Woche, mit WhatsApp-Angebot.')">
-            <div class="tile-t">Angebot Rechner</div>
-            <div class="tile-s">m² & Preis</div>
+            <div class="t-main">Angebot Rechner</div>
+            <div class="t-sub">m² & Preis</div>
         </div>
         <div class="tile" onclick="document.getElementById('cam').click()">
-            <div class="tile-t">Mängel-Foto</div>
-            <div class="tile-s">Kamera Bericht</div>
+            <div class="t-main">Mängel-Foto</div>
+            <div class="t-sub">Kamera Bericht</div>
         </div>
         <div class="tile" onclick="sendTg()">
-            <div class="tile-t">Telegram Alert</div>
-            <div class="tile-s">Autorisierung</div>
+            <div class="t-main">Telegram Alert</div>
+            <div class="t-sub">Autorisierung</div>
         </div>
     </div>
 
-    <div class="action-bar" id="actBar"></div>
+    <div class="act-bar" id="actBar"></div>
 
     <div class="dock">
-        <div class="dock-top">
+        <div class="mic-row">
             <button type="button" class="mic" onclick="toggleRec()">🎙️</button>
-            <div class="status-txt" id="stTxt" onclick="toggleRec()">Tippen oder „Hey Neo“ sagen</div>
+            <div id="stTxt" onclick="toggleRec()" style="flex:1; font-size:13px; font-weight:700; color:var(--accent); cursor:pointer;">Tippen oder „Hey Neo“ sagen</div>
             <button type="button" class="chip" onclick="openList()">Listen</button>
         </div>
-        <div class="input-row">
+        <div class="inp-row">
             <input type="text" id="msg" placeholder="Befehl oder Übersetzung..." onkeypress="if(event.key==='Enter')sendTxt()">
             <button type="button" onclick="sendTxt()">Senden</button>
         </div>
@@ -213,8 +186,8 @@ HTML_PAGE = """
     <input type="file" id="cam" accept="image/*" capture="environment" style="display:none" onchange="handleImg(event)">
 
     <div class="modal" id="modal">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-            <b>Notizen & Codes</b>
+        <div class="row-between" style="margin-bottom:12px;">
+            <strong>Notizen & Objekt-Codes</strong>
             <button type="button" class="chip" onclick="closeList()">✕ Schließen</button>
         </div>
         <div id="listBody" style="flex:1; overflow-y:auto;"></div>
@@ -230,7 +203,7 @@ HTML_PAGE = """
 
         fetch('https://api.open-meteo.com/v1/forecast?latitude=53.5511&longitude=9.9937&current_weather=true')
             .then(r => r.json()).then(d => {
-                if (d.current_weather) document.getElementById('weather').innerText = "Hamburg " + Math.round(d.current_weather.temperature) + "°C";
+                if (d.current_weather) document.getElementById('weather').innerText = "HH " + Math.round(d.current_weather.temperature) + "°C";
             }).catch(()=>{});
 
         fetch('/calendar_preview').then(r => r.json()).then(d => {
@@ -255,13 +228,13 @@ HTML_PAGE = """
         function toggleMode() { mode = mode === 'ARBEIT' ? 'PRIVAT' : 'ARBEIT'; saveState(); }
         function setSt(s) {
             document.body.className = s || '';
-            stTxt.innerText = s === 'listening' ? 'Hört zu...' : (s === 'thinking' ? 'Antwort kommt...' : (s === 'speaking' ? 'NEO spricht...' : 'Tippen oder „Hey Neo“ sagen'));
+            stTxt.innerText = s === 'listening' ? 'Hört zu...' : (s === 'thinking' ? 'NEO denkt nach...' : (s === 'speaking' ? 'NEO spricht...' : 'Tippen oder „Hey Neo“ sagen'));
         }
 
         function stopWake() { if (wakeRec) { try { wakeRec.onend = null; wakeRec.abort(); } catch(e){} wakeRec = null; } }
         function toggleWake() {
             wakeOn = !wakeOn;
-            document.getElementById('wLabel').innerText = wakeOn ? 'Voice Aktiv' : 'Stumm';
+            document.getElementById('wBtn').innerText = wakeOn ? 'Voice: AN' : 'Voice: AUS';
             if (wakeOn) startWake(); else stopWake();
         }
         function startWake() {
@@ -278,7 +251,7 @@ HTML_PAGE = """
                     if (t.includes('hey neo') || t.includes('neo')) { stopWake(); inConv = true; startRec(); return; }
                 }
             };
-            wakeRec.onend = () => { wakeRec = null; if (wakeOn && !isRec && !isSpk && !inConv) setTimeout(startWake, 500); };
+            wakeRec.onend = () => { wakeRec = null; if (wakeOn && !isRec && !isSpk && !inConv) setTimeout(startWake, 600); };
             try { wakeRec.start(); } catch(e){}
         }
 
@@ -317,15 +290,17 @@ HTML_PAGE = """
 
         function openList() {
             document.getElementById('modal').classList.add('open');
-            document.getElementById('listBody').innerHTML = mem.length ? mem.map((x,i) => `<div class="row"><span>${x}</span><button class="pill" onclick="mem.splice(${i},1);saveState();openList();">✓</button></div>`).join('') : '<p style="color:#94A3B8">Keine Notizen.</p>';
+            document.getElementById('listBody').innerHTML = mem.length ? mem.map((x,i) => `<div class="note-row"><span>${x}</span><button type="button" class="pill" onclick="mem.splice(${i},1);saveState();openList();">✓</button></div>`).join('') : '<p style="color:#94A3B8">Keine Notizen vorhanden.</p>';
         }
         function closeList() { document.getElementById('modal').classList.remove('open'); }
 
         async function sendTg() {
             stTxt.innerText = "Sende Telegram...";
-            const r = await fetch('/telegram_notify', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({text:"📞 NEO Autorisierung angefordert!"}) });
-            const d = await r.json();
-            stTxt.innerText = d.ok ? "Telegram gesendet!" : (d.error || "Fehler");
+            try {
+                const r = await fetch('/telegram_notify', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({text:"📞 NEO Autorisierung angefordert!"}) });
+                const d = await r.json();
+                stTxt.innerText = d.ok ? "Telegram gesendet!" : (d.error || "Fehler");
+            } catch(e) { stTxt.innerText = "Telegram Fehler"; }
         }
 
         function handleImg(ev) {
@@ -351,11 +326,12 @@ HTML_PAGE = """
             try {
                 const res = await fetch('/chat', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
                 const d = await res.json();
-                if (d.error) { inConv = false; setSt(null); stTxt.innerText = d.error; return; }
+                if (d.error) { inConv = false; setSt(null); document.getElementById('replyBox').innerText = d.error; return; }
                 if (d.end_conversation) inConv = false;
                 if (d.new_memory) { mem.push(d.new_memory); saveState(); }
+                document.getElementById('replyBox').innerText = d.reply;
                 if (d.copy_text) {
-                    const b = document.createElement('button'); b.className = 'pill'; b.innerText = 'Text kopieren';
+                    const b = document.createElement('button'); b.type = 'button'; b.className = 'pill'; b.innerText = 'Text kopieren';
                     b.onclick = () => { navigator.clipboard.writeText(d.copy_text); b.innerText = '✓ Kopiert'; };
                     document.getElementById('actBar').appendChild(b);
                 }
@@ -373,8 +349,7 @@ HTML_PAGE = """
         window.onload = startWake;
     </script>
 </body>
-</html>
-"""
+</html>"""
 
 def parse_upcoming_events():
     now_ts = time.time()
@@ -412,9 +387,9 @@ def parse_upcoming_events():
 
 SYSTEM_PROMPT = """Du bist NEO, der schnelle KI-Assistent von Margil (Kundenbetreuer Gebäudereinigung Hamburg).
 Modus: {mode} | Zeit: {local_time}. Antworte kurz, höflich, ohne Markdown/Sternchen.
-- Auto-Briefing ("Ich fahre los"): Nächster Termin + Codes aus Notizen + Google Maps URL in `action_url`.
-- Dolmetscher DE <-> SQ: Bei Übersetzung ins Albanische `voice_lang`: "sq", sonst "de".
-- Kalkulator: Büro ~220 m²/Std, 31,50 €/Std netto. Fertiger Text in `copy_text` + WhatsApp Intent (`intent://send?text=URL_ENCODED#Intent;scheme=whatsapp;package=com.whatsapp.w4b;end`).
+- Auto-Briefing ("Ich fahre los"): Nächster Termin + Codes aus Notizen + Google Maps URL in `action_url` (`action_label`: "Navigation starten").
+- Dolmetscher DE <-> SQ: Bei Übersetzung ins Albanische `voice_lang`: "sq" und Übersetzung in `copy_text`, sonst "de".
+- Kalkulator: Büro ~220 m²/Std, 31,50 €/Std netto (4,33 Wochen/Monat). Fertiges Angebot in `copy_text` + WhatsApp Intent (`intent://send?text=URL_ENCODED#Intent;scheme=whatsapp;package=com.whatsapp.w4b;end`, `action_label`: "WhatsApp öffnen").
 - Gespräch Ende ("Danke", "Stopp"): `end_conversation`: true.
 Antworte NUR als JSON:
 {{"reply":"","voice_lang":"de","copy_text":"","new_memory":"","action_url":"","action_label":"","end_conversation":false}}"""
@@ -447,7 +422,15 @@ def cal_prev():
 
 @app.route("/manifest.json")
 def manifest():
-    return jsonify(MANIFEST_JSON)
+    return jsonify({
+        "name": "NEO",
+        "short_name": "NEO",
+        "start_url": "/",
+        "display": "standalone",
+        "background_color": "#060913",
+        "theme_color": "#060913",
+        "icons": [{"src": "/icon.svg", "sizes": "any", "type": "image/svg+xml"}]
+    })
 
 @app.route("/icon.svg")
 def icon():
