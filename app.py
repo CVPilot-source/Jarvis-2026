@@ -28,7 +28,7 @@ HTML_PAGE = """<!DOCTYPE html>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#030712">
     <link rel="manifest" href="/manifest.json">
-    <title>N.E.O. // VOICE COMMAND CORE</title>
+    <title>N.E.O. // PURE VOICE CORE</title>
     <style>
         :root {
             --gold: #F59E0B;
@@ -81,35 +81,19 @@ HTML_PAGE = """<!DOCTYPE html>
         }
         .hud-btn:hover { border-color: var(--gold); color: var(--gold); }
 
-        /* TOP RIGHT STREAM PANEL */
-        .hud-tr {
-            position: fixed; top: 20px; right: 24px; width: 380px; max-width: 44vw;
-            background: var(--panel); border: 1px solid var(--border); border-top: 2px solid var(--gold);
-            border-radius: 12px; padding: 12px 16px; z-index: 10;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.65);
-        }
-        .tr-head {
-            display: flex; justify-content: space-between; font-size: 10.5px;
-            font-weight: 800; letter-spacing: 1.2px; color: var(--gold); margin-bottom: 6px;
-        }
-        .tr-body {
-            font-size: 13.5px; line-height: 1.45; color: #F1F5F9;
-            max-height: 150px; overflow-y: auto; user-select: text;
-        }
-
         /* CENTER REACTOR CORE */
         .core-trigger {
-            position: fixed; top: 46%; left: 50%; transform: translate(-50%, -50%);
-            width: 170px; height: 170px; border-radius: 50%; z-index: 8;
+            position: fixed; top: 48%; left: 50%; transform: translate(-50%, -50%);
+            width: 190px; height: 190px; border-radius: 50%; z-index: 8;
             cursor: pointer; display: flex; flex-direction: column;
             align-items: center; justify-content: center; text-align: center;
         }
         .core-label {
-            font-size: 22px; font-weight: 900; letter-spacing: 5px; color: #FFF;
-            text-shadow: 0 0 16px var(--gold);
+            font-size: 24px; font-weight: 900; letter-spacing: 6px; color: #FFF;
+            text-shadow: 0 0 18px var(--gold);
         }
         .core-sub {
-            font-size: 10px; font-weight: 800; letter-spacing: 1.8px;
+            font-size: 10.5px; font-weight: 800; letter-spacing: 2px;
             color: var(--gold); margin-top: 4px;
         }
 
@@ -136,7 +120,7 @@ HTML_PAGE = """<!DOCTYPE html>
 
         /* POPUP WINDOW */
         .holo-modal {
-            position: fixed; top: 46%; left: 50%; transform: translate(-50%, -50%);
+            position: fixed; top: 48%; left: 50%; transform: translate(-50%, -50%);
             width: 480px; max-width: 92vw; background: rgba(7, 13, 27, 0.97);
             border: 1px solid var(--cyan); box-shadow: 0 0 45px rgba(0, 0, 0, 0.85);
             border-radius: 14px; padding: 18px; z-index: 30;
@@ -155,7 +139,7 @@ HTML_PAGE = """<!DOCTYPE html>
             border-left: 3px solid var(--gold); border-radius: 7px; margin-bottom: 7px;
         }
 
-        /* BOTTOM ACTION BAR (ONLY PILLS, NO TEXT BOX) */
+        /* BOTTOM ACTION STRIP */
         .bottom-dock {
             position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%);
             width: 600px; max-width: 94vw; z-index: 12;
@@ -167,12 +151,6 @@ HTML_PAGE = """<!DOCTYPE html>
             padding: 8px 18px; font-size: 12px; font-weight: 800; text-decoration: none;
             cursor: pointer; box-shadow: 0 0 16px var(--gold-glow);
         }
-
-        @media (max-width: 768px) {
-            .hud-tr { top: auto; bottom: 24px; right: 12px; left: 12px; width: auto; max-width: none; }
-            .node-item { padding: 6px 10px; }
-            .node-title { font-size: 11px; }
-        }
     </style>
 </head>
 <body>
@@ -181,22 +159,13 @@ HTML_PAGE = """<!DOCTYPE html>
     <!-- TOP LEFT -->
     <div class="hud-tl">
         <div class="sys-title">NEO <span style="font-size:11px; color:var(--gold); letter-spacing:2px;">HANDS-FREE OS</span></div>
-        <div class="sys-sub" id="sysMeta">HAMBURG • DAUERHAFT AKTIV</div>
+        <div class="sys-sub" id="sysMeta">HAMBURG • 24/7 AKTIV</div>
         <div class="hud-controls">
             <button type="button" class="hud-btn" id="wBtn" onclick="toggleWake()" style="border-color:#10B981; color:#10B981;">● HEY NEO: 24/7 AKTIV</button>
             <button type="button" class="hud-btn" id="mBtn" onclick="toggleMode()">MODUS: ARBEIT</button>
             <button type="button" class="hud-btn" onclick="openHolo('calendar')">KALENDER</button>
             <button type="button" class="hud-btn" onclick="openHolo('codes')">CODES (<span id="nCount">0</span>)</button>
         </div>
-    </div>
-
-    <!-- TOP RIGHT OUTPUT -->
-    <div class="hud-tr">
-        <div class="tr-head">
-            <span>VOICE STREAM // 24/7</span>
-            <span id="streamStatus">LAUSCHT ("HEY NEO")</span>
-        </div>
-        <div class="tr-body" id="replyBox">Spreche einfach jederzeit mit mir: Sage „Hey Neo“ gefolgt von deinem Befehl. Kein Tippen nötig!</div>
     </div>
 
     <!-- CENTER REACTOR -->
@@ -282,7 +251,7 @@ HTML_PAGE = """<!DOCTYPE html>
 
         function drawNeuralNetwork() {
             ctx.clearRect(0, 0, W, H);
-            const cx = W * 0.5, cy = H * 0.46;
+            const cx = W * 0.5, cy = H * 0.48;
 
             let mainColor = '245, 158, 11', secColor = '56, 189, 248', rotSpeed = 0.005, pulseBoost = 1;
             if (coreStateMode === 'listening') { mainColor = '16, 185, 129'; rotSpeed = 0.016; pulseBoost = 2.4; }
@@ -384,7 +353,7 @@ HTML_PAGE = """<!DOCTYPE html>
                 body.innerHTML = `
                     <div style="display:flex;gap:6px;margin-bottom:12px;">
                         <input id="newCodeInp" type="text" placeholder="Neuen Code/Notiz eingeben..." style="flex:1;background:#030712;border:1px solid var(--border);color:#fff;padding:8px;border-radius:6px;">
-                        <button type="button" class="gold-pill" onclick="const v=document.getElementById('newCodeInp').value.trim();if(v){mem.push(v);saveState();openHolo('codes');}">+ Speichern</button>
+                        <button type="button" class="exec-btn" onclick="const v=document.getElementById('newCodeInp').value.trim();if(v){mem.push(v);saveState();openHolo('codes');}">+ Speichern</button>
                     </div>` + listHtml;
             } else if (type === 'calc') {
                 title.innerText = 'ANGEBOTS-KALKULATOR (31,50 €/Std)';
@@ -407,11 +376,10 @@ HTML_PAGE = """<!DOCTYPE html>
             coreStateMode = s || 'idle';
             document.body.className = s || '';
             const cSt = document.getElementById('coreState');
-            const sSt = document.getElementById('streamStatus');
-            if (s === 'listening') { cSt.innerText = 'ICH HÖRE ZU...'; sSt.innerText = 'SPRICH JETZT'; }
-            else if (s === 'thinking') { cSt.innerText = 'DENKT NACH...'; sSt.innerText = 'ANALYSE...'; }
-            else if (s === 'speaking') { cSt.innerText = 'NEO SPRICHT'; sSt.innerText = 'AUDIO AKTIV'; }
-            else { cSt.innerText = activeSession ? 'SPRICH WEITER...' : 'SAY "HEY NEO"'; sSt.innerText = activeSession ? 'DIALOG AKTIV' : 'LAUSCHT ("HEY NEO")'; }
+            if (s === 'listening') { cSt.innerText = 'HÖRT ZU...'; }
+            else if (s === 'thinking') { cSt.innerText = 'DENKT NACH...'; }
+            else if (s === 'speaking') { cSt.innerText = 'NEO SPRICHT'; }
+            else { cSt.innerText = activeSession ? 'SPRICH WEITER...' : 'SAY "HEY NEO"'; }
         }
 
         // --- 4. 100% HANDS-FREE CONTINUOUS SPEECH ENGINE ---
@@ -443,7 +411,6 @@ HTML_PAGE = """<!DOCTYPE html>
             activeSession = true;
             beep(520, 920);
             setSt('listening');
-            document.getElementById('replyBox').innerText = "🎙️ Ich höre dir direkt zu, Margil...";
             if (!srInstance) startAlwaysListening();
         }
 
@@ -470,7 +437,6 @@ HTML_PAGE = """<!DOCTYPE html>
                     if (!event.results[i].isFinal) {
                         if (activeSession || low.includes('neo') || low.includes('nio')) {
                             setSt('listening');
-                            document.getElementById('replyBox').innerText = "🎙️ " + raw + " ...";
                         }
                         continue;
                     }
@@ -489,7 +455,6 @@ HTML_PAGE = """<!DOCTYPE html>
                             activeSession = true;
                             beep(520, 960);
                             setSt('listening');
-                            document.getElementById('replyBox').innerText = "🎙️ Ja, Margil? Sprich einfach weiter...";
                             return;
                         }
                     } else if (activeSession && raw.length > 1) {
@@ -531,12 +496,10 @@ HTML_PAGE = """<!DOCTYPE html>
         };
 
         async function sendTg() {
-            document.getElementById('replyBox').innerText = "Sende Autorisierungsanfrage an Telegram...";
             try {
                 const r = await fetch('/telegram_notify', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({text:"📞 NEO Autorisierung angefordert!"}) });
                 const d = await r.json();
-                document.getElementById('replyBox').innerText = d.ok ? "✅ Telegram-Benachrichtigung erfolgreich gesendet!" : ("⚠️ " + (d.error || "Telegram Fehler"));
-            } catch(e) { document.getElementById('replyBox').innerText = "Verbindungsfehler zu Telegram."; }
+            } catch(e) {}
         }
 
         function handleImg(ev) {
@@ -551,7 +514,6 @@ HTML_PAGE = """<!DOCTYPE html>
 
         async function sendNeo(payload) {
             document.getElementById('actBar').innerHTML = '';
-            document.getElementById('replyBox').innerText = "NEO verarbeitet: „" + (payload.message || "Anfrage") + "“...";
             payload.mode = mode;
             payload.memory = mem;
             payload.local_time_str = new Date().toLocaleString('de-DE');
@@ -561,13 +523,11 @@ HTML_PAGE = """<!DOCTYPE html>
                 const d = await res.json();
                 if (d.error) {
                     isBusy = false; setSt(null);
-                    document.getElementById('replyBox').innerText = "Fehler: " + d.error;
                     if (wakeOn) startAlwaysListening();
                     return;
                 }
                 if (d.end_conversation) activeSession = false;
                 if (d.new_memory) { mem.push(d.new_memory); saveState(); }
-                document.getElementById('replyBox').innerText = d.reply;
 
                 if (d.copy_text) {
                     const b = document.createElement('button'); b.type = 'button'; b.className = 'gold-pill'; b.innerText = '📋 Text kopieren';
@@ -595,7 +555,6 @@ HTML_PAGE = """<!DOCTYPE html>
                 }
             } catch(e) {
                 isBusy = false; setSt(null);
-                document.getElementById('replyBox').innerText = "Server-Verbindungsfehler.";
                 if (wakeOn) startAlwaysListening();
             }
         }
@@ -738,7 +697,7 @@ def chat():
 
         parts = []
         if "image" in data:
-            parts.append(types.Part.from_bytes(data=base64.b64decode(data["image"], mime_type="image/jpeg")))
+            parts.append(types.Part.from_bytes(data=base64.b64decode(data["image"]), mime_type="image/jpeg"))
             parts.append(data.get("message", "Mängelbericht erstellen."))
         elif "audio" in data:
             parts.append(types.Part.from_bytes(data=base64.b64decode(data["audio"]), mime_type=data.get("mime_type", "audio/webm")))
