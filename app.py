@@ -28,34 +28,34 @@ HTML_PAGE = """<!DOCTYPE html>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#030712">
     <link rel="manifest" href="/manifest.json">
-    <title>NEO // APEX CORE</title>
+    <title>N.E.O. // VOICE COMMAND CORE</title>
     <style>
         :root {
             --gold: #F59E0B;
-            --gold-glow: rgba(245, 158, 11, 0.45);
+            --gold-glow: rgba(245, 158, 11, 0.5);
             --cyan: #38BDF8;
             --bg: #030712;
-            --panel: rgba(8, 15, 30, 0.88);
-            --border: rgba(56, 189, 248, 0.25);
+            --panel: rgba(8, 15, 30, 0.90);
+            --border: rgba(56, 189, 248, 0.28);
             --text: #F8FAFC;
             --muted: #94A3B8;
         }
-        body.listening { --gold: #10B981; --gold-glow: rgba(16, 185, 129, 0.6); }
-        body.thinking  { --gold: #38BDF8; --gold-glow: rgba(56, 189, 248, 0.6); }
-        body.speaking  { --gold: #A855F7; --gold-glow: rgba(168, 85, 247, 0.6); }
+        body.listening { --gold: #10B981; --gold-glow: rgba(16, 185, 129, 0.65); }
+        body.thinking  { --gold: #38BDF8; --gold-glow: rgba(56, 189, 248, 0.65); }
+        body.speaking  { --gold: #A855F7; --gold-glow: rgba(168, 85, 247, 0.65); }
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
 
         html, body {
             margin: 0; padding: 0; width: 100vw; height: 100vh; overflow: hidden;
             background-color: var(--bg);
             background-image:
-                radial-gradient(circle at 50% 46%, rgba(14, 30, 62, 0.78) 0%, rgba(3, 7, 18, 0.98) 70%),
-                linear-gradient(rgba(56, 189, 248, 0.045) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(56, 189, 248, 0.045) 1px, transparent 1px);
-            background-size: 100% 100%, 56px 56px, 56px 56px;
+                radial-gradient(circle at 50% 46%, rgba(14, 30, 62, 0.82) 0%, rgba(3, 7, 18, 0.98) 70%),
+                linear-gradient(rgba(56, 189, 248, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(56, 189, 248, 0.05) 1px, transparent 1px);
+            background-size: 100% 100%, 64px 64px, 64px 64px;
             color: var(--text);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
         }
 
         #neuralCanvas {
@@ -65,39 +65,39 @@ HTML_PAGE = """<!DOCTYPE html>
 
         /* TOP LEFT HUD */
         .hud-tl {
-            position: fixed; top: 18px; left: 22px; z-index: 10;
+            position: fixed; top: 20px; left: 24px; z-index: 10;
             display: flex; flex-direction: column; gap: 6px;
         }
         .sys-title {
-            font-size: 21px; font-weight: 900; letter-spacing: 4px; color: var(--cyan);
+            font-size: 22px; font-weight: 900; letter-spacing: 4px; color: var(--cyan);
             display: flex; align-items: center; gap: 10px;
         }
-        .sys-sub { font-size: 11px; font-weight: 700; letter-spacing: 1.4px; color: var(--muted); }
+        .sys-sub { font-size: 11.5px; font-weight: 700; letter-spacing: 1.2px; color: var(--muted); }
         .hud-controls { display: flex; gap: 8px; margin-top: 4px; flex-wrap: wrap; }
         .hud-btn {
             background: var(--panel); border: 1px solid var(--border); color: var(--text);
-            padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 700;
+            padding: 6px 12px; border-radius: 7px; font-size: 11.5px; font-weight: 700;
             cursor: pointer; transition: 0.15s;
         }
         .hud-btn:hover { border-color: var(--gold); color: var(--gold); }
 
-        /* TOP RIGHT LIVE OUTPUT */
+        /* TOP RIGHT STREAM PANEL */
         .hud-tr {
-            position: fixed; top: 18px; right: 22px; width: 350px; max-width: 42vw;
+            position: fixed; top: 20px; right: 24px; width: 380px; max-width: 44vw;
             background: var(--panel); border: 1px solid var(--border); border-top: 2px solid var(--gold);
-            border-radius: 12px; padding: 12px 15px; z-index: 10;
-            box-shadow: 0 10px 28px rgba(0,0,0,0.6);
+            border-radius: 12px; padding: 12px 16px; z-index: 10;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.65);
         }
         .tr-head {
-            display: flex; justify-content: space-between; font-size: 10px;
-            font-weight: 800; letter-spacing: 1.3px; color: var(--gold); margin-bottom: 6px;
+            display: flex; justify-content: space-between; font-size: 10.5px;
+            font-weight: 800; letter-spacing: 1.2px; color: var(--gold); margin-bottom: 6px;
         }
         .tr-body {
-            font-size: 13px; line-height: 1.45; color: #F1F5F9;
-            max-height: 130px; overflow-y: auto;
+            font-size: 13.5px; line-height: 1.45; color: #F1F5F9;
+            max-height: 150px; overflow-y: auto; user-select: text;
         }
 
-        /* CENTER CORE BUTTON */
+        /* CENTER REACTOR CORE */
         .core-trigger {
             position: fixed; top: 46%; left: 50%; transform: translate(-50%, -50%);
             width: 170px; height: 170px; border-radius: 50%; z-index: 8;
@@ -105,15 +105,15 @@ HTML_PAGE = """<!DOCTYPE html>
             align-items: center; justify-content: center; text-align: center;
         }
         .core-label {
-            font-size: 20px; font-weight: 900; letter-spacing: 5px; color: #FFF;
-            text-shadow: 0 0 14px var(--gold);
+            font-size: 22px; font-weight: 900; letter-spacing: 5px; color: #FFF;
+            text-shadow: 0 0 16px var(--gold);
         }
         .core-sub {
-            font-size: 9.5px; font-weight: 800; letter-spacing: 1.8px;
+            font-size: 10px; font-weight: 800; letter-spacing: 1.8px;
             color: var(--gold); margin-top: 4px;
         }
 
-        /* CLEAN APEX NODES WITH GLOW DOTS */
+        /* NODES */
         .node-item {
             position: fixed; transform: translate(-50%, -50%); z-index: 7;
             display: flex; align-items: center; gap: 9px;
@@ -125,20 +125,20 @@ HTML_PAGE = """<!DOCTYPE html>
         .node-item:hover, .node-item.active-node {
             border-color: var(--gold);
             box-shadow: 0 0 20px var(--gold-glow);
-            transform: translate(-50%, -50%) scale(1.06);
+            transform: translate(-50%, -50%) scale(1.07);
         }
         .node-dot {
-            width: 8px; height: 8px; border-radius: 50%;
+            width: 9px; height: 9px; border-radius: 50%;
             background: var(--cyan); box-shadow: 0 0 8px var(--cyan);
         }
         .node-item.active-node .node-dot { background: var(--gold); box-shadow: 0 0 10px var(--gold); }
-        .node-title { font-size: 12px; font-weight: 700; letter-spacing: 0.6px; color: #F8FAFC; }
+        .node-title { font-size: 12.5px; font-weight: 700; color: #F8FAFC; }
 
         /* POPUP WINDOW */
         .holo-modal {
             position: fixed; top: 46%; left: 50%; transform: translate(-50%, -50%);
-            width: 460px; max-width: 92vw; background: rgba(7, 13, 27, 0.96);
-            border: 1px solid var(--cyan); box-shadow: 0 0 40px rgba(0, 0, 0, 0.85);
+            width: 480px; max-width: 92vw; background: rgba(7, 13, 27, 0.97);
+            border: 1px solid var(--cyan); box-shadow: 0 0 45px rgba(0, 0, 0, 0.85);
             border-radius: 14px; padding: 18px; z-index: 30;
             display: none; flex-direction: column; gap: 12px;
         }
@@ -146,49 +146,30 @@ HTML_PAGE = """<!DOCTYPE html>
         .holo-head {
             display: flex; justify-content: space-between; align-items: center;
             border-bottom: 1px solid var(--border); padding-bottom: 8px;
-            font-size: 12px; font-weight: 800; letter-spacing: 1.5px; color: var(--cyan);
+            font-size: 12.5px; font-weight: 800; letter-spacing: 1.5px; color: var(--cyan);
         }
-        .holo-content { max-height: 260px; overflow-y: auto; font-size: 13px; }
+        .holo-content { max-height: 280px; overflow-y: auto; font-size: 13.5px; }
         .holo-row {
             display: flex; justify-content: space-between; align-items: center;
             padding: 8px 11px; background: rgba(56, 189, 248, 0.07);
             border-left: 3px solid var(--gold); border-radius: 7px; margin-bottom: 7px;
         }
 
-        /* BOTTOM CONSOLE */
+        /* BOTTOM ACTION BAR (ONLY PILLS, NO TEXT BOX) */
         .bottom-dock {
-            position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%);
-            width: 580px; max-width: 94vw; z-index: 12;
+            position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%);
+            width: 600px; max-width: 94vw; z-index: 12;
             display: flex; flex-direction: column; gap: 8px; align-items: center;
         }
         .act-strip { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
         .gold-pill {
             background: var(--gold); color: #030712; border: none; border-radius: 999px;
-            padding: 7px 16px; font-size: 12px; font-weight: 800; text-decoration: none;
-            cursor: pointer; box-shadow: 0 0 14px var(--gold-glow);
-        }
-        .cmd-bar {
-            width: 100%; background: var(--panel); border: 1px solid var(--border);
-            border-radius: 999px; padding: 6px 8px 6px 14px;
-            display: flex; align-items: center; gap: 8px;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.6);
-        }
-        .cmd-bar input {
-            flex: 1; background: transparent; border: none; color: #FFF;
-            font-size: 13.5px; outline: none;
-        }
-        .mic-round {
-            width: 36px; height: 36px; border-radius: 50%;
-            background: rgba(245, 158, 11, 0.16); border: 1px solid var(--gold);
-            color: #FFF; cursor: pointer; display: flex; align-items: center; justify-content: center;
-        }
-        .exec-btn {
-            background: var(--cyan); color: #030712; border: none; border-radius: 999px;
-            padding: 8px 18px; font-size: 12px; font-weight: 800; cursor: pointer;
+            padding: 8px 18px; font-size: 12px; font-weight: 800; text-decoration: none;
+            cursor: pointer; box-shadow: 0 0 16px var(--gold-glow);
         }
 
         @media (max-width: 768px) {
-            .hud-tr { top: auto; bottom: 82px; right: 12px; left: 12px; width: auto; max-width: none; }
+            .hud-tr { top: auto; bottom: 24px; right: 12px; left: 12px; width: auto; max-width: none; }
             .node-item { padding: 6px 10px; }
             .node-title { font-size: 11px; }
         }
@@ -199,10 +180,10 @@ HTML_PAGE = """<!DOCTYPE html>
 
     <!-- TOP LEFT -->
     <div class="hud-tl">
-        <div class="sys-title">NEO <span style="font-size:11px; color:var(--gold); letter-spacing:2px;">NEURAL OS</span></div>
-        <div class="sys-sub" id="sysMeta">HAMBURG • SYNCHRONISIERT</div>
+        <div class="sys-title">NEO <span style="font-size:11px; color:var(--gold); letter-spacing:2px;">HANDS-FREE OS</span></div>
+        <div class="sys-sub" id="sysMeta">HAMBURG • DAUERHAFT AKTIV</div>
         <div class="hud-controls">
-            <button type="button" class="hud-btn" id="wBtn" onclick="toggleWake()" style="border-color:#10B981; color:#10B981;">● HEY NEO: AN</button>
+            <button type="button" class="hud-btn" id="wBtn" onclick="toggleWake()" style="border-color:#10B981; color:#10B981;">● HEY NEO: 24/7 AKTIV</button>
             <button type="button" class="hud-btn" id="mBtn" onclick="toggleMode()">MODUS: ARBEIT</button>
             <button type="button" class="hud-btn" onclick="openHolo('calendar')">KALENDER</button>
             <button type="button" class="hud-btn" onclick="openHolo('codes')">CODES (<span id="nCount">0</span>)</button>
@@ -212,16 +193,16 @@ HTML_PAGE = """<!DOCTYPE html>
     <!-- TOP RIGHT OUTPUT -->
     <div class="hud-tr">
         <div class="tr-head">
-            <span>NEURAL STREAM</span>
-            <span id="streamStatus">ONLINE</span>
+            <span>VOICE STREAM // 24/7</span>
+            <span id="streamStatus">LAUSCHT ("HEY NEO")</span>
         </div>
-        <div class="tr-body" id="replyBox">System bereit, Margil. Klicke auf den Kern, wähle einen Knotenpunkt oder sage „Hey Neo“.</div>
+        <div class="tr-body" id="replyBox">Spreche einfach jederzeit mit mir: Sage „Hey Neo“ gefolgt von deinem Befehl. Kein Tippen nötig!</div>
     </div>
 
     <!-- CENTER REACTOR -->
-    <div class="core-trigger" onclick="toggleRec()">
+    <div class="core-trigger" onclick="manualListenTrigger()">
         <div class="core-label">NEO</div>
-        <div class="core-sub" id="coreState">ONLINE</div>
+        <div class="core-sub" id="coreState">SAY "HEY NEO"</div>
     </div>
 
     <!-- NODES -->
@@ -236,14 +217,9 @@ HTML_PAGE = """<!DOCTYPE html>
         <div class="holo-content" id="holoBody"></div>
     </div>
 
-    <!-- BOTTOM DOCK -->
+    <!-- BOTTOM ACTION STRIP -->
     <div class="bottom-dock">
         <div class="act-strip" id="actBar"></div>
-        <div class="cmd-bar">
-            <button type="button" class="mic-round" onclick="toggleRec()">🎙️</button>
-            <input type="text" id="msg" placeholder="Befehl eingeben & Enter drücken..." onkeydown="if(event.key==='Enter')sendTxt()">
-            <button type="button" class="exec-btn" onclick="sendTxt()">SENDEN</button>
-        </div>
     </div>
 
     <input type="file" id="cam" accept="image/*" style="display:none" onchange="handleImg(event)">
@@ -259,23 +235,22 @@ HTML_PAGE = """<!DOCTYPE html>
                 const g = ac.createGain();
                 osc.connect(g); g.connect(ac.destination);
                 osc.frequency.setValueAtTime(f1, ac.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(f2, ac.currentTime + 0.10);
-                g.gain.setValueAtTime(0.10, ac.currentTime);
-                g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.12);
-                osc.start(); osc.stop(ac.currentTime + 0.13);
+                osc.frequency.exponentialRampToValueAtTime(f2, ac.currentTime + 0.12);
+                g.gain.setValueAtTime(0.14, ac.currentTime);
+                g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.14);
+                osc.start(); osc.stop(ac.currentTime + 0.15);
             } catch(e){}
         }
 
-        // --- 1. CLEAN APEX NODES ---
+        // --- 1. NODES ---
         const NODES = [
-            { id: 'brief',    label: 'Morning Brief',    rx: 0.22, ry: 0.24, action: () => quickCmd('Gib mir mein komplettes Morning Briefing mit Terminen heute und wichtigen Objekt-Codes.') },
-            { id: 'calendar', label: 'Calendar Sync',    rx: 0.15, ry: 0.46, action: () => openHolo('calendar') },
-            { id: 'navi',     label: 'Auto-Briefing',    rx: 0.21, ry: 0.68, action: () => quickCmd('Ich fahre los zum nächsten Termin. Gib mir das Briefing mit Codes und starte Navigation.') },
-            { id: 'codes',    label: 'Objekt-Codes',     rx: 0.34, ry: 0.80, action: () => openHolo('codes') },
-            { id: 'offer',    label: 'Angebot Rechner',  rx: 0.78, ry: 0.24, action: () => openHolo('calc') },
-            { id: 'camera',   label: 'Mängel-Kamera',    rx: 0.85, ry: 0.46, action: () => document.getElementById('cam').click() },
-            { id: 'trans',    label: 'Dolmetscher DE/SQ',rx: 0.79, ry: 0.68, action: () => { const i = document.getElementById('msg'); i.focus(); i.value = 'Übersetze ins Albanische: '; } },
-            { id: 'telegram', label: 'Telegram Auth',    rx: 0.66, ry: 0.80, action: () => sendTg() }
+            { id: 'brief',    label: '☀️ Morning Brief',   rx: 0.23, ry: 0.25, action: () => quickCmd('Gib mir mein komplettes Morning Briefing mit Terminen heute und wichtigen Objekt-Codes.') },
+            { id: 'calendar', label: '📅 Kalender Sync',   rx: 0.15, ry: 0.45, action: () => openHolo('calendar') },
+            { id: 'navi',     label: '🧭 Auto-Briefing',   rx: 0.22, ry: 0.65, action: () => quickCmd('Ich fahre los zum nächsten Termin. Gib mir das Briefing mit Codes und starte Navigation.') },
+            { id: 'codes',    label: '🔐 Objekt-Codes',    rx: 0.34, ry: 0.77, action: () => openHolo('codes') },
+            { id: 'offer',    label: '📐 Angebot Rechner', rx: 0.77, ry: 0.25, action: () => openHolo('calc') },
+            { id: 'camera',   label: '📸 Mängel-Foto',     rx: 0.85, ry: 0.45, action: () => document.getElementById('cam').click() },
+            { id: 'telegram', label: '✈️ Autorisierung',   rx: 0.66, ry: 0.77, action: () => sendTg() }
         ];
 
         const nodesLayer = document.getElementById('nodesLayer');
@@ -294,7 +269,7 @@ HTML_PAGE = """<!DOCTYPE html>
             nodesLayer.appendChild(el);
         });
 
-        // --- 2. PARTICLE SPHERE + APEX NEURAL TRACES CANVAS (60 FPS ULTRA-LIGHT) ---
+        // --- 2. CANVAS ANIMATION ---
         const canvas = document.getElementById('neuralCanvas');
         const ctx = canvas.getContext('2d');
         let W = window.innerWidth, H = window.innerHeight;
@@ -302,46 +277,29 @@ HTML_PAGE = """<!DOCTYPE html>
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
 
-        // 160 3D-Punkte für die zentrale Kugel
-        const NUM_DOTS = 160;
-        const sphereDots = [];
-        for (let i = 0; i < NUM_DOTS; i++) {
-            const phi = Math.acos(-1 + (2 * i) / NUM_DOTS);
-            const theta = Math.sqrt(NUM_DOTS * Math.PI) * phi;
-            sphereDots.push({
-                x: Math.cos(theta) * Math.sin(phi),
-                y: Math.sin(theta) * Math.sin(phi),
-                z: Math.cos(phi),
-                phase: i * 0.15
-            });
-        }
+        let coreStateMode = 'idle', angle1 = 0, angle2 = 0, pulseT = 0;
+        const packets = NODES.map((_, idx) => ({ progress: (idx * 0.15) % 1, speed: 0.004 + (idx % 3) * 0.0012 }));
 
-        let coreStateMode = 'idle', angleY = 0, angleX = 0, pulseT = 0;
-        const packets = NODES.map((_, idx) => ({ progress: (idx * 0.15) % 1, speed: 0.0045 + (idx % 3) * 0.001 }));
-
-        function drawScene() {
+        function drawNeuralNetwork() {
             ctx.clearRect(0, 0, W, H);
             const cx = W * 0.5, cy = H * 0.46;
 
-            let mainColor = '245, 158, 11', secColor = '56, 189, 248', rotSpeed = 0.007, pulseBoost = 1, waveAmp = 3;
-            if (coreStateMode === 'listening') { mainColor = '16, 185, 129'; rotSpeed = 0.016; pulseBoost = 2.2; waveAmp = 9; }
-            else if (coreStateMode === 'thinking') { mainColor = '56, 189, 248'; rotSpeed = 0.028; pulseBoost = 3.0; waveAmp = 6; }
-            else if (coreStateMode === 'speaking') { mainColor = '168, 85, 247'; rotSpeed = 0.018; pulseBoost = 2.5; waveAmp = 14; }
+            let mainColor = '245, 158, 11', secColor = '56, 189, 248', rotSpeed = 0.005, pulseBoost = 1;
+            if (coreStateMode === 'listening') { mainColor = '16, 185, 129'; rotSpeed = 0.016; pulseBoost = 2.4; }
+            else if (coreStateMode === 'thinking') { mainColor = '56, 189, 248'; rotSpeed = 0.026; pulseBoost = 3.2; }
+            else if (coreStateMode === 'speaking') { mainColor = '168, 85, 247'; rotSpeed = 0.018; pulseBoost = 2.6; }
 
-            angleY += rotSpeed;
-            angleX += rotSpeed * 0.45;
-            pulseT += 0.05 * pulseBoost;
+            angle1 += rotSpeed; angle2 -= rotSpeed * 0.7; pulseT += 0.05 * pulseBoost;
 
-            // A. Geschwungene Linien + Energie-Punkte zu den Knoten
             NODES.forEach((n, idx) => {
                 const nx = W * n.rx, ny = H * n.ry;
-                const midX = (cx + nx) * 0.5, midY = (cy + ny) * 0.5 + (idx % 2 === 0 ? -24 : 24);
+                const midX = (cx + nx) * 0.5, midY = (cy + ny) * 0.5 + (idx % 2 === 0 ? -25 : 25);
 
                 ctx.beginPath();
                 ctx.moveTo(cx, cy);
                 ctx.quadraticCurveTo(midX, midY, nx, ny);
-                ctx.strokeStyle = `rgba(${secColor}, 0.24)`;
-                ctx.lineWidth = 1.4;
+                ctx.strokeStyle = `rgba(${secColor}, 0.25)`;
+                ctx.lineWidth = 1.5;
                 ctx.stroke();
 
                 const p = packets[idx];
@@ -352,47 +310,33 @@ HTML_PAGE = """<!DOCTYPE html>
                 const py = (1 - t) * (1 - t) * cy + 2 * (1 - t) * t * midY + t * t * ny;
 
                 ctx.beginPath();
-                ctx.arc(px, py, 2.8, 0, Math.PI * 2);
+                ctx.arc(px, py, 3, 0, Math.PI * 2);
                 ctx.fillStyle = `rgba(${mainColor}, 0.95)`;
                 ctx.fill();
             });
 
-            // B. Zentrale 3D-Punkte-Sphäre + äußerer Gold/Cyan-Ring
-            const baseR = 78;
-            const glow = ctx.createRadialGradient(cx, cy, 10, cx, cy, baseR + 55);
-            glow.addColorStop(0, `rgba(${mainColor}, 0.26)`);
+            const baseR = 72 + (coreStateMode === 'speaking' ? Math.sin(pulseT * 2) * 8 : Math.sin(pulseT) * 2);
+            const glow = ctx.createRadialGradient(cx, cy, 10, cx, cy, baseR + 60);
+            glow.addColorStop(0, `rgba(${mainColor}, 0.32)`);
             glow.addColorStop(1, 'rgba(3, 7, 18, 0)');
             ctx.fillStyle = glow;
-            ctx.beginPath(); ctx.arc(cx, cy, baseR + 55, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(cx, cy, baseR + 60, 0, Math.PI * 2); ctx.fill();
 
-            // Äußerer rotierender Ring
-            ctx.save(); ctx.translate(cx, cy); ctx.rotate(angleY);
-            ctx.strokeStyle = `rgba(${mainColor}, 0.75)`; ctx.lineWidth = 2; ctx.setLineDash([22, 12, 6, 12]);
-            ctx.beginPath(); ctx.arc(0, 0, baseR + 18, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
+            ctx.save(); ctx.translate(cx, cy); ctx.rotate(angle1);
+            ctx.strokeStyle = `rgba(${secColor}, 0.6)`; ctx.lineWidth = 2; ctx.setLineDash([24, 12, 6, 12]);
+            ctx.beginPath(); ctx.arc(0, 0, baseR + 22, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
 
-            // 3D Partikel-Kugel im Zentrum
-            const cosY = Math.cos(angleY), sinY = Math.sin(angleY);
-            const cosX = Math.cos(angleX), sinX = Math.sin(angleX);
+            ctx.save(); ctx.translate(cx, cy); ctx.rotate(angle2);
+            ctx.strokeStyle = `rgba(${mainColor}, 0.85)`; ctx.lineWidth = 3; ctx.setLineDash([16, 10]);
+            ctx.beginPath(); ctx.arc(0, 0, baseR + 7, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
 
-            for (let i = 0; i < NUM_DOTS; i++) {
-                const d = sphereDots[i];
-                const r = baseR + Math.sin(pulseT + d.phase) * waveAmp;
-                const x1 = d.x * r * cosY - d.z * r * sinY;
-                const z1 = d.z * r * cosY + d.x * r * sinY;
-                const y1 = d.y * r * cosX - z1 * sinX;
-                const z2 = z1 * cosX + d.y * r * sinX;
+            ctx.beginPath(); ctx.arc(cx, cy, baseR - 6, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(5, 10, 22, 0.92)'; ctx.fill();
+            ctx.strokeStyle = `rgba(${mainColor}, 0.95)`; ctx.lineWidth = 2.5; ctx.stroke();
 
-                const scale = 260 / (260 + z2);
-                const alpha = Math.max(0.15, (z2 + baseR) / (2 * baseR));
-                ctx.fillStyle = i % 3 === 0 ? `rgba(${secColor}, ${alpha.toFixed(2)})` : `rgba(${mainColor}, ${alpha.toFixed(2)})`;
-                ctx.beginPath();
-                ctx.arc(cx + x1 * scale, cy + y1 * scale, Math.max(1.2, 2.4 * scale), 0, Math.PI * 2);
-                ctx.fill();
-            }
-
-            requestAnimationFrame(drawScene);
+            requestAnimationFrame(drawNeuralNetwork);
         }
-        drawScene();
+        drawNeuralNetwork();
 
         // --- 3. STATE & POPUPS ---
         let cachedEvents = [], weatherStr = "HAMBURG";
@@ -440,7 +384,7 @@ HTML_PAGE = """<!DOCTYPE html>
                 body.innerHTML = `
                     <div style="display:flex;gap:6px;margin-bottom:12px;">
                         <input id="newCodeInp" type="text" placeholder="Neuen Code/Notiz eingeben..." style="flex:1;background:#030712;border:1px solid var(--border);color:#fff;padding:8px;border-radius:6px;">
-                        <button type="button" class="exec-btn" onclick="const v=document.getElementById('newCodeInp').value.trim();if(v){mem.push(v);saveState();openHolo('codes');}">+ Speichern</button>
+                        <button type="button" class="gold-pill" onclick="const v=document.getElementById('newCodeInp').value.trim();if(v){mem.push(v);saveState();openHolo('codes');}">+ Speichern</button>
                     </div>` + listHtml;
             } else if (type === 'calc') {
                 title.innerText = 'ANGEBOTS-KALKULATOR (31,50 €/Std)';
@@ -464,133 +408,150 @@ HTML_PAGE = """<!DOCTYPE html>
             document.body.className = s || '';
             const cSt = document.getElementById('coreState');
             const sSt = document.getElementById('streamStatus');
-            if (s === 'listening') { cSt.innerText = 'HÖRT ZU...'; sSt.innerText = 'SPRICH JETZT'; }
-            else if (s === 'thinking') { cSt.innerText = 'ANALYSE...'; sSt.innerText = 'DENKT NACH'; }
-            else if (s === 'speaking') { cSt.innerText = 'SPRICHT'; sSt.innerText = 'AUDIO AKTIV'; }
-            else { cSt.innerText = 'ONLINE'; sSt.innerText = 'STANDBY'; }
+            if (s === 'listening') { cSt.innerText = 'ICH HÖRE ZU...'; sSt.innerText = 'SPRICH JETZT'; }
+            else if (s === 'thinking') { cSt.innerText = 'DENKT NACH...'; sSt.innerText = 'ANALYSE...'; }
+            else if (s === 'speaking') { cSt.innerText = 'NEO SPRICHT'; sSt.innerText = 'AUDIO AKTIV'; }
+            else { cSt.innerText = activeSession ? 'SPRICH WEITER...' : 'SAY "HEY NEO"'; sSt.innerText = activeSession ? 'DIALOG AKTIV' : 'LAUSCHT ("HEY NEO")'; }
         }
 
-        // --- 4. RELIABLE VOICE & WAKE-WORD ENGINE ---
-        let wakeOn = true, isRec = false, isSpk = false, inConv = false;
-        let rec = null, stream = null, chunks = [], wakeRec = null;
+        // --- 4. 100% HANDS-FREE CONTINUOUS SPEECH ENGINE ---
+        let wakeOn = true;
+        let activeSession = false;
+        let isBusy = false;
+        let srInstance = null;
 
-        function stopWake() { if (wakeRec) { try { wakeRec.onend = null; wakeRec.abort(); } catch(e){} wakeRec = null; } }
         function toggleWake() {
             wakeOn = !wakeOn;
             const b = document.getElementById('wBtn');
             if (wakeOn) {
-                b.innerText = '● HEY NEO: AN';
-                b.style.borderColor = '#10B981'; b.style.color = '#10B981';
-                startWake();
+                b.innerText = '● HEY NEO: 24/7 AKTIV';
+                b.style.borderColor = '#10B981';
+                b.style.color = '#10B981';
+                startAlwaysListening();
             } else {
-                b.innerText = '○ HEY NEO: AUS';
-                b.style.borderColor = ''; b.style.color = '';
-                stopWake();
+                b.innerText = '○ HEY NEO: PAUSIERT';
+                b.style.borderColor = '';
+                b.style.color = '';
+                activeSession = false;
+                if (srInstance) { try { srInstance.onend = null; srInstance.abort(); } catch(e){} srInstance = null; }
+                setSt(null);
             }
         }
 
-        function startWake() {
-            if (!wakeOn || isRec || isSpk || inConv) return;
+        function manualListenTrigger() {
+            if (isBusy) { player.pause(); isBusy = false; }
+            activeSession = true;
+            beep(520, 920);
+            setSt('listening');
+            document.getElementById('replyBox').innerText = "🎙️ Ich höre dir direkt zu, Margil...";
+            if (!srInstance) startAlwaysListening();
+        }
+
+        function startAlwaysListening() {
+            if (!wakeOn || isBusy) return;
             const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (!SR) return;
-            stopWake();
-            wakeRec = new SR();
-            wakeRec.lang = 'de-DE';
-            wakeRec.continuous = true;
-            wakeRec.onresult = (e) => {
-                for (let i = e.resultIndex; i < e.results.length; i++) {
-                    const raw = e.results[i][0].transcript.trim();
+            if (srInstance) {
+                try { srInstance.onend = null; srInstance.abort(); } catch(e){}
+                srInstance = null;
+            }
+
+            srInstance = new SR();
+            srInstance.lang = 'de-DE';
+            srInstance.continuous = true;
+            srInstance.interimResults = true;
+
+            srInstance.onresult = (event) => {
+                if (isBusy) return;
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    const raw = event.results[i][0].transcript.trim();
                     const low = raw.toLowerCase();
-                    if (low.includes('hey neo') || low.includes('hallo neo') || low === 'neo') {
-                        stopWake();
-                        beep(540, 920);
-                        const after = raw.replace(/.*?(hey neo|hallo neo|neo)/i, '').trim();
-                        if (after.length > 3) {
-                            quickCmd(after);
-                        } else {
-                            inConv = true;
-                            startRec();
+
+                    if (!event.results[i].isFinal) {
+                        if (activeSession || low.includes('neo') || low.includes('nio')) {
+                            setSt('listening');
+                            document.getElementById('replyBox').innerText = "🎙️ " + raw + " ...";
                         }
+                        continue;
+                    }
+
+                    const wakeMatch = low.match(/\b(hey neo|hey nio|hallo neo|ok neo|neo)\b/);
+                    if (wakeMatch) {
+                        const idx = low.indexOf(wakeMatch[0]) + wakeMatch[0].length;
+                        const commandAfterWake = raw.slice(idx).replace(/^[,.\s]+/, '').trim();
+
+                        if (commandAfterWake.length > 2) {
+                            activeSession = true;
+                            beep(640, 880);
+                            processVoiceText(commandAfterWake);
+                            return;
+                        } else {
+                            activeSession = true;
+                            beep(520, 960);
+                            setSt('listening');
+                            document.getElementById('replyBox').innerText = "🎙️ Ja, Margil? Sprich einfach weiter...";
+                            return;
+                        }
+                    } else if (activeSession && raw.length > 1) {
+                        beep(640, 880);
+                        processVoiceText(raw);
                         return;
                     }
                 }
             };
-            wakeRec.onend = () => { wakeRec = null; if (wakeOn && !isRec && !isSpk && !inConv) setTimeout(startWake, 600); };
-            try { wakeRec.start(); } catch(e){}
+
+            srInstance.onend = () => {
+                srInstance = null;
+                if (wakeOn && !isBusy) setTimeout(() => startAlwaysListening(), 250);
+            };
+            srInstance.onerror = () => {
+                srInstance = null;
+                if (wakeOn && !isBusy) setTimeout(() => startAlwaysListening(), 600);
+            };
+
+            try { srInstance.start(); } catch(e) { srInstance = null; }
         }
 
-        function toggleRec() {
-            if (isSpk) { player.pause(); isSpk = false; setSt(null); }
-            if (isRec) { isRec = false; if (rec && rec.state !== 'inactive') rec.stop(); return; }
-            inConv = true;
-            beep(540, 920);
-            startRec();
+        function processVoiceText(spokenText) {
+            isBusy = true;
+            if (srInstance) { try { srInstance.onend = null; srInstance.abort(); } catch(e){} srInstance = null; }
+            setSt('thinking');
+            sendNeo({ message: spokenText });
         }
 
-        async function startRec() {
-            if (isRec || isSpk) return;
-            stopWake();
-            try {
-                stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                chunks = [];
-                rec = new MediaRecorder(stream);
-                rec.ondataavailable = e => { if (e.data && e.data.size > 0) chunks.push(e.data); };
-                rec.onstop = () => {
-                    stream.getTracks().forEach(t => t.stop());
-                    const blob = new Blob(chunks, { type: rec.mimeType || 'audio/webm' });
-                    if (blob.size < 600) { inConv = false; setSt(null); startWake(); return; }
-                    setSt('thinking');
-                    const r = new FileReader();
-                    r.readAsDataURL(blob);
-                    r.onloadend = () => sendNeo({ audio: r.result.split(',')[1], mime_type: (rec.mimeType || 'audio/webm').split(';')[0] });
-                };
-                rec.start();
-                isRec = true;
-                setSt('listening');
-                document.getElementById('replyBox').innerText = "🎙️ Ich höre zu, Margil... (Klicke nochmal auf den Kern oder warte kurz)";
-                setTimeout(() => { if (isRec) { isRec = false; rec.stop(); } }, 5500);
-            } catch(e) {
-                inConv = false; setSt(null);
-                document.getElementById('replyBox').innerText = "Bitte Mikrofon-Zugriff oben in der Adressleiste erlauben.";
-            }
-        }
-
-        player.onplay = () => { isSpk = true; setSt('speaking'); };
+        player.onplay = () => { isBusy = true; setSt('speaking'); };
         player.onended = () => {
-            isSpk = false; setSt(null);
-            if (inConv) setTimeout(startRec, 400);
-            else if (wakeOn) setTimeout(startWake, 500);
+            isBusy = false;
+            setSt(activeSession ? 'listening' : null);
+            if (wakeOn) setTimeout(() => startAlwaysListening(), 250);
+        };
+        player.onerror = () => {
+            isBusy = false; setSt(null);
+            if (wakeOn) setTimeout(() => startAlwaysListening(), 350);
         };
 
         async function sendTg() {
             document.getElementById('replyBox').innerText = "Sende Autorisierungsanfrage an Telegram...";
             try {
-                const r = await fetch('/telegram_notify', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({text:"📞 NEO Autorisierung angefordert: Bitte nächsten Schritt freigeben."}) });
+                const r = await fetch('/telegram_notify', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({text:"📞 NEO Autorisierung angefordert!"}) });
                 const d = await r.json();
-                document.getElementById('replyBox').innerText = d.ok ? "✅ Autorisierungs-Anfrage an Telegram gesendet!" : ("⚠️ " + (d.error || "Telegram Fehler"));
+                document.getElementById('replyBox').innerText = d.ok ? "✅ Telegram-Benachrichtigung erfolgreich gesendet!" : ("⚠️ " + (d.error || "Telegram Fehler"));
             } catch(e) { document.getElementById('replyBox').innerText = "Verbindungsfehler zu Telegram."; }
         }
 
         function handleImg(ev) {
             const f = ev.target.files[0]; if (!f) return;
-            setSt('thinking');
+            isBusy = true; setSt('thinking');
             const r = new FileReader();
             r.onload = e => sendNeo({ image: e.target.result.split(',')[1], message: "Erstelle einen professionellen Objekt-Mängelbericht." });
             r.readAsDataURL(f);
         }
 
-        function quickCmd(t) { setSt('thinking'); sendNeo({ message: t }); }
-        function sendTxt() {
-            const inp = document.getElementById('msg');
-            if (!inp.value.trim()) return;
-            const v = inp.value.trim(); inp.value = '';
-            setSt('thinking'); sendNeo({ message: v });
-        }
+        function quickCmd(t) { isBusy = true; setSt('thinking'); sendNeo({ message: t }); }
 
         async function sendNeo(payload) {
-            stopWake();
             document.getElementById('actBar').innerHTML = '';
-            document.getElementById('replyBox').innerText = "NEO verarbeitet deine Anfrage...";
+            document.getElementById('replyBox').innerText = "NEO verarbeitet: „" + (payload.message || "Anfrage") + "“...";
             payload.mode = mode;
             payload.memory = mem;
             payload.local_time_str = new Date().toLocaleString('de-DE');
@@ -598,18 +559,22 @@ HTML_PAGE = """<!DOCTYPE html>
             try {
                 const res = await fetch('/chat', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
                 const d = await res.json();
-                if (d.error) { inConv = false; setSt(null); document.getElementById('replyBox').innerText = "Fehler: " + d.error; startWake(); return; }
-                if (d.end_conversation) inConv = false;
+                if (d.error) {
+                    isBusy = false; setSt(null);
+                    document.getElementById('replyBox').innerText = "Fehler: " + d.error;
+                    if (wakeOn) startAlwaysListening();
+                    return;
+                }
+                if (d.end_conversation) activeSession = false;
                 if (d.new_memory) { mem.push(d.new_memory); saveState(); }
                 document.getElementById('replyBox').innerText = d.reply;
 
                 if (d.copy_text) {
-                    const b = document.createElement('button'); b.type = 'button'; b.className = 'gold-pill'; b.innerText = 'Text kopieren';
+                    const b = document.createElement('button'); b.type = 'button'; b.className = 'gold-pill'; b.innerText = '📋 Text kopieren';
                     b.onclick = () => { navigator.clipboard.writeText(d.copy_text); b.innerText = '✓ Kopiert!'; };
                     document.getElementById('actBar').appendChild(b);
                 }
                 if (d.action_url) {
-                    inConv = false;
                     let finalUrl = d.action_url;
                     if (!isMobile && finalUrl.startsWith('intent://')) {
                         const m = finalUrl.match(/text=([^#&]+)/);
@@ -620,16 +585,24 @@ HTML_PAGE = """<!DOCTYPE html>
                 }
                 if (d.audio) {
                     player.src = "data:audio/mp3;base64," + d.audio;
-                    player.play().catch(() => { isSpk = false; setSt(null); startWake(); });
-                } else { setSt(null); startWake(); }
+                    player.play().catch(() => {
+                        isBusy = false; setSt(null);
+                        if (wakeOn) startAlwaysListening();
+                    });
+                } else {
+                    isBusy = false; setSt(null);
+                    if (wakeOn) startAlwaysListening();
+                }
             } catch(e) {
-                inConv = false; setSt(null);
-                document.getElementById('replyBox').innerText = "Verbindungsfehler.";
-                startWake();
+                isBusy = false; setSt(null);
+                document.getElementById('replyBox').innerText = "Server-Verbindungsfehler.";
+                if (wakeOn) startAlwaysListening();
             }
         }
 
-        window.onload = startWake;
+        window.addEventListener('load', () => {
+            startAlwaysListening();
+        });
     </script>
 </body>
 </html>"""
@@ -765,7 +738,7 @@ def chat():
 
         parts = []
         if "image" in data:
-            parts.append(types.Part.from_bytes(data=base64.b64decode(data["image"]), mime_type="image/jpeg"))
+            parts.append(types.Part.from_bytes(data=base64.b64decode(data["image"], mime_type="image/jpeg")))
             parts.append(data.get("message", "Mängelbericht erstellen."))
         elif "audio" in data:
             parts.append(types.Part.from_bytes(data=base64.b64decode(data["audio"]), mime_type=data.get("mime_type", "audio/webm")))
