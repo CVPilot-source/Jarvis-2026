@@ -17,8 +17,8 @@ MANIFEST_JSON = {
     "short_name": "NEO",
     "start_url": "/",
     "display": "standalone",
-    "background_color": "#02060D",
-    "theme_color": "#02060D",
+    "background_color": "#05080F",
+    "theme_color": "#05080F",
     "icons": [
         {
             "src": "/icon.svg",
@@ -30,10 +30,10 @@ MANIFEST_JSON = {
 }
 
 ICON_SVG = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="120" fill="#02060D"/>
-  <circle cx="256" cy="256" r="165" fill="none" stroke="#00D4FF" stroke-width="8" stroke-dasharray="28 14"/>
-  <circle cx="256" cy="256" r="115" fill="none" stroke="#00F5D4" stroke-width="4"/>
-  <circle cx="256" cy="256" r="24" fill="#00D4FF"/>
+  <rect width="512" height="512" rx="120" fill="#05080F"/>
+  <circle cx="256" cy="256" r="160" fill="none" stroke="#00E5FF" stroke-width="6" stroke-dasharray="24 14"/>
+  <circle cx="256" cy="256" r="110" fill="none" stroke="#38BDF8" stroke-width="3" stroke-opacity="0.7"/>
+  <circle cx="256" cy="256" r="20" fill="#00E5FF"/>
 </svg>"""
 
 HTML_PAGE = """
@@ -44,302 +44,333 @@ HTML_PAGE = """
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#02060D">
+    <meta name="theme-color" content="#05080F">
     <link rel="manifest" href="/manifest.json">
     <link rel="icon" type="image/svg+xml" href="/icon.svg">
-    <title>NEO HUD</title>
+    <title>NEO</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
         :root {
-            --hud-blue: #00D4FF;
-            --hud-cyan: #00F5D4;
-            --hud-bg: #02060D;
-            --panel-bg: rgba(4, 18, 34, 0.65);
-            --panel-border: rgba(0, 212, 255, 0.35);
-            --text-main: #E0F7FF;
-            --text-dim: rgba(160, 225, 255, 0.6);
+            --accent: #00E5FF;
+            --accent-glow: rgba(0, 229, 255, 0.28);
+            --bg-deep: #05080F;
+            --card-bg: rgba(15, 23, 42, 0.62);
+            --card-border: rgba(255, 255, 255, 0.11);
+            --text-primary: #F8FAFC;
+            --text-secondary: #94A3B8;
         }
 
-        body.listening { --hud-blue: #00FF88; --hud-cyan: #00FF88; --panel-border: rgba(0, 255, 136, 0.55); }
-        body.thinking { --hud-blue: #F59E0B; --hud-cyan: #FBBF24; --panel-border: rgba(245, 158, 11, 0.55); }
-        body.speaking { --hud-blue: #38BDF8; --hud-cyan: #00F5D4; --panel-border: rgba(56, 189, 248, 0.65); }
+        body.listening {
+            --accent: #10B981;
+            --accent-glow: rgba(16, 185, 129, 0.35);
+        }
+        body.thinking {
+            --accent: #F59E0B;
+            --accent-glow: rgba(245, 158, 11, 0.35);
+        }
+        body.speaking {
+            --accent: #38BDF8;
+            --accent-glow: rgba(56, 189, 248, 0.38);
+        }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
         body {
             margin: 0;
-            background: radial-gradient(circle at 50% 45%, #07192E 0%, #02060D 72%, #000205 100%);
-            color: var(--text-main);
-            font-family: 'Rajdhani', sans-serif;
+            background: radial-gradient(circle at 50% 38%, #0F1C34 0%, #05080F 68%, #020408 100%);
+            color: var(--text-primary);
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
             height: 100dvh;
             overflow: hidden;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            padding: 10px 12px 14px;
-            position: relative;
+            padding: 14px 14px 16px;
+            -webkit-font-smoothing: antialiased;
         }
 
-        body::before {
-            content: "";
-            position: fixed;
-            inset: 0;
-            background-image:
-                linear-gradient(rgba(0, 212, 255, 0.04) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0, 212, 255, 0.04) 1px, transparent 1px);
-            background-size: 36px 36px;
-            pointer-events: none;
-            z-index: 0;
-        }
-
-        .visor-frame {
-            position: fixed;
-            inset: 6px;
-            border: 1px solid rgba(0, 212, 255, 0.22);
-            border-radius: 22px;
-            pointer-events: none;
-            z-index: 1;
-            box-shadow: inset 0 0 35px rgba(0, 212, 255, 0.08);
-        }
-
-        .hud-top {
+        /* --- TOP HEADER --- */
+        .top-bar {
             display: flex;
             justify-content: space-between;
-            align-items: flex-start;
+            align-items: center;
             z-index: 5;
-            position: relative;
-        }
-
-        .hud-chip {
-            background: var(--panel-bg);
-            border: 1px solid var(--panel-border);
-            padding: 5px 10px;
-            border-radius: 8px;
-            font-size: 11px;
-            letter-spacing: 1.2px;
-            text-transform: uppercase;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            box-shadow: 0 0 12px rgba(0, 212, 255, 0.12);
-            cursor: pointer;
-        }
-
-        .pulse-dot {
-            width: 7px;
-            height: 7px;
-            border-radius: 50%;
-            background: var(--hud-blue);
-            box-shadow: 0 0 8px var(--hud-blue);
-        }
-
-        .neo-header-center {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin-top: -2px;
-        }
-
-        .neo-title-badge {
-            font-family: 'Orbitron', sans-serif;
-            font-weight: 900;
-            font-size: 18px;
-            letter-spacing: 6px;
-            color: #FFFFFF;
-            text-shadow: 0 0 14px var(--hud-blue), 0 0 28px var(--hud-blue);
-            background: linear-gradient(180deg, rgba(0, 212, 255, 0.18), rgba(0, 212, 255, 0.04));
-            border: 1px solid var(--panel-border);
-            border-top: 2px solid var(--hud-blue);
-            padding: 4px 26px 5px 32px;
-            clip-path: polygon(10% 0%, 90% 0%, 100% 100%, 0% 100%);
-        }
-
-        .hud-clock-box {
-            text-align: center;
-            margin-top: 4px;
-            background: rgba(2, 12, 24, 0.6);
-            border: 1px solid rgba(0, 212, 255, 0.2);
-            padding: 3px 14px;
-            border-radius: 6px;
-        }
-
-        .hud-time {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 17px;
-            font-weight: 700;
-            color: var(--text-main);
-            letter-spacing: 1.5px;
-        }
-
-        .hud-date {
-            font-size: 9.5px;
-            letter-spacing: 1.5px;
-            color: var(--text-dim);
-            text-transform: uppercase;
-        }
-
-        .hud-stage {
-            flex: 1;
-            display: grid;
-            grid-template-columns: 1fr auto 1fr;
-            align-items: center;
             gap: 8px;
-            z-index: 4;
-            position: relative;
-            width: 100%;
-            max-width: 960px;
-            margin: 0 auto;
         }
 
-        .hud-side-col {
+        .pill-btn {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            color: var(--text-primary);
+            padding: 7px 12px;
+            border-radius: 999px;
+            font-size: 11.5px;
+            font-weight: 600;
+            letter-spacing: 0.4px;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            cursor: pointer;
+            transition: border-color 0.2s, transform 0.15s;
+        }
+        .pill-btn:active { transform: scale(0.96); }
+
+        .status-led {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent);
+            box-shadow: 0 0 10px var(--accent);
+        }
+
+        .brand-center {
+            text-align: center;
+        }
+
+        .brand-title {
+            font-size: 17px;
+            font-weight: 800;
+            letter-spacing: 5px;
+            padding-left: 5px;
+            color: #FFFFFF;
+            text-shadow: 0 0 20px var(--accent-glow);
+        }
+
+        .clock-display {
+            margin-top: 6px;
+            text-align: center;
+        }
+
+        .clock-time {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            color: #FFFFFF;
+            line-height: 1.05;
+        }
+
+        .clock-date {
+            font-size: 11.5px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-top: 3px;
+            letter-spacing: 0.3px;
+        }
+
+        /* --- MAIN GRID --- */
+        .main-stage {
+            flex: 1;
             display: flex;
             flex-direction: column;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 540px;
+            margin: 8px auto 4px;
+            z-index: 4;
+        }
+
+        .cards-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
             gap: 10px;
         }
 
-        .hud-card {
-            background: var(--panel-bg);
-            border: 1px solid var(--panel-border);
-            border-left: 3px solid var(--hud-blue);
-            border-radius: 8px;
-            padding: 8px 10px;
-            backdrop-filter: blur(8px);
-            box-shadow: 0 0 18px rgba(0, 212, 255, 0.08);
+        .glass-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 11px 13px;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+            transition: border-color 0.2s, background 0.2s;
         }
+        .glass-card.clickable { cursor: pointer; }
+        .glass-card.clickable:active { background: rgba(30, 41, 59, 0.8); }
 
-        .hud-card-title {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 9.5px;
-            letter-spacing: 1.5px;
-            color: var(--hud-blue);
-            margin-bottom: 6px;
-            display: flex;
-            justify-content: space-between;
-            border-bottom: 1px solid rgba(0, 212, 255, 0.18);
-            padding-bottom: 3px;
-        }
-
-        .stat-row {
+        .card-head {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 11px;
-            margin: 4px 0;
-            color: var(--text-dim);
+            gap: 6px;
+            margin-bottom: 8px;
         }
 
-        .bar-track {
-            width: 54%;
+        .card-label {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-secondary);
+        }
+
+        .card-badge {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--accent);
+            background: rgba(0, 229, 255, 0.1);
+            border: 1px solid rgba(0, 229, 255, 0.25);
+            padding: 2px 7px;
+            border-radius: 6px;
+        }
+
+        .metric-line {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            font-weight: 500;
+            color: #CBD5E1;
+            margin: 5px 0;
+        }
+
+        .progress-bg {
+            width: 48%;
             height: 5px;
-            background: rgba(0, 212, 255, 0.12);
-            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 99px;
             overflow: hidden;
         }
 
-        .bar-fill {
+        .progress-bar {
             height: 100%;
-            background: linear-gradient(90deg, var(--hud-blue), var(--hud-cyan));
-            box-shadow: 0 0 8px var(--hud-blue);
-            transition: width 0.5s ease;
+            background: var(--accent);
+            border-radius: 99px;
+            box-shadow: 0 0 8px var(--accent);
         }
 
-        .env-grid {
+        .counter-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 5px;
-            font-size: 11px;
-        }
-        .env-item strong {
-            color: #FFFFFF;
-            font-size: 13px;
-            display: block;
+            gap: 8px;
+            margin-top: 2px;
         }
 
-        .reticle-wrap {
+        .counter-box span {
+            display: block;
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .counter-box strong {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 20px;
+            font-weight: 700;
+            color: #FFFFFF;
+        }
+
+        /* --- NEURAL CORE (CENTER REACTOR) --- */
+        .core-stage {
             position: relative;
-            width: 240px;
-            height: 240px;
+            flex: 1;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
             cursor: pointer;
             user-select: none;
+            min-height: 195px;
         }
 
-        .reticle-label {
-            position: absolute;
-            top: -12px;
-            font-family: 'Orbitron', sans-serif;
-            font-size: 9px;
-            letter-spacing: 2px;
-            color: var(--hud-blue);
-            background: rgba(2, 12, 24, 0.8);
-            padding: 2px 10px;
-            border: 1px solid var(--panel-border);
-            border-radius: 10px;
+        .core-status-pill {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10.5px;
+            font-weight: 600;
+            letter-spacing: 1.4px;
+            text-transform: uppercase;
+            color: var(--accent);
+            background: rgba(15, 23, 42, 0.85);
+            border: 1px solid var(--card-border);
+            padding: 4px 12px;
+            border-radius: 999px;
+            margin-bottom: 10px;
         }
 
-        .ring {
-            position: absolute;
-            border-radius: 50%;
-            pointer-events: none;
-            transition: border-color 0.25s, box-shadow 0.25s;
-        }
-
-        .ring-outer {
-            width: 228px;
-            height: 228px;
-            border: 2px dashed var(--hud-blue);
-            opacity: 0.55;
-            animation: spinCW 24s linear infinite;
-        }
-
-        .ring-mid {
-            width: 178px;
-            height: 178px;
-            border: 3px solid transparent;
-            border-top-color: var(--hud-blue);
-            border-bottom-color: var(--hud-cyan);
-            box-shadow: 0 0 20px rgba(0, 212, 255, 0.25);
-            animation: spinCCW 10s linear infinite;
-        }
-
-        .ring-inner {
-            width: 124px;
-            height: 124px;
-            border: 1.5px solid var(--hud-cyan);
-            opacity: 0.8;
-            animation: spinCW 6s linear infinite;
-        }
-
-        .core-eye {
-            width: 68px;
-            height: 68px;
-            border-radius: 50%;
-            background: radial-gradient(circle, var(--hud-cyan) 0%, rgba(0, 212, 255, 0.25) 55%, transparent 75%);
-            border: 2px solid var(--hud-blue);
-            box-shadow: 0 0 25px var(--hud-blue), inset 0 0 15px var(--hud-cyan);
+        .reactor-rings {
+            position: relative;
+            width: 175px;
+            height: 175px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-family: 'Orbitron', sans-serif;
-            font-size: 11px;
-            font-weight: 700;
-            letter-spacing: 1.5px;
+        }
+
+        .r-ring {
+            position: absolute;
+            border-radius: 50%;
+            pointer-events: none;
+            transition: border-color 0.25s;
+        }
+
+        .r-outer {
+            width: 175px;
+            height: 175px;
+            border: 1.5px dashed rgba(255, 255, 255, 0.22);
+            animation: rotCW 28s linear infinite;
+        }
+
+        .r-mid {
+            width: 138px;
+            height: 138px;
+            border: 2.5px solid transparent;
+            border-top-color: var(--accent);
+            border-right-color: var(--accent);
+            filter: drop-shadow(0 0 8px var(--accent-glow));
+            animation: rotCCW 9s linear infinite;
+        }
+
+        .r-inner {
+            width: 102px;
+            height: 102px;
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            animation: rotCW 14s linear infinite;
+        }
+
+        .r-center {
+            width: 68px;
+            height: 68px;
+            border-radius: 50%;
+            background: radial-gradient(circle, var(--accent-glow) 0%, rgba(15, 23, 42, 0.9) 75%);
+            border: 1.5px solid var(--accent);
+            box-shadow: 0 0 28px var(--accent-glow), inset 0 0 14px var(--accent-glow);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 800;
+            letter-spacing: 2px;
+            padding-left: 2px;
             color: #FFFFFF;
             transition: transform 0.12s ease;
         }
 
-        body.listening .ring-mid { animation-duration: 3s; }
-        body.thinking .ring-outer { animation-duration: 4s; }
-        body.thinking .ring-mid { animation-duration: 1.8s; }
-        body.speaking .core-eye { animation: corePulse 0.45s infinite alternate; }
+        body.listening .r-mid { animation-duration: 2.8s; }
+        body.thinking .r-mid { animation-duration: 1.4s; }
+        body.speaking .r-center { animation: speakBeat 0.42s infinite alternate; }
 
-        @keyframes spinCW { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        @keyframes spinCCW { from { transform: rotate(360deg); } to { transform: rotate(0deg); } }
-        @keyframes corePulse { from { transform: scale(0.95); } to { transform: scale(1.16); } }
+        @keyframes rotCW { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes rotCCW { from { transform: rotate(360deg); } to { transform: rotate(0deg); } }
+        @keyframes speakBeat { from { transform: scale(0.95); } to { transform: scale(1.14); } }
 
+        .card-subtext {
+            font-size: 12.5px;
+            font-weight: 500;
+            color: #E2E8F0;
+            line-height: 1.45;
+        }
+        .card-hint {
+            font-size: 11.5px;
+            font-weight: 600;
+            color: var(--accent);
+            margin-top: 3px;
+        }
+
+        /* --- ACTION BAR --- */
         .action-bar {
             min-height: 36px;
             display: flex;
@@ -350,22 +381,22 @@ HTML_PAGE = """
         }
 
         .action-pill {
-            padding: 6px 16px;
-            border-radius: 16px;
-            background: rgba(0, 212, 255, 0.18);
-            border: 1px solid var(--hud-blue);
-            color: #FFFFFF;
+            padding: 8px 18px;
+            border-radius: 999px;
+            background: var(--accent);
+            color: #05080F;
+            border: none;
             font-size: 12.5px;
-            font-weight: 600;
-            letter-spacing: 1px;
+            font-weight: 700;
             text-decoration: none;
             cursor: pointer;
-            box-shadow: 0 0 14px rgba(0, 212, 255, 0.25);
+            box-shadow: 0 4px 18px var(--accent-glow);
         }
 
-        .hud-bottom {
+        /* --- BOTTOM WAVE & DOCK --- */
+        .bottom-area {
             width: 100%;
-            max-width: 960px;
+            max-width: 540px;
             margin: 0 auto;
             display: flex;
             flex-direction: column;
@@ -373,328 +404,378 @@ HTML_PAGE = """
             z-index: 5;
         }
 
-        .voice-wave-box {
-            background: var(--panel-bg);
-            border: 1px solid var(--panel-border);
-            border-radius: 8px;
-            padding: 4px 10px;
+        .wave-strip {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 5px 12px;
             display: flex;
             align-items: center;
             justify-content: space-between;
             height: 36px;
         }
 
-        .voice-tag {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 9px;
-            letter-spacing: 1.5px;
-            color: var(--hud-blue);
-            white-space: nowrap;
+        .wave-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--text-secondary);
+            letter-spacing: 0.8px;
         }
 
         #waveCanvas {
             flex: 1;
-            height: 26px;
+            height: 24px;
             margin: 0 10px;
         }
 
-        .hud-dock {
+        .nav-dock {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
             gap: 6px;
-            background: rgba(4, 18, 34, 0.85);
-            border: 1px solid var(--panel-border);
-            border-radius: 12px;
+            background: rgba(10, 15, 28, 0.88);
+            border: 1px solid var(--card-border);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            border-radius: 16px;
             padding: 6px;
         }
 
-        .dock-btn {
-            background: rgba(0, 212, 255, 0.06);
-            border: 1px solid rgba(0, 212, 255, 0.22);
-            border-radius: 8px;
-            padding: 6px 2px;
-            color: var(--text-main);
+        .dock-item {
+            background: transparent;
+            border: 1px solid transparent;
+            border-radius: 11px;
+            padding: 7px 2px;
+            color: var(--text-secondary);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 2px;
+            gap: 4px;
             cursor: pointer;
-            font-family: 'Orbitron', sans-serif;
-            font-size: 8.5px;
-            letter-spacing: 0.8px;
-        }
-        .dock-btn span.ico { font-size: 15px; }
-        .dock-btn.active {
-            border-color: var(--hud-cyan);
-            background: rgba(0, 245, 212, 0.16);
-            box-shadow: 0 0 10px rgba(0, 245, 212, 0.25);
+            font-size: 10.5px;
+            font-weight: 600;
+            transition: all 0.18s;
         }
 
-        @media (max-width: 680px) {
-            .hud-stage {
-                grid-template-columns: 1fr;
-                grid-template-rows: auto 1fr auto;
-            }
-            .hud-side-col {
-                flex-direction: row;
-                justify-content: space-between;
-            }
-            .hud-card {
-                flex: 1;
-                padding: 6px 8px;
-            }
-            .reticle-wrap {
-                width: 205px;
-                height: 205px;
-                margin: 0 auto;
-            }
-            .ring-outer { width: 196px; height: 196px; }
-            .ring-mid { width: 152px; height: 152px; }
-            .ring-inner { width: 106px; height: 106px; }
+        .dock-item svg {
+            width: 19px;
+            height: 19px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
         }
 
+        .dock-item.active {
+            background: rgba(0, 229, 255, 0.12);
+            border-color: rgba(0, 229, 255, 0.35);
+            color: #FFFFFF;
+        }
+        .dock-item.active svg { stroke: var(--accent); }
+
+        /* --- COMMAND DRAWER --- */
         .drawer {
             position: fixed;
             inset: 0;
-            background: rgba(2, 6, 13, 0.96);
-            backdrop-filter: blur(20px);
+            background: rgba(5, 8, 15, 0.97);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
             z-index: 30;
             display: none;
             flex-direction: column;
             justify-content: space-between;
-            padding: 18px;
+            padding: 18px 16px 20px;
         }
         .drawer.open { display: flex; }
 
-        .drawer-header {
+        .drawer-top {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding-bottom: 10px;
-            border-bottom: 1px solid var(--panel-border);
-            font-family: 'Orbitron', sans-serif;
-            letter-spacing: 2px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid var(--card-border);
         }
 
-        .tabs {
+        .drawer-title {
+            font-size: 16px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            color: #FFFFFF;
+        }
+
+        .close-btn {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            color: #FFFFFF;
+            padding: 7px 14px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .tab-bar {
             display: flex;
             gap: 8px;
-            margin: 12px 0;
+            margin: 14px 0;
             overflow-x: auto;
         }
-        .tab {
-            padding: 7px 13px;
-            border-radius: 8px;
-            background: rgba(0, 212, 255, 0.08);
-            border: 1px solid rgba(0, 212, 255, 0.25);
-            color: var(--text-main);
-            font-size: 12px;
+
+        .tab-pill {
+            padding: 8px 14px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--card-border);
+            color: var(--text-secondary);
+            font-size: 12.5px;
             font-weight: 600;
             cursor: pointer;
             white-space: nowrap;
         }
-        .tab.active {
-            background: var(--hud-blue);
-            color: #02060D;
+
+        .tab-pill.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #05080F;
+            font-weight: 700;
         }
 
-        .drawer-body {
+        .drawer-content {
             flex: 1;
             overflow-y: auto;
-            padding: 6px 0;
+            padding: 4px 0;
         }
 
-        .list-item {
+        .action-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .action-tile {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 14px;
+            padding: 14px 12px;
+            color: #FFFFFF;
+            font-size: 13px;
+            font-weight: 600;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 8px;
+            cursor: pointer;
+        }
+
+        .action-tile svg {
+            width: 20px;
+            height: 20px;
+            stroke: var(--accent);
+            stroke-width: 2;
+            fill: none;
+        }
+
+        .item-card {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: rgba(0, 212, 255, 0.06);
-            border: 1px solid rgba(0, 212, 255, 0.2);
-            padding: 10px 14px;
-            border-radius: 8px;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            padding: 12px 14px;
+            border-radius: 12px;
             margin-bottom: 8px;
             font-size: 14px;
+            color: #F8FAFC;
         }
 
-        .check-btn {
-            background: rgba(0, 245, 212, 0.2);
-            color: var(--hud-cyan);
-            border: 1px solid var(--hud-cyan);
-            border-radius: 6px;
-            padding: 4px 10px;
+        .done-btn {
+            background: rgba(16, 185, 129, 0.16);
+            color: #10B981;
+            border: 1px solid rgba(16, 185, 129, 0.35);
+            border-radius: 8px;
+            padding: 5px 10px;
             font-weight: 700;
             cursor: pointer;
         }
 
-        .quick-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 8px;
-        }
-        .q-btn {
-            padding: 11px;
-            border-radius: 8px;
-            background: rgba(0, 212, 255, 0.08);
-            border: 1px solid var(--panel-border);
-            color: var(--text-main);
-            font-size: 13px;
-            text-align: left;
-            cursor: pointer;
-        }
-
-        .text-dock {
+        .input-bar {
             display: flex;
             gap: 8px;
-            background: rgba(0, 212, 255, 0.08);
-            border: 1px solid var(--panel-border);
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid var(--card-border);
             padding: 6px 8px;
-            border-radius: 10px;
+            border-radius: 14px;
         }
-        .text-dock input {
+
+        .input-bar input {
             flex: 1;
             background: transparent;
             border: none;
-            color: white;
-            font-size: 15px;
-            padding: 6px;
+            color: #FFFFFF;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 14.5px;
+            padding: 8px;
             outline: none;
         }
-        .text-dock button {
-            background: var(--hud-blue);
-            color: #02060D;
+
+        .input-bar button {
+            background: var(--accent);
+            color: #05080F;
             border: none;
-            border-radius: 8px;
+            border-radius: 10px;
             padding: 8px 16px;
-            font-family: 'Orbitron', sans-serif;
+            font-size: 13px;
             font-weight: 700;
             cursor: pointer;
         }
     </style>
 </head>
 <body>
-    <div class="visor-frame"></div>
-
-    <div class="hud-top">
-        <div class="hud-chip" onclick="toggleWakeWord()">
-            <div class="pulse-dot"></div>
-            <span id="stateLabel">VOICE ACTIVE</span>
+    <!-- TOP BAR -->
+    <div class="top-bar">
+        <div class="pill-btn" onclick="toggleWakeWord()">
+            <div class="status-led"></div>
+            <span id="stateLabel">Voice Active</span>
         </div>
 
-        <div class="neo-header-center">
-            <div class="neo-title-badge">NEO</div>
-            <div class="hud-clock-box">
-                <div class="hud-time" id="hudClock">00:00</div>
-                <div class="hud-date" id="hudDate">HAMBURG • SYSTEM ONLINE</div>
-            </div>
+        <div class="brand-center">
+            <div class="brand-title">NEO</div>
         </div>
 
-        <div class="hud-chip" id="modeBtn" onclick="toggleMode()">
-            <span>ARBEIT</span>
-            <span style="color:var(--hud-cyan);">100%</span>
+        <div class="pill-btn" id="modeBtn" onclick="toggleMode()">
+            <span>Arbeit</span>
+            <span style="color:var(--accent); font-family:'JetBrains Mono',monospace;">ON</span>
         </div>
     </div>
 
-    <div class="hud-stage">
-        <div class="hud-side-col">
-            <div class="hud-card">
-                <div class="hud-card-title"><span>SYSTEM STATUS</span><span>ONLINE</span></div>
-                <div class="stat-row"><span>GEMINI 3.8</span><div class="bar-track"><div class="bar-fill" style="width:96%"></div></div></div>
-                <div class="stat-row"><span>VOICE GATE</span><div class="bar-track"><div class="bar-fill" style="width:92%"></div></div></div>
-                <div class="stat-row"><span>MODULES</span><div class="bar-track"><div class="bar-fill" style="width:100%"></div></div></div>
+    <!-- CLOCK -->
+    <div class="clock-display">
+        <div class="clock-time" id="hudClock">00:00</div>
+        <div class="clock-date" id="hudDate">Hamburg • System bereit</div>
+    </div>
+
+    <!-- MAIN STAGE -->
+    <div class="main-stage">
+        <!-- TOP CARDS -->
+        <div class="cards-row">
+            <div class="glass-card">
+                <div class="card-head">
+                    <span class="card-label">System</span>
+                    <span class="card-badge">Online</span>
+                </div>
+                <div class="metric-line"><span>Gemini 3.8</span><div class="progress-bg"><div class="progress-bar" style="width:96%"></div></div></div>
+                <div class="metric-line"><span>Voice Gate</span><div class="progress-bg"><div class="progress-bar" style="width:92%"></div></div></div>
+                <div class="metric-line"><span>Kalender</span><div class="progress-bg"><div class="progress-bar" style="width:100%"></div></div></div>
             </div>
 
-            <div class="hud-card">
-                <div class="hud-card-title"><span>ENVIRONMENT</span><span>HAMBURG</span></div>
-                <div class="env-grid">
-                    <div class="env-item"><span>NOTIZEN</span><strong id="hud-mem">0</strong></div>
-                    <div class="env-item"><span>MATERIAL</span><strong id="hud-mat">0</strong></div>
+            <div class="glass-card clickable" onclick="openDrawer()">
+                <div class="card-head">
+                    <span class="card-label">Speicher</span>
+                    <span class="card-badge">Sync</span>
+                </div>
+                <div class="counter-grid">
+                    <div class="counter-box">
+                        <span>Notizen</span>
+                        <strong id="hud-mem">0</strong>
+                    </div>
+                    <div class="counter-box">
+                        <span>Material</span>
+                        <strong id="hud-mat">0</strong>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="reticle-wrap" onclick="toggleDirectRecord()">
-            <div class="reticle-label" id="reticleStatus">NEURAL CORE • READY</div>
-            <div class="ring ring-outer"></div>
-            <div class="ring ring-mid"></div>
-            <div class="ring ring-inner"></div>
-            <div class="core-eye" id="coreEye">NEO</div>
+        <!-- CENTER REACTOR -->
+        <div class="core-stage" onclick="toggleDirectRecord()">
+            <div class="core-status-pill" id="reticleStatus">Neural Core • Bereit</div>
+            <div class="reactor-rings">
+                <div class="r-ring r-outer"></div>
+                <div class="r-ring r-mid"></div>
+                <div class="r-ring r-inner"></div>
+                <div class="r-center" id="coreEye">NEO</div>
+            </div>
         </div>
 
-        <div class="hud-side-col">
-            <div class="hud-card" onclick="quickCmd('Ich fahre jetzt los zum nächsten Termin. Gib mir das Auto-Briefing mit Codes und starte die Navigation.')" style="cursor:pointer;">
-                <div class="hud-card-title"><span>AUTO-BRIEFING</span><span>GO</span></div>
-                <div style="font-size:11.5px; color:var(--text-main); line-height:1.35;">
-                    • Nächster Termin + Codes<br>
-                    • Direkt-Navi starten<br>
-                    • Offene Tasks: <strong id="hud-task" style="color:var(--hud-cyan);">0</strong>
+        <!-- BOTTOM CARDS -->
+        <div class="cards-row">
+            <div class="glass-card clickable" onclick="quickCmd('Ich fahre jetzt los zum nächsten Termin. Gib mir das Auto-Briefing mit Codes und starte die Navigation.')">
+                <div class="card-head">
+                    <span class="card-label">Auto-Briefing</span>
+                    <span class="card-badge">Go</span>
                 </div>
+                <div class="card-subtext">Nächster Termin & Codes</div>
+                <div class="card-hint">Offene Tasks: <span id="hud-task">0</span></div>
             </div>
 
-            <div class="hud-card" onclick="findParking()" style="cursor:pointer;">
-                <div class="hud-card-title"><span>LOCATION</span><span>GPS</span></div>
-                <div style="font-size:11.5px; color:var(--text-dim);">
-                    HAMBURG, DE<br>
-                    <span style="color:var(--hud-cyan);">Tippen für Auto-GPS</span>
+            <div class="glass-card clickable" onclick="findParking()">
+                <div class="card-head">
+                    <span class="card-label">Standort</span>
+                    <span class="card-badge">GPS</span>
                 </div>
+                <div class="card-subtext">Hamburg, DE</div>
+                <div class="card-hint">Auto-Position öffnen</div>
             </div>
         </div>
     </div>
 
+    <!-- DYNAMIC ACTION BUTTONS -->
     <div class="action-bar" id="actionBar"></div>
 
-    <div class="hud-bottom">
-        <div class="voice-wave-box">
-            <span class="voice-tag" id="waveLabel">VOICE ASSISTANT</span>
+    <!-- BOTTOM WAVE & DOCK -->
+    <div class="bottom-area">
+        <div class="wave-strip">
+            <span class="wave-label">AUDIO</span>
             <canvas id="waveCanvas" width="420" height="40"></canvas>
-            <span class="voice-tag" style="color:var(--hud-cyan);">DE / SQ</span>
+            <span class="wave-label" style="color:var(--accent);">DE / SQ</span>
         </div>
 
-        <div class="hud-dock">
-            <div class="dock-btn" onclick="quickCmd('Ich fahre los zum nächsten Termin im Kalender. Gib mir das Briefing und starte die Navigation.')">
-                <span class="ico">🧭</span>
-                <span>LOSFAHREN</span>
+        <div class="nav-dock">
+            <div class="dock-item" onclick="quickCmd('Ich fahre los zum nächsten Termin im Kalender. Gib mir das Briefing und starte die Navigation.')">
+                <svg viewBox="0 0 24 24"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+                <span>Navi</span>
             </div>
-            <div class="dock-btn" onclick="document.getElementById('camInput').click()">
-                <span class="ico">📷</span>
-                <span>MÄNGEL-CAM</span>
+            <div class="dock-item" onclick="document.getElementById('camInput').click()">
+                <svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                <span>Kamera</span>
             </div>
-            <div class="dock-btn" onclick="quickCmd('Erkläre mir ausführlich meine Termine im Kalender für heute und die nächsten Tage.')">
-                <span class="ico">📅</span>
-                <span>CALENDAR</span>
+            <div class="dock-item" onclick="quickCmd('Erkläre mir ausführlich meine Termine im Kalender für heute und die nächsten Tage.')">
+                <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                <span>Kalender</span>
             </div>
-            <div class="dock-btn active" id="wakeBtn" onclick="toggleWakeWord()">
-                <span class="ico">🎙️</span>
-                <span>VOICE</span>
+            <div class="dock-item active" id="wakeBtn" onclick="toggleWakeWord()">
+                <svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+                <span>Voice</span>
             </div>
-            <div class="dock-btn" onclick="openDrawer()">
-                <span class="ico">⚙️</span>
-                <span>SYSTEM</span>
+            <div class="dock-item" onclick="openDrawer()">
+                <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+                <span>System</span>
             </div>
         </div>
     </div>
 
     <input type="file" id="camInput" accept="image/*" capture="environment" style="display:none" onchange="handleImage(event)">
 
+    <!-- COMMAND DRAWER -->
     <div class="drawer" id="drawer">
         <div>
-            <div class="drawer-header">
-                <span>NEO COMMAND SYSTEM</span>
-                <button class="hud-chip" onclick="closeDrawer()">✕ SCHLIESSEN</button>
+            <div class="drawer-top">
+                <span class="drawer-title">NEO Command Center</span>
+                <button class="close-btn" onclick="closeDrawer()">✕ Schließen</button>
             </div>
-            <div class="tabs">
-                <div class="tab active" id="tab-tools" onclick="switchTab('tools')">Aktionen</div>
-                <div class="tab" id="tab-memory" onclick="switchTab('memory')">Notizen (<span id="c-mem">0</span>)</div>
-                <div class="tab" id="tab-materials" onclick="switchTab('materials')">Material (<span id="c-mat">0</span>)</div>
-                <div class="tab" id="tab-tasks" onclick="switchTab('tasks')">Tasks (<span id="c-task">0</span>)</div>
+            <div class="tab-bar">
+                <div class="tab-pill active" id="tab-tools" onclick="switchTab('tools')">Aktionen</div>
+                <div class="tab-pill" id="tab-memory" onclick="switchTab('memory')">Notizen (<span id="c-mem">0</span>)</div>
+                <div class="tab-pill" id="tab-materials" onclick="switchTab('materials')">Material (<span id="c-mat">0</span>)</div>
+                <div class="tab-pill" id="tab-tasks" onclick="switchTab('tasks')">Tasks (<span id="c-task">0</span>)</div>
             </div>
         </div>
 
-        <div class="drawer-body" id="drawerBody"></div>
+        <div class="drawer-content" id="drawerBody"></div>
 
-        <div class="text-dock">
+        <div class="input-bar">
             <input type="text" id="msg" placeholder="Befehl, Kalkulation oder Übersetzung..." onkeypress="if(event.key==='Enter'){closeDrawer();sendText();}">
-            <button onclick="closeDrawer();sendText();">SEND</button>
+            <button onclick="closeDrawer();sendText();">Senden</button>
         </div>
     </div>
 
@@ -704,7 +785,7 @@ HTML_PAGE = """
         function updateHudClock() {
             const now = new Date();
             document.getElementById('hudClock').innerText = now.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
-            document.getElementById('hudDate').innerText = now.toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase();
+            document.getElementById('hudDate').innerText = now.toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
         }
         updateHudClock();
         setInterval(updateHudClock, 10000);
@@ -720,11 +801,11 @@ HTML_PAGE = """
             const t = Date.now() * 0.008;
 
             let amp = 2.5;
-            let color = '#00D4FF';
+            let color = '#00E5FF';
 
             if (currentState === 'listening') {
                 amp = 4 + audioEnergy * 0.42;
-                color = '#00FF88';
+                color = '#10B981';
             } else if (currentState === 'thinking') {
                 amp = 8;
                 color = '#F59E0B';
@@ -737,7 +818,7 @@ HTML_PAGE = """
 
             wCtx.beginPath();
             wCtx.strokeStyle = color;
-            wCtx.lineWidth = 2;
+            wCtx.lineWidth = 2.2;
             for (let x = 0; x < waveCanvas.width; x += 3) {
                 const env = Math.sin((x / waveCanvas.width) * Math.PI);
                 const y = midY + Math.sin(x * 0.06 + t) * amp * env;
@@ -802,7 +883,8 @@ HTML_PAGE = """
             document.getElementById('hud-mem').innerText = userMemory.length;
             document.getElementById('hud-mat').innerText = userMaterials.length;
             document.getElementById('hud-task').innerText = userTasks.length;
-            document.getElementById('modeBtn').innerHTML = `<span>${workMode}</span><span style="color:var(--hud-cyan);">100%</span>`;
+            const modeText = workMode === 'ARBEIT' ? 'Arbeit' : 'Privat';
+            document.getElementById('modeBtn').innerHTML = `<span>${modeText}</span><span style="color:var(--accent); font-family:'JetBrains Mono',monospace;">ON</span>`;
         }
         updateBadges();
 
@@ -816,19 +898,19 @@ HTML_PAGE = """
             document.body.classList.remove('listening', 'thinking', 'speaking');
             if (state === 'listening') {
                 document.body.classList.add('listening');
-                stateLabel.innerText = "LISTENING...";
-                reticleStatus.innerText = "AUDIO INPUT • ACTIVE";
+                stateLabel.innerText = "Hört zu...";
+                reticleStatus.innerText = "Audio Input • Aktiv";
             } else if (state === 'thinking') {
                 document.body.classList.add('thinking');
-                stateLabel.innerText = "PROCESSING...";
-                reticleStatus.innerText = "TARGET ANALYSIS";
+                stateLabel.innerText = "Analysiert...";
+                reticleStatus.innerText = "Neural Processing";
             } else if (state === 'speaking') {
                 document.body.classList.add('speaking');
-                stateLabel.innerText = "NEO SPEAKING";
-                reticleStatus.innerText = "VOICE OUTPUT • LIVE";
+                stateLabel.innerText = "NEO spricht";
+                reticleStatus.innerText = "Voice Output • Live";
             } else {
-                stateLabel.innerText = wakeEnabled ? "VOICE ACTIVE" : "VOICE MUTED";
-                reticleStatus.innerText = "NEURAL CORE • READY";
+                stateLabel.innerText = wakeEnabled ? "Voice Active" : "Stummgeschaltet";
+                reticleStatus.innerText = "Neural Core • Bereit";
             }
         }
 
@@ -1041,26 +1123,44 @@ HTML_PAGE = """
         function closeDrawer() { document.getElementById('drawer').classList.remove('open'); }
         function switchTab(tab) {
             activeTab = tab;
-            document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-pill').forEach(el => el.classList.remove('active'));
             document.getElementById('tab-' + tab).classList.add('active');
             const body = document.getElementById('drawerBody');
 
             if (tab === 'tools') {
                 body.innerHTML = `
-                    <div class="quick-grid">
-                        <div class="q-btn" onclick="closeDrawer();quickCmd('Ich fahre los zum nächsten Termin im Kalender. Gib mir das Auto-Briefing mit Objekt-Codes und starte die Navigation.')">🚗 Auto-Briefing & Navi</div>
-                        <div class="q-btn" onclick="closeDrawer();quickCmd('Erkläre mir ausführlich meine Termine im Kalender für heute und die nächsten Tage.')">📅 Kalender erklären</div>
-                        <div class="q-btn" onclick="closeDrawer();quickCmd('Kalkuliere ein Reinigungsangebot für 600 Quadratmeter Büro, zweimal pro Woche, und mach die WhatsApp-Nachricht fertig.')">💶 Angebots-Rechner</div>
-                        <div class="q-btn" onclick="closeDrawer();document.getElementById('camInput').click()">📷 Mängelbericht Foto</div>
-                        <div class="q-btn" onclick="closeDrawer();saveParking()">🅿️ Parkplatz merken</div>
-                        <div class="q-btn" onclick="closeDrawer();findParking()">🧭 Auto finden (GPS)</div>
+                    <div class="action-grid">
+                        <div class="action-tile" onclick="closeDrawer();quickCmd('Ich fahre los zum nächsten Termin im Kalender. Gib mir das Auto-Briefing mit Objekt-Codes und starte die Navigation.')">
+                            <svg viewBox="0 0 24 24"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+                            <span>Auto-Briefing & Navi</span>
+                        </div>
+                        <div class="action-tile" onclick="closeDrawer();quickCmd('Erkläre mir ausführlich meine Termine im Kalender für heute und die nächsten Tage.')">
+                            <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                            <span>Kalender erklären</span>
+                        </div>
+                        <div class="action-tile" onclick="closeDrawer();quickCmd('Kalkuliere ein Reinigungsangebot für 600 Quadratmeter Büro, zweimal pro Woche, und mach die WhatsApp-Nachricht fertig.')">
+                            <svg viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="12" y2="14"/></svg>
+                            <span>Angebots-Rechner</span>
+                        </div>
+                        <div class="action-tile" onclick="closeDrawer();document.getElementById('camInput').click()">
+                            <svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                            <span>Mängelbericht Foto</span>
+                        </div>
+                        <div class="action-tile" onclick="closeDrawer();saveParking()">
+                            <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                            <span>Parkplatz merken</span>
+                        </div>
+                        <div class="action-tile" onclick="closeDrawer();findParking()">
+                            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
+                            <span>Auto finden (GPS)</span>
+                        </div>
                     </div>`;
                 return;
             }
             let list = tab === 'materials' ? userMaterials : (tab === 'tasks' ? userTasks : userMemory);
             body.innerHTML = list.length === 0
-                ? `<div style="color:#94A3B8; text-align:center; margin-top:30px;">Leer, Sir.</div>`
-                : list.map((item, idx) => `<div class="list-item"><span>${idx + 1}. ${item}</span><button class="check-btn" onclick="deleteItem('${tab}', ${idx})">✓</button></div>`).join('');
+                ? `<div style="color:#64748B; text-align:center; margin-top:40px; font-size:14px;">Keine Einträge vorhanden, Sir.</div>`
+                : list.map((item, idx) => `<div class="item-card"><span>${idx + 1}. ${item}</span><button class="done-btn" onclick="deleteItem('${tab}', ${idx})">✓</button></div>`).join('');
         }
 
         function deleteItem(type, idx) {
@@ -1076,7 +1176,7 @@ HTML_PAGE = """
             navigator.geolocation.getCurrentPosition(pos => {
                 const time = new Date().toLocaleTimeString('de-DE', {hour:'2-digit', minute:'2-digit'});
                 localStorage.setItem('neo_parking', JSON.stringify({lat: pos.coords.latitude, lng: pos.coords.longitude, time}));
-                reticleStatus.innerText = "GPS PARKPLATZ GESPEICHERT";
+                reticleStatus.innerText = "Parkplatz gespeichert";
             });
         }
 
@@ -1143,7 +1243,7 @@ HTML_PAGE = """
                 if (data.error) {
                     inConversation = false;
                     setState(null);
-                    reticleStatus.innerText = "SYSTEM ERROR";
+                    reticleStatus.innerText = "Systemfehler";
                     if (wakeEnabled) setTimeout(() => startWakeListener(), 1000);
                     return;
                 }
@@ -1170,7 +1270,7 @@ HTML_PAGE = """
                 if (data.copy_text && data.copy_text.trim() !== "") {
                     const cBtn = document.createElement('button');
                     cBtn.className = "action-pill";
-                    cBtn.innerText = "📋 Kopieren";
+                    cBtn.innerText = "Text kopieren";
                     cBtn.onclick = () => { navigator.clipboard.writeText(data.copy_text); cBtn.innerText = "✓ Kopiert"; };
                     actionBar.appendChild(cBtn);
                 }
