@@ -1429,9 +1429,15 @@ def home():
 
 @app.route("/avatar")
 def avatar():
-    for fname in ["neo_avatar.jpg", "neo_avatar.png", "neo_avatar.jpeg"]:
-        if os.path.exists(fname):
-            return send_file(fname)
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    # 1. Kontrollo emrat standardë (pa dallim shkronjash të mëdha/të vogla)
+    for f in os.listdir(base_dir):
+        if f.lower().startswith("neo_avatar") and f.lower().endswith((".jpg", ".jpeg", ".png", ".webp")):
+            return send_file(os.path.join(base_dir, f))
+    # 2. Nëse e ke ngarkuar me emrin origjinal nga telefoni, merr çdo .jpg/.png në dosje
+    for f in os.listdir(base_dir):
+        if f.lower().endswith((".jpg", ".jpeg", ".png", ".webp")) and not f.lower().startswith("icon"):
+            return send_file(os.path.join(base_dir, f))
     return Response(ICON_SVG, mimetype="image/svg+xml")
 
 @app.route("/calendar_preview")
