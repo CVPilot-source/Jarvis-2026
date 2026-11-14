@@ -40,9 +40,9 @@ HTML_PAGE = """<!DOCTYPE html>
             --text: #F8FAFC;
             --muted: #94A3B8;
         }
-        body.listening { --gold: #10B981; --gold-glow: rgba(16, 185, 129, 0.55); }
-        body.thinking  { --gold: #38BDF8; --gold-glow: rgba(56, 189, 248, 0.55); }
-        body.speaking  { --gold: #A855F7; --gold-glow: rgba(168, 85, 247, 0.60); }
+        body.listening { --gold: #10B981; --gold-glow: rgba(16, 185, 129, 0.65); }
+        body.thinking  { --gold: #38BDF8; --gold-glow: rgba(56, 189, 248, 0.65); }
+        body.speaking  { --gold: #A855F7; --gold-glow: rgba(168, 85, 247, 0.65); }
 
         * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
 
@@ -97,7 +97,7 @@ HTML_PAGE = """<!DOCTYPE html>
             max-height: 140px; overflow-y: auto; user-select: text;
         }
 
-        /* CENTER CORE BUTTON */
+        /* CENTER CORE */
         .core-trigger {
             position: fixed; top: 46%; left: 50%; transform: translate(-50%, -50%);
             width: 160px; height: 160px; border-radius: 50%; z-index: 8;
@@ -109,7 +109,7 @@ HTML_PAGE = """<!DOCTYPE html>
             text-shadow: 0 0 14px var(--gold);
         }
         .core-sub {
-            font-size: 10.5px; font-weight: 800; letter-spacing: 1.5px;
+            font-size: 10px; font-weight: 800; letter-spacing: 1.5px;
             color: var(--gold); margin-top: 4px;
         }
 
@@ -199,10 +199,10 @@ HTML_PAGE = """<!DOCTYPE html>
 
     <!-- TOP LEFT -->
     <div class="hud-tl">
-        <div class="sys-title">NEO <span style="font-size:11px; color:var(--gold); letter-spacing:2px;">DESKTOP & MOBILE OS</span></div>
+        <div class="sys-title">NEO <span style="font-size:11px; color:var(--gold); letter-spacing:2px;">ALWAYS-ON VOICE OS</span></div>
         <div class="sys-sub" id="sysMeta">HAMBURG • SYNCHRONISIERT</div>
         <div class="hud-controls">
-            <button type="button" class="hud-btn" id="wBtn" onclick="toggleWake()">HEY NEO: AUS (PC-MODUS)</button>
+            <button type="button" class="hud-btn" id="wBtn" onclick="toggleWake()" style="border-color:#10B981; color:#10B981;">● HEY NEO: IMMER AKTIV</button>
             <button type="button" class="hud-btn" id="mBtn" onclick="toggleMode()">MODUS: ARBEIT</button>
             <button type="button" class="hud-btn" onclick="openHolo('calendar')">KALENDER</button>
             <button type="button" class="hud-btn" onclick="openHolo('codes')">CODES (<span id="nCount">0</span>)</button>
@@ -212,16 +212,16 @@ HTML_PAGE = """<!DOCTYPE html>
     <!-- TOP RIGHT OUTPUT -->
     <div class="hud-tr">
         <div class="tr-head">
-            <span>NEO LIVE OUTPUT</span>
-            <span id="streamStatus">ONLINE</span>
+            <span>LIVE VOICE STREAM</span>
+            <span id="streamStatus">WARTE AUF "HEY NEO"</span>
         </div>
-        <div class="tr-body" id="replyBox">Klicke auf einen Knotenpunkt, tippe unten einen Befehl ein oder klicke auf den NEO-Kern zum Sprechen.</div>
+        <div class="tr-body" id="replyBox">Sage einfach „Hey Neo“ (z.B. „Hey Neo, gib mir mein Morning Brief“). Ich höre dauerhaft zu!</div>
     </div>
 
     <!-- CENTER REACTOR -->
-    <div class="core-trigger" onclick="toggleRec()" title="Klicken zum Sprechen">
+    <div class="core-trigger" onclick="manualListenTrigger()">
         <div class="core-label">NEO</div>
-        <div class="core-sub" id="coreState">CLICK TO SPEAK</div>
+        <div class="core-sub" id="coreState">SAY "HEY NEO"</div>
     </div>
 
     <!-- NODES -->
@@ -240,8 +240,8 @@ HTML_PAGE = """<!DOCTYPE html>
     <div class="bottom-dock">
         <div class="act-strip" id="actBar"></div>
         <div class="cmd-bar">
-            <button type="button" class="mic-round" onclick="toggleRec()" title="Spracheingabe">🎙️</button>
-            <input type="text" id="msg" placeholder="Befehl eingeben und Enter drücken (z.B. Morning Brief, Angebot 600m², Übersetzung)..." onkeydown="if(event.key==='Enter')sendTxt()">
+            <button type="button" class="mic-round" onclick="manualListenTrigger()">🎙️</button>
+            <input type="text" id="msg" placeholder="Oder hier schreiben & Enter drücken..." onkeydown="if(event.key==='Enter')sendTxt()">
             <button type="button" class="exec-btn" onclick="sendTxt()">SENDEN</button>
         </div>
     </div>
@@ -251,6 +251,21 @@ HTML_PAGE = """<!DOCTYPE html>
 
     <script>
         const isMobile = /Android|iPhone|iPad/i.test(navigator.userAgent);
+
+        // Kurzer Bestätigungston wenn "Hey Neo" erkannt wird
+        function beep(f1, f2) {
+            try {
+                const ac = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ac.createOscillator();
+                const g = ac.createGain();
+                osc.connect(g); g.connect(ac.destination);
+                osc.frequency.setValueAtTime(f1, ac.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(f2, ac.currentTime + 0.11);
+                g.gain.setValueAtTime(0.12, ac.currentTime);
+                g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.13);
+                osc.start(); osc.stop(ac.currentTime + 0.14);
+            } catch(e){}
+        }
 
         // --- 1. NODES ---
         const NODES = [
@@ -296,9 +311,9 @@ HTML_PAGE = """<!DOCTYPE html>
             const cx = W * 0.5, cy = H * 0.46;
 
             let mainColor = '245, 158, 11', secColor = '56, 189, 248', rotSpeed = 0.005, pulseBoost = 1;
-            if (coreStateMode === 'listening') { mainColor = '16, 185, 129'; rotSpeed = 0.015; pulseBoost = 2.2; }
-            else if (coreStateMode === 'thinking') { mainColor = '56, 189, 248'; rotSpeed = 0.025; pulseBoost = 3.0; }
-            else if (coreStateMode === 'speaking') { mainColor = '168, 85, 247'; rotSpeed = 0.018; pulseBoost = 2.5; }
+            if (coreStateMode === 'listening') { mainColor = '16, 185, 129'; rotSpeed = 0.016; pulseBoost = 2.4; }
+            else if (coreStateMode === 'thinking') { mainColor = '56, 189, 248'; rotSpeed = 0.026; pulseBoost = 3.2; }
+            else if (coreStateMode === 'speaking') { mainColor = '168, 85, 247'; rotSpeed = 0.018; pulseBoost = 2.6; }
 
             angle1 += rotSpeed; angle2 -= rotSpeed * 0.7; pulseT += 0.05 * pulseBoost;
 
@@ -328,7 +343,7 @@ HTML_PAGE = """<!DOCTYPE html>
 
             const baseR = 72 + (coreStateMode === 'speaking' ? Math.sin(pulseT * 2) * 8 : Math.sin(pulseT) * 2);
             const glow = ctx.createRadialGradient(cx, cy, 10, cx, cy, baseR + 60);
-            glow.addColorStop(0, `rgba(${mainColor}, 0.30)`);
+            glow.addColorStop(0, `rgba(${mainColor}, 0.32)`);
             glow.addColorStop(1, 'rgba(3, 7, 18, 0)');
             ctx.fillStyle = glow;
             ctx.beginPath(); ctx.arc(cx, cy, baseR + 60, 0, Math.PI * 2); ctx.fill();
@@ -364,9 +379,6 @@ HTML_PAGE = """<!DOCTYPE html>
 
         let mem = JSON.parse(localStorage.getItem('neo_memory') || '[]');
         let mode = localStorage.getItem('neo_mode') || 'ARBEIT';
-        let wakeOn = false; // Auf PC standardmäßig aus, damit Mikrofon nicht blockiert!
-        let isRec = false, isSpk = false, inConv = false;
-        let rec = null, stream = null, chunks = [], wakeRec = null;
         const player = document.getElementById('player');
 
         function saveState() {
@@ -422,73 +434,149 @@ HTML_PAGE = """<!DOCTYPE html>
             document.body.className = s || '';
             const cSt = document.getElementById('coreState');
             const sSt = document.getElementById('streamStatus');
-            if (s === 'listening') { cSt.innerText = 'STOP (CLICK)'; sSt.innerText = 'HÖRT ZU...'; }
-            else if (s === 'thinking') { cSt.innerText = 'PROCESSING'; sSt.innerText = 'ANALYSIERT...'; }
-            else if (s === 'speaking') { cSt.innerText = 'SPEAKING'; sSt.innerText = 'SPRICHT...'; }
-            else { cSt.innerText = 'CLICK TO SPEAK'; sSt.innerText = 'ONLINE'; }
+            if (s === 'listening') { cSt.innerText = 'ICH HÖRE ZU...'; sSt.innerText = 'SPRICH JETZT'; }
+            else if (s === 'thinking') { cSt.innerText = 'DENKT NACH...'; sSt.innerText = 'ANALYSE...'; }
+            else if (s === 'speaking') { cSt.innerText = 'NEO SPRICHT'; sSt.innerText = 'AUDIO AKTIV'; }
+            else { cSt.innerText = activeSession ? 'SPRICH WEITER...' : 'SAY "HEY NEO"'; sSt.innerText = activeSession ? 'DIALOG AKTIV' : 'LAUSCHT ("HEY NEO")'; }
         }
 
-        // --- 4. PC & MOBILE AUDIO RECORDING ---
-        function stopWake() { if (wakeRec) { try { wakeRec.onend = null; wakeRec.abort(); } catch(e){} wakeRec = null; } }
+        // --- 4. 100% HANDS-FREE CONTINUOUS SPEECH ENGINE (KEIN KLICKEN NÖTIG!) ---
+        let wakeOn = true;          // Immer aktiv!
+        let activeSession = false;  // Wenn true, nimmt NEO jeden Satz direkt an (ohne "Hey Neo")
+        let isBusy = false;         // True während NEO denkt oder spricht
+        let srInstance = null;
+
         function toggleWake() {
             wakeOn = !wakeOn;
-            document.getElementById('wBtn').innerText = wakeOn ? 'HEY NEO: AN' : 'HEY NEO: AUS';
-            if (wakeOn) startWake(); else stopWake();
-        }
-        function startWake() {
-            if (!wakeOn || isRec || isSpk || inConv) return;
-            const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if (!SR) return;
-            stopWake();
-            wakeRec = new SR();
-            wakeRec.lang = 'de-DE';
-            wakeRec.continuous = true;
-            wakeRec.onresult = (e) => {
-                for (let i = e.resultIndex; i < e.results.length; i++) {
-                    const t = e.results[i][0].transcript.toLowerCase();
-                    if (t.includes('hey neo') || t.includes('neo')) { stopWake(); inConv = true; startRec(); return; }
-                }
-            };
-            wakeRec.onend = () => { wakeRec = null; if (wakeOn && !isRec && !isSpk && !inConv) setTimeout(startWake, 800); };
-            try { wakeRec.start(); } catch(e){}
-        }
-
-        function toggleRec() {
-            if (isSpk) { player.pause(); isSpk = false; setSt(null); }
-            if (isRec) { isRec = false; if (rec && rec.state !== 'inactive') rec.stop(); return; }
-            inConv = true; startRec();
-        }
-
-        async function startRec() {
-            if (isRec || isSpk) return;
-            stopWake();
-            try {
-                stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                chunks = [];
-                rec = new MediaRecorder(stream);
-                rec.ondataavailable = e => { if (e.data && e.data.size > 0) chunks.push(e.data); };
-                rec.onstop = () => {
-                    stream.getTracks().forEach(t => t.stop());
-                    const blob = new Blob(chunks, { type: rec.mimeType || 'audio/webm' });
-                    if (blob.size < 600) { inConv = false; setSt(null); return; }
-                    setSt('thinking');
-                    const r = new FileReader();
-                    r.readAsDataURL(blob);
-                    r.onloadend = () => sendNeo({ audio: r.result.split(',')[1], mime_type: (rec.mimeType || 'audio/webm').split(';')[0] });
-                };
-                rec.start();
-                isRec = true;
-                setSt('listening');
-                document.getElementById('replyBox').innerText = "🎙️ Ich höre zu, Margil... (Klicke nochmal auf den Kern, wenn du fertig bist)";
-                setTimeout(() => { if (isRec) { isRec = false; rec.stop(); } }, 6500);
-            } catch(e) {
-                inConv = false; setSt(null);
-                document.getElementById('replyBox').innerText = "Mikrofon-Zugriff blockiert. Bitte oben in der Adressleiste das Mikrofon erlauben.";
+            const b = document.getElementById('wBtn');
+            if (wakeOn) {
+                b.innerText = '● HEY NEO: IMMER AKTIV';
+                b.style.borderColor = '#10B981';
+                b.style.color = '#10B981';
+                startAlwaysListening();
+            } else {
+                b.innerText = '○ HEY NEO: PAUSIERT';
+                b.style.borderColor = '';
+                b.style.color = '';
+                activeSession = false;
+                if (srInstance) { try { srInstance.onend = null; srInstance.abort(); } catch(e){} srInstance = null; }
+                setSt(null);
             }
         }
 
-        player.onplay = () => { isSpk = true; setSt('speaking'); };
-        player.onended = () => { isSpk = false; setSt(null); if (wakeOn) startWake(); };
+        function manualListenTrigger() {
+            if (isBusy) {
+                player.pause();
+                isBusy = false;
+            }
+            activeSession = true;
+            beep(520, 920);
+            setSt('listening');
+            document.getElementById('replyBox').innerText = "🎙️ Ich höre dir direkt zu, Margil...";
+            if (!srInstance) startAlwaysListening();
+        }
+
+        function startAlwaysListening() {
+            if (!wakeOn || isBusy) return;
+            const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SR) {
+                document.getElementById('replyBox').innerText = "Bitte Google Chrome oder Edge für Hands-Free 'Hey Neo' nutzen.";
+                return;
+            }
+            if (srInstance) {
+                try { srInstance.onend = null; srInstance.abort(); } catch(e){}
+                srInstance = null;
+            }
+
+            srInstance = new SR();
+            srInstance.lang = 'de-DE';
+            srInstance.continuous = true;
+            srInstance.interimResults = true;
+
+            srInstance.onresult = (event) => {
+                if (isBusy) return;
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    const raw = event.results[i][0].transcript.trim();
+                    const low = raw.toLowerCase();
+
+                    // Live-Vorschau während Margil spricht
+                    if (!event.results[i].isFinal) {
+                        if (activeSession || low.includes('neo') || low.includes('nio')) {
+                            setSt('listening');
+                            document.getElementById('replyBox').innerText = "🎙️ " + raw + " ...";
+                        }
+                        continue;
+                    }
+
+                    // Finaler Satz erkannt!
+                    const wakeMatch = low.match(/\b(hey neo|hey nio|hallo neo|ok neo|neo)\b/);
+                    if (wakeMatch) {
+                        const idx = low.indexOf(wakeMatch[0]) + wakeMatch[0].length;
+                        const commandAfterWake = raw.slice(idx).replace(/^[,.\s]+/, '').trim();
+
+                        if (commandAfterWake.length > 2) {
+                            // Margil hat direkt gesagt: "Hey Neo, wie ist das Wetter?"
+                            activeSession = true;
+                            beep(640, 880);
+                            processVoiceText(commandAfterWake);
+                            return;
+                        } else {
+                            // Margil hat nur "Hey Neo" gesagt -> Dialog-Modus öffnen!
+                            activeSession = true;
+                            beep(520, 960);
+                            setSt('listening');
+                            document.getElementById('replyBox').innerText = "🎙️ Ja, Margil? Sprich einfach weiter...";
+                            return;
+                        }
+                    } else if (activeSession && raw.length > 1) {
+                        // Im aktiven Gespräch braucht Margil NICHT nochmal "Hey Neo" zu sagen
+                        beep(640, 880);
+                        processVoiceText(raw);
+                        return;
+                    }
+                }
+            };
+
+            srInstance.onend = () => {
+                srInstance = null;
+                if (wakeOn && !isBusy) {
+                    setTimeout(() => startAlwaysListening(), 250);
+                }
+            };
+
+            srInstance.onerror = () => {
+                srInstance = null;
+                if (wakeOn && !isBusy) {
+                    setTimeout(() => startAlwaysListening(), 600);
+                }
+            };
+
+            try { srInstance.start(); } catch(e) { srInstance = null; }
+        }
+
+        function processVoiceText(spokenText) {
+            isBusy = true;
+            if (srInstance) { try { srInstance.onend = null; srInstance.abort(); } catch(e){} srInstance = null; }
+            setSt('thinking');
+            sendNeo({ message: spokenText });
+        }
+
+        player.onplay = () => {
+            isBusy = true;
+            setSt('speaking');
+        };
+
+        player.onended = () => {
+            isBusy = false;
+            setSt(activeSession ? 'listening' : null);
+            if (wakeOn) setTimeout(() => startAlwaysListening(), 250);
+        };
+
+        player.onerror = () => {
+            isBusy = false;
+            setSt(null);
+            if (wakeOn) setTimeout(() => startAlwaysListening(), 350);
+        };
 
         async function sendTg() {
             document.getElementById('replyBox').innerText = "Sende Autorisierungsanfrage an Telegram...";
@@ -501,34 +589,40 @@ HTML_PAGE = """<!DOCTYPE html>
 
         function handleImg(ev) {
             const f = ev.target.files[0]; if (!f) return;
+            isBusy = true;
             setSt('thinking');
             const r = new FileReader();
             r.onload = e => sendNeo({ image: e.target.result.split(',')[1], message: "Erstelle einen professionellen Objekt-Mängelbericht." });
             r.readAsDataURL(f);
         }
 
-        function quickCmd(t) { setSt('thinking'); sendNeo({ message: t }); }
+        function quickCmd(t) { isBusy = true; setSt('thinking'); sendNeo({ message: t }); }
         function sendTxt() {
             const inp = document.getElementById('msg');
             if (!inp.value.trim()) return;
             const v = inp.value.trim(); inp.value = '';
-            setSt('thinking'); sendNeo({ message: v });
+            isBusy = true;
+            setSt('thinking');
+            sendNeo({ message: v });
         }
 
         async function sendNeo(payload) {
-            stopWake();
             document.getElementById('actBar').innerHTML = '';
-            document.getElementById('replyBox').innerText = "NEO verarbeitet deine Anfrage...";
+            document.getElementById('replyBox').innerText = "NEO verarbeitet: „" + (payload.message || "Anfrage") + "“...";
             payload.mode = mode;
             payload.memory = mem;
-            payload.is_mobile = isMobile;
             payload.local_time_str = new Date().toLocaleString('de-DE');
 
             try {
                 const res = await fetch('/chat', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
                 const d = await res.json();
-                if (d.error) { inConv = false; setSt(null); document.getElementById('replyBox').innerText = "Fehler: " + d.error; return; }
-                if (d.end_conversation) inConv = false;
+                if (d.error) {
+                    isBusy = false; setSt(null);
+                    document.getElementById('replyBox').innerText = "Fehler: " + d.error;
+                    if (wakeOn) startAlwaysListening();
+                    return;
+                }
+                if (d.end_conversation) activeSession = false;
                 if (d.new_memory) { mem.push(d.new_memory); saveState(); }
                 document.getElementById('replyBox').innerText = d.reply;
 
@@ -538,9 +632,7 @@ HTML_PAGE = """<!DOCTYPE html>
                     document.getElementById('actBar').appendChild(b);
                 }
                 if (d.action_url) {
-                    inConv = false;
                     let finalUrl = d.action_url;
-                    // Falls am PC, Android intent:// in normale Web-URL umwandeln!
                     if (!isMobile && finalUrl.startsWith('intent://')) {
                         const m = finalUrl.match(/text=([^#&]+)/);
                         finalUrl = 'https://wa.me/?text=' + (m ? m[1] : '');
@@ -550,13 +642,25 @@ HTML_PAGE = """<!DOCTYPE html>
                 }
                 if (d.audio) {
                     player.src = "data:audio/mp3;base64," + d.audio;
-                    player.play().catch(() => { isSpk = false; setSt(null); });
-                } else { setSt(null); }
+                    player.play().catch(() => {
+                        isBusy = false; setSt(null);
+                        if (wakeOn) startAlwaysListening();
+                    });
+                } else {
+                    isBusy = false; setSt(null);
+                    if (wakeOn) startAlwaysListening();
+                }
             } catch(e) {
-                inConv = false; setSt(null);
-                document.getElementById('replyBox').innerText = "Server-Verbindungsfehler. Bitte Seite kurz neu laden.";
+                isBusy = false; setSt(null);
+                document.getElementById('replyBox').innerText = "Server-Verbindungsfehler.";
+                if (wakeOn) startAlwaysListening();
             }
         }
+
+        // Startet sofort beim Laden der Seite das permanente Lauschen auf "Hey Neo"!
+        window.addEventListener('load', () => {
+            startAlwaysListening();
+        });
     </script>
 </body>
 </html>"""
@@ -600,7 +704,7 @@ Modus: {mode} | Zeit: {local_time}. Antworte souverän, ruhig, kurz und ohne Mar
 - Morning Brief / Auto-Briefing: Nächste Termine + Codes aus Notizen + Google Maps URL in `action_url` (`action_label`: "Navigation starten").
 - Dolmetscher DE <-> SQ: Bei Übersetzung ins Albanische `voice_lang`: "sq" und Übersetzung in `copy_text`, sonst "de".
 - Kalkulator: Büro ~220 m²/Std, 31,50 €/Std netto (4,33 Wochen/Monat). Fertiges Angebot in `copy_text` + WhatsApp URL (`https://wa.me/?text=URL_ENCODED`, `action_label`: "WhatsApp öffnen").
-- Gespräch Ende ("Danke", "Stopp"): `end_conversation`: true.
+- Gespräch Ende ("Danke", "Stopp", "Pause"): `end_conversation`: true.
 Antworte NUR als JSON:
 {{"reply":"","voice_lang":"de","copy_text":"","new_memory":"","action_url":"","action_label":"","end_conversation":false}}"""
 
@@ -615,7 +719,6 @@ async def make_voice(text, lang="de"):
     return base64.b64encode(buf).decode("utf-8")
 
 def generate_with_fallback(client, parts, config):
-    # Versucht zuerst gemini-3.8-flash; falls Google API 404 zurückgibt, sofortiger Fallback auf gemini-2.5-flash
     for model_name in ["gemini-3.8-flash", "gemini-2.5-flash"]:
         try:
             return client.models.generate_content(model=model_name, contents=parts, config=config)
@@ -695,9 +798,6 @@ def chat():
         if "image" in data:
             parts.append(types.Part.from_bytes(data=base64.b64decode(data["image"]), mime_type="image/jpeg"))
             parts.append(data.get("message", "Mängelbericht erstellen."))
-        elif "audio" in data:
-            parts.append(types.Part.from_bytes(data=base64.b64decode(data["audio"]), mime_type=data.get("mime_type", "audio/webm")))
-            parts.append("Antworte auf diese Sprachnachricht von Margil.")
         else:
             parts.append(data.get("message", ""))
 
