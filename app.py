@@ -15,10 +15,10 @@ app = Flask(__name__)
 ICAL_CACHE = {"ts": 0, "events": []}
 
 ICON_SVG = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="120" fill="#03050A"/>
-  <circle cx="256" cy="256" r="145" fill="none" stroke="#38BDF8" stroke-width="8" stroke-dasharray="10 18"/>
-  <circle cx="256" cy="256" r="95" fill="none" stroke="#818CF8" stroke-width="6" stroke-dasharray="6 14"/>
-  <circle cx="256" cy="256" r="18" fill="#38BDF8"/>
+  <rect width="512" height="512" rx="120" fill="#050811"/>
+  <circle cx="256" cy="256" r="145" fill="none" stroke="#F59E0B" stroke-width="8" stroke-dasharray="18 12"/>
+  <circle cx="256" cy="256" r="95" fill="none" stroke="#38BDF8" stroke-width="5"/>
+  <circle cx="256" cy="256" r="24" fill="#F59E0B"/>
 </svg>"""
 
 HTML_PAGE = """<!DOCTYPE html>
@@ -28,21 +28,22 @@ HTML_PAGE = """<!DOCTYPE html>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#03050A">
+    <meta name="theme-color" content="#050811">
     <link rel="manifest" href="/manifest.json">
-    <title>NEO Particle Core</title>
+    <title>NEO Neural Core</title>
     <style>
         :root {
-            --accent: #38BDF8;
-            --bg: #03050A;
-            --surface: rgba(15, 23, 42, 0.72);
-            --border: rgba(255, 255, 255, 0.09);
+            --core: #F59E0B;
+            --cyan: #38BDF8;
+            --bg: #050811;
+            --panel: rgba(11, 17, 32, 0.86);
+            --border: rgba(56, 189, 248, 0.22);
             --text: #F8FAFC;
             --muted: #94A3B8;
         }
-        body.listening { --accent: #10B981; }
-        body.thinking  { --accent: #F59E0B; }
-        body.speaking  { --accent: #A855F7; }
+        body.listening { --core: #10B981; }
+        body.thinking  { --core: #38BDF8; }
+        body.speaking  { --core: #A855F7; }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
@@ -50,128 +51,183 @@ HTML_PAGE = """<!DOCTYPE html>
             margin: 0 auto;
             max-width: 500px;
             height: 100dvh;
-            background: radial-gradient(circle at 50% 34%, #0B152C 0%, #03050A 68%);
+            background-color: var(--bg);
+            background-image:
+                radial-gradient(circle at 50% 35%, rgba(245, 158, 11, 0.14) 0%, transparent 55%),
+                linear-gradient(rgba(56, 189, 248, 0.045) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(56, 189, 248, 0.045) 1px, transparent 1px);
+            background-size: 100% 100%, 26px 26px, 26px 26px;
             color: var(--text);
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            padding: 12px 14px;
+            padding: 10px 12px;
             gap: 8px;
             overflow: hidden;
         }
 
-        .top-bar {
+        /* TOP HUD BAR */
+        .hud-top {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            z-index: 2;
+            z-index: 5;
         }
-        .chip {
-            background: var(--surface);
+        .hud-chip {
+            background: var(--panel);
             border: 1px solid var(--border);
             color: var(--text);
-            padding: 6px 12px;
+            padding: 5px 11px;
             border-radius: 999px;
-            font-size: 11.5px;
+            font-size: 11px;
             font-weight: 700;
             cursor: pointer;
             display: flex;
             align-items: center;
             gap: 6px;
         }
-        .dot {
+        .led {
             width: 8px;
             height: 8px;
             border-radius: 50%;
-            background: var(--accent);
-            box-shadow: 0 0 10px var(--accent);
+            background: var(--core);
+            box-shadow: 0 0 10px var(--core);
         }
-        .logo {
+        .hud-brand {
             font-size: 13px;
             font-weight: 900;
             letter-spacing: 4px;
-            color: var(--accent);
+            color: var(--core);
+            text-shadow: 0 0 12px rgba(245, 158, 11, 0.5);
         }
 
-        /* 3D PARTICLE SPHERE STAGE */
-        .sphere-stage {
+        /* NEURAL NODE NETWORK STAGE */
+        .neural-stage {
             position: relative;
+            width: 100%;
+            height: 295px;
+            flex-shrink: 0;
+            margin: 0 auto;
+        }
+        .neural-lines {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        .neural-lines line {
+            stroke: rgba(56, 189, 248, 0.28);
+            stroke-width: 1.5;
+            stroke-dasharray: 4 4;
+        }
+        body.thinking .neural-lines line,
+        body.speaking .neural-lines line {
+            stroke: var(--core);
+            stroke-opacity: 0.65;
+        }
+
+        /* CENTRAL CORE (APEX STYLE) */
+        .core-hub {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 98px;
+            height: 98px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(245, 158, 11, 0.25) 0%, #090E1C 72%);
+            border: 2.5px solid var(--core);
+            box-shadow: 0 0 28px var(--core), inset 0 0 16px var(--core);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            flex: 1;
-            min-height: 210px;
             cursor: pointer;
+            z-index: 4;
+            transition: transform 0.15s, border-color 0.2s, box-shadow 0.2s;
         }
-        #particleCanvas {
-            width: 220px;
-            height: 220px;
-            display: block;
+        .core-hub:active { transform: translate(-50%, -50%) scale(0.94); }
+        .core-ring-outer {
+            position: absolute;
+            inset: -9px;
+            border-radius: 50%;
+            border: 1.5px dashed var(--cyan);
+            opacity: 0.65;
+            animation: spinSlow 18s linear infinite;
+            pointer-events: none;
         }
-        .status-caption {
+        @keyframes spinSlow {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .core-name {
+            font-size: 15px;
+            font-weight: 900;
+            letter-spacing: 2px;
+            color: #FFFFFF;
+        }
+        .core-state {
+            font-size: 9px;
+            font-weight: 800;
+            text-transform: uppercase;
+            color: var(--core);
             margin-top: 2px;
-            font-size: 13px;
-            font-weight: 700;
-            color: var(--accent);
-            text-align: center;
-            letter-spacing: 0.3px;
-        }
-        .meta-line {
-            display: flex;
-            gap: 6px;
-            margin-top: 6px;
-        }
-        .meta-tag {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 7px;
-            padding: 3px 8px;
-            font-size: 11px;
-            font-weight: 600;
-            color: var(--muted);
-            cursor: pointer;
         }
 
-        /* COMPACT INFO CARDS */
-        .glass-card {
-            background: var(--surface);
+        /* SATELLITE NODES AROUND CORE */
+        .node {
+            position: absolute;
+            width: 78px;
+            background: var(--panel);
             border: 1px solid var(--border);
-            border-radius: 14px;
-            padding: 9px 12px;
+            border-radius: 12px;
+            padding: 6px 4px;
+            text-align: center;
+            cursor: pointer;
+            z-index: 3;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+            transition: border-color 0.15s, transform 0.12s;
         }
-        .card-lbl {
+        .node:active {
+            transform: scale(0.94);
+            border-color: var(--core);
+        }
+        .node-ico { font-size: 14px; display: block; }
+        .node-lbl { font-size: 10px; font-weight: 700; color: #E2E8F0; display: block; margin-top: 1px; }
+
+        /* 6 Node Positions */
+        .n-tl { top: 10px; left: 8px; }
+        .n-tr { top: 10px; right: 8px; }
+        .n-ml { top: 50%; left: 2px; transform: translateY(-50%); }
+        .n-mr { top: 50%; right: 2px; transform: translateY(-50%); }
+        .n-bl { bottom: 10px; left: 8px; }
+        .n-br { bottom: 10px; right: 8px; }
+
+        /* LIVE BRIEFING & OUTPUT PANEL */
+        .data-panel {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-left: 3px solid var(--core);
+            border-radius: 12px;
+            padding: 8px 11px;
+        }
+        .panel-head {
+            display: flex;
+            justify-content: space-between;
             font-size: 9.5px;
             font-weight: 800;
-            letter-spacing: 1px;
             text-transform: uppercase;
-            color: var(--accent);
+            letter-spacing: 0.9px;
+            color: var(--cyan);
             margin-bottom: 2px;
         }
-        .card-txt {
-            font-size: 13px;
+        .panel-body {
+            font-size: 12.5px;
             line-height: 1.38;
             color: #F1F5F9;
         }
-
-        /* 4 QUICK MODULES */
-        .quick-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 7px;
-        }
-        .q-tile {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 9px 4px;
-            text-align: center;
-            cursor: pointer;
-        }
-        .q-tile:active { border-color: var(--accent); }
-        .q-ico { font-size: 16px; display: block; margin-bottom: 2px; }
-        .q-lbl { font-size: 10.5px; font-weight: 700; color: var(--text); }
 
         .act-bar {
             display: flex;
@@ -180,54 +236,54 @@ HTML_PAGE = """<!DOCTYPE html>
             min-height: 26px;
         }
         .pill {
-            background: var(--accent);
-            color: #03050A;
+            background: var(--core);
+            color: #050811;
             border: none;
             border-radius: 999px;
-            padding: 6px 14px;
-            font-size: 12px;
+            padding: 5px 14px;
+            font-size: 11.5px;
             font-weight: 800;
             text-decoration: none;
             cursor: pointer;
         }
 
-        /* INPUT BAR */
-        .dock {
-            background: var(--surface);
+        /* BOTTOM COMMAND CONSOLE */
+        .console {
+            background: var(--panel);
             border: 1px solid var(--border);
-            border-radius: 15px;
+            border-radius: 14px;
             padding: 7px;
             display: flex;
             gap: 7px;
             align-items: center;
         }
         .mic-btn {
-            width: 40px;
-            height: 40px;
-            border-radius: 11px;
-            background: rgba(56, 189, 248, 0.12);
-            border: 1px solid var(--accent);
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            background: rgba(245, 158, 11, 0.14);
+            border: 1px solid var(--core);
             color: #FFF;
-            font-size: 17px;
+            font-size: 16px;
             cursor: pointer;
             flex-shrink: 0;
         }
-        .dock input {
+        .console input {
             flex: 1;
-            background: #03050A;
+            background: #04060D;
             border: 1px solid var(--border);
-            border-radius: 10px;
+            border-radius: 9px;
             color: #FFF;
-            padding: 9px 10px;
-            font-size: 13.5px;
+            padding: 8px 10px;
+            font-size: 13px;
             outline: none;
         }
         .send-btn {
-            background: var(--accent);
-            color: #03050A;
+            background: var(--cyan);
+            color: #050811;
             border: none;
-            border-radius: 10px;
-            padding: 9px 13px;
+            border-radius: 9px;
+            padding: 8px 12px;
             font-size: 12px;
             font-weight: 800;
             cursor: pointer;
@@ -237,7 +293,7 @@ HTML_PAGE = """<!DOCTYPE html>
         .modal {
             position: fixed;
             inset: 0;
-            background: #03050A;
+            background: #050811;
             z-index: 50;
             display: none;
             flex-direction: column;
@@ -248,7 +304,7 @@ HTML_PAGE = """<!DOCTYPE html>
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: var(--surface);
+            background: var(--panel);
             border: 1px solid var(--border);
             padding: 10px 12px;
             border-radius: 10px;
@@ -258,69 +314,97 @@ HTML_PAGE = """<!DOCTYPE html>
     </style>
 </head>
 <body>
-    <div class="top-bar">
-        <button type="button" class="chip" onclick="toggleWake()">
-            <span class="dot"></span>
+    <div class="hud-top">
+        <button type="button" class="hud-chip" onclick="toggleWake()">
+            <span class="led"></span>
             <span id="wBtn">Voice AN</span>
         </button>
-        <div class="logo">NEO</div>
-        <button type="button" class="chip" id="mBtn" onclick="toggleMode()">Arbeit</button>
+        <div class="hud-brand">NEO</div>
+        <button type="button" class="hud-chip" id="mBtn" onclick="toggleMode()">Arbeit</button>
     </div>
 
-    <!-- 3D PARTICLE SPHERE -->
-    <div class="sphere-stage" onclick="toggleRec()">
-        <canvas id="particleCanvas" width="440" height="440"></canvas>
-        <div class="status-caption" id="stTxt">Tippen oder „Hey Neo“ sagen</div>
-        <div class="meta-line" onclick="event.stopPropagation()">
-            <span class="meta-tag" id="clock">--:--</span>
-            <span class="meta-tag" id="weather">Hamburg</span>
-            <span class="meta-tag" onclick="openList()">Codes: <span id="nCount">0</span></span>
+    <!-- NEURAL NODE MAP (APEX STYLE) -->
+    <div class="neural-stage">
+        <svg class="neural-lines" viewBox="0 0 400 295" preserveAspectRatio="none">
+            <line x1="200" y1="147" x2="55" y2="35" />
+            <line x1="200" y1="147" x2="345" y2="35" />
+            <line x1="200" y1="147" x2="42" y2="147" />
+            <line x1="200" y1="147" x2="358" y2="147" />
+            <line x1="200" y1="147" x2="55" y2="260" />
+            <line x1="200" y1="147" x2="345" y2="260" />
+        </svg>
+
+        <!-- CENTRAL CORE -->
+        <div class="core-hub" onclick="toggleRec()">
+            <div class="core-ring-outer"></div>
+            <div class="core-name">NEO</div>
+            <div class="core-state" id="coreState">ONLINE</div>
+        </div>
+
+        <!-- 6 CONNECTED NODES -->
+        <div class="node n-tl" onclick="quickCmd('Gib mir mein Morning Briefing mit allen Terminen heute und wichtigen Codes.')">
+            <span class="node-ico">☀️</span>
+            <span class="node-lbl">Morning Brief</span>
+        </div>
+
+        <div class="node n-tr" onclick="quickCmd('Ich fahre los zum nächsten Termin. Gib mir das Briefing mit Codes und starte Navigation.')">
+            <span class="node-ico">🧭</span>
+            <span class="node-lbl">Auto-Navi</span>
+        </div>
+
+        <div class="node n-ml" onclick="quickCmd('Kalkuliere 600 qm Büro, 2x pro Woche, mit WhatsApp-Angebot.')">
+            <span class="node-ico">📐</span>
+            <span class="node-lbl">Angebot</span>
+        </div>
+
+        <div class="node n-mr" onclick="document.getElementById('cam').click()">
+            <span class="node-ico">📸</span>
+            <span class="node-lbl">Kamera</span>
+        </div>
+
+        <div class="node n-bl" onclick="openList()">
+            <span class="node-ico">🔐</span>
+            <span class="node-lbl">Codes (<span id="nCount">0</span>)</span>
+        </div>
+
+        <div class="node n-br" onclick="sendTg()">
+            <span class="node-ico">✈️</span>
+            <span class="node-lbl">Telegram</span>
         </div>
     </div>
 
-    <div class="glass-card" onclick="quickCmd('Erkläre mir kurz meine nächsten Termine im Kalender.')" style="cursor:pointer;">
-        <div class="card-lbl">Nächster Termin</div>
-        <div class="card-txt" id="nextEv" style="font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Kalender wird geladen...</div>
+    <!-- NEXT SCHEDULE NODE -->
+    <div class="data-panel" onclick="quickCmd('Erkläre mir kurz meine nächsten Termine im Kalender.')" style="cursor:pointer;">
+        <div class="panel-head">
+            <span>Kalender Node</span>
+            <span id="clockMeta">--:-- • HH</span>
+        </div>
+        <div class="panel-body" id="nextEv" style="font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Synchronisiere Termine...</div>
     </div>
 
-    <div class="glass-card">
-        <div class="card-lbl">NEO Antwort</div>
-        <div class="card-txt" id="replyBox">Bereit, Margil.</div>
-    </div>
-
-    <div class="quick-grid">
-        <div class="q-tile" onclick="quickCmd('Ich fahre los zum nächsten Termin. Gib mir das Briefing mit Codes und starte Navigation.')">
-            <span class="q-ico">🧭</span>
-            <span class="q-lbl">Briefing</span>
+    <!-- LIVE AI OUTPUT -->
+    <div class="data-panel" style="flex:1; display:flex; flex-direction:column; justify-content:center;">
+        <div class="panel-head">
+            <span>NEO Output</span>
+            <span id="stTxt">Bereit, Margil</span>
         </div>
-        <div class="q-tile" onclick="quickCmd('Kalkuliere 600 qm Büro, 2x pro Woche, mit WhatsApp-Angebot.')">
-            <span class="q-ico">📐</span>
-            <span class="q-lbl">Angebot</span>
-        </div>
-        <div class="q-tile" onclick="document.getElementById('cam').click()">
-            <span class="q-ico">📸</span>
-            <span class="q-lbl">Mängel</span>
-        </div>
-        <div class="q-tile" onclick="sendTg()">
-            <span class="q-ico">✈️</span>
-            <span class="q-lbl">Telegram</span>
-        </div>
+        <div class="panel-body" id="replyBox">Tippe auf den Kern oder sage „Hey Neo“.</div>
     </div>
 
     <div class="act-bar" id="actBar"></div>
 
-    <div class="dock">
+    <div class="console">
         <button type="button" class="mic-btn" onclick="toggleRec()">🎙️</button>
-        <input type="text" id="msg" placeholder="Befehl oder Übersetzung..." onkeypress="if(event.key==='Enter')sendTxt()">
+        <input type="text" id="msg" placeholder="Befehl oder Übersetzung DE/SQ..." onkeypress="if(event.key==='Enter')sendTxt()">
         <button type="button" class="send-btn" onclick="sendTxt()">Go</button>
     </div>
 
     <input type="file" id="cam" accept="image/*" capture="environment" style="display:none" onchange="handleImg(event)">
 
     <div class="modal" id="modal">
-        <div class="top-bar" style="margin-bottom:12px;">
-            <strong style="color:var(--accent);">Objekt-Codes & Notizen</strong>
-            <button type="button" class="chip" onclick="closeList()">✕ Schließen</button>
+        <div class="hud-top" style="margin-bottom:12px;">
+            <strong style="color:var(--core);">Objekt-Codes & Notizen</strong>
+            <button type="button" class="hud-chip" onclick="closeList()">✕ Schließen</button>
         </div>
         <div id="listBody" style="flex:1; overflow-y:auto;"></div>
     </div>
@@ -328,111 +412,16 @@ HTML_PAGE = """<!DOCTYPE html>
     <audio id="player" playsinline></audio>
 
     <script>
-        // --- 3D HOLOGRAPHIC PARTICLE SPHERE ENGINE ---
-        const canvas = document.getElementById('particleCanvas');
-        const ctx = canvas.getContext('2d');
-        const NUM_DOTS = 240;
-        const dots = [];
-        for (let i = 0; i < NUM_DOTS; i++) {
-            const phi = Math.acos(-1 + (2 * i) / NUM_DOTS);
-            const theta = Math.sqrt(NUM_DOTS * Math.PI) * phi;
-            dots.push({
-                x: Math.cos(theta) * Math.sin(phi),
-                y: Math.sin(theta) * Math.sin(phi),
-                z: Math.cos(phi),
-                phase: i * 0.15
-            });
-        }
-
-        let currentModeState = 'idle';
-        let angleY = 0, angleX = 0, tick = 0;
-
-        function renderParticles() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            tick += 0.05;
-
-            let speed = 0.008;
-            let baseRadius = 138;
-            let colorRGB = '56, 189, 248'; // Cyan
-            let waveAmp = 4;
-
-            if (currentModeState === 'listening') {
-                speed = 0.016;
-                baseRadius = 148 + Math.sin(tick * 2.5) * 10;
-                colorRGB = '16, 185, 129'; // Green
-                waveAmp = 12;
-            } else if (currentModeState === 'thinking') {
-                speed = 0.032;
-                baseRadius = 132;
-                colorRGB = '245, 158, 11'; // Gold/Amber
-                waveAmp = 8;
-            } else if (currentModeState === 'speaking') {
-                speed = 0.018;
-                baseRadius = 146 + Math.sin(tick * 3.8) * 14;
-                colorRGB = '168, 85, 247'; // Purple
-                waveAmp = 18;
-            }
-
-            angleY += speed;
-            angleX += speed * 0.45;
-
-            const cosY = Math.cos(angleY), sinY = Math.sin(angleY);
-            const cosX = Math.cos(angleX), sinX = Math.sin(angleX);
-            const cx = canvas.width / 2, cy = canvas.height / 2;
-
-            // Core soft glow
-            const grad = ctx.createRadialGradient(cx, cy, 10, cx, cy, baseRadius + 30);
-            grad.addColorStop(0, `rgba(${colorRGB}, 0.22)`);
-            grad.addColorStop(1, `rgba(${colorRGB}, 0)`);
-            ctx.fillStyle = grad;
-            ctx.beginPath();
-            ctx.arc(cx, cy, baseRadius + 30, 0, Math.PI * 2);
-            ctx.fill();
-
-            const projected = [];
-            for (let i = 0; i < NUM_DOTS; i++) {
-                const d = dots[i];
-                const wave = Math.sin(tick * 2 + d.phase) * waveAmp;
-                const r = baseRadius + wave;
-
-                let x1 = d.x * r * cosY - d.z * r * sinY;
-                let z1 = d.z * r * cosY + d.x * r * sinY;
-                let y1 = d.y * r * cosX - z1 * sinX;
-                let z2 = z1 * cosX + d.y * r * sinX;
-
-                const scale = 360 / (360 + z2);
-                projected.push({
-                    x: cx + x1 * scale,
-                    y: cy + y1 * scale,
-                    z: z2,
-                    alpha: Math.max(0.18, (z2 + baseRadius) / (2 * baseRadius)),
-                    size: Math.max(1.4, 3.2 * scale)
-                });
-            }
-
-            projected.sort((a, b) => b.z - a.z);
-
-            for (let i = 0; i < projected.length; i++) {
-                const p = projected[i];
-                ctx.fillStyle = `rgba(${colorRGB}, ${p.alpha.toFixed(2)})`;
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-                ctx.fill();
-            }
-
-            requestAnimationFrame(renderParticles);
-        }
-        renderParticles();
-
-        // --- APP LOGIC ---
+        let tempStr = "HH";
         function updClock() {
-            document.getElementById('clock').innerText = new Date().toLocaleTimeString('de-DE', {hour:'2-digit', minute:'2-digit'}) + " Uhr";
+            const t = new Date().toLocaleTimeString('de-DE', {hour:'2-digit', minute:'2-digit'});
+            document.getElementById('clockMeta').innerText = t + " Uhr • " + tempStr;
         }
         updClock(); setInterval(updClock, 15000);
 
         fetch('https://api.open-meteo.com/v1/forecast?latitude=53.5511&longitude=9.9937&current_weather=true')
             .then(r => r.json()).then(d => {
-                if (d.current_weather) document.getElementById('weather').innerText = "HH " + Math.round(d.current_weather.temperature) + "°C";
+                if (d.current_weather) { tempStr = "HH " + Math.round(d.current_weather.temperature) + "°C"; updClock(); }
             }).catch(()=>{});
 
         fetch('/calendar_preview').then(r => r.json()).then(d => {
@@ -445,6 +434,7 @@ HTML_PAGE = """<!DOCTYPE html>
         let rec = null, stream = null, chunks = [], wakeRec = null;
         const player = document.getElementById('player');
         const stTxt = document.getElementById('stTxt');
+        const coreState = document.getElementById('coreState');
 
         function saveState() {
             localStorage.setItem('neo_memory', JSON.stringify(mem));
@@ -456,9 +446,11 @@ HTML_PAGE = """<!DOCTYPE html>
 
         function toggleMode() { mode = mode === 'ARBEIT' ? 'PRIVAT' : 'ARBEIT'; saveState(); }
         function setSt(s) {
-            currentModeState = s || 'idle';
             document.body.className = s || '';
-            stTxt.innerText = s === 'listening' ? 'Hört zu, Margil...' : (s === 'thinking' ? 'NEO analysiert...' : (s === 'speaking' ? 'NEO spricht...' : 'Tippen oder „Hey Neo“ sagen'));
+            if (s === 'listening') { stTxt.innerText = 'Hört zu...'; coreState.innerText = 'LISTENING'; }
+            else if (s === 'thinking') { stTxt.innerText = 'Analysiert...'; coreState.innerText = 'ACTIVE'; }
+            else if (s === 'speaking') { stTxt.innerText = 'Spricht...'; coreState.innerText = 'SPEAKING'; }
+            else { stTxt.innerText = 'Bereit, Margil'; coreState.innerText = 'ONLINE'; }
         }
 
         function stopWake() { if (wakeRec) { try { wakeRec.onend = null; wakeRec.abort(); } catch(e){} wakeRec = null; } }
@@ -617,7 +609,7 @@ def parse_upcoming_events():
 
 SYSTEM_PROMPT = """Du bist NEO, der schnelle KI-Assistent von Margil (Kundenbetreuer Gebäudereinigung Hamburg).
 Modus: {mode} | Zeit: {local_time}. Antworte kurz, höflich, ohne Markdown/Sternchen.
-- Auto-Briefing ("Ich fahre los"): Nächster Termin + Codes aus Notizen + Google Maps URL in `action_url` (`action_label`: "Navigation starten").
+- Morning Brief / Auto-Briefing: Nächste Termine + Codes aus Notizen + Google Maps URL in `action_url` (`action_label`: "Navigation starten").
 - Dolmetscher DE <-> SQ: Bei Übersetzung ins Albanische `voice_lang`: "sq" und Übersetzung in `copy_text`, sonst "de".
 - Kalkulator: Büro ~220 m²/Std, 31,50 €/Std netto (4,33 Wochen/Monat). Fertiges Angebot in `copy_text` + WhatsApp Intent (`intent://send?text=URL_ENCODED#Intent;scheme=whatsapp;package=com.whatsapp.w4b;end`, `action_label`: "WhatsApp öffnen").
 - Gespräch Ende ("Danke", "Stopp"): `end_conversation`: true.
@@ -657,8 +649,8 @@ def manifest():
         "short_name": "NEO",
         "start_url": "/",
         "display": "standalone",
-        "background_color": "#03050A",
-        "theme_color": "#03050A",
+        "background_color": "#050811",
+        "theme_color": "#050811",
         "icons": [{"src": "/icon.svg", "sizes": "any", "type": "image/svg+xml"}]
     })
 
@@ -736,4 +728,3 @@ def chat():
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
-  
