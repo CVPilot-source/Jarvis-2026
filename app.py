@@ -4,6 +4,7 @@ import time
 import json
 import base64
 import asyncio
+import threading
 import urllib.request
 from datetime import datetime, timedelta
 from flask import Flask, request, jsonify, render_template_string, Response, send_file
@@ -13,6 +14,16 @@ import edge_tts
 
 app = Flask(__name__)
 ICAL_CACHE = {"ts": 0, "events": []}
+
+# PROACTIVE ENGINE STATE (ULTRA-LIGHTWEIGHT)
+PROACTIVE_STATE = {
+    "chat_id": os.environ.get("TELEGRAM_CHAT_ID", "").strip(),
+    "last_update_id": 0,
+    "notified_events": set(),
+    "morning_brief_date": "",
+    "pending_action": None,
+    "voice_alerts": []  # Queue für automatische Sprachansagen im Browser
+}
 
 ICON_SVG = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <rect width="512" height="512" rx="115" fill="#030712"/>
@@ -28,7 +39,7 @@ HTML_PAGE = """<!DOCTYPE html>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#030712">
     <link rel="manifest" href="/manifest.json">
-    <title>NEO // COMMAND OS</title>
+    <title>NEO // AUTONOMOUS OS</title>
     <style>
         :root {
             --gold: #F59E0B;
@@ -63,7 +74,6 @@ HTML_PAGE = """<!DOCTYPE html>
             z-index: 1; pointer-events: none;
         }
 
-        /* TOP LEFT HUD */
         .hud-tl {
             position: fixed; top: 18px; left: 22px; z-index: 10;
             display: flex; flex-direction: column; gap: 6px;
@@ -81,9 +91,8 @@ HTML_PAGE = """<!DOCTYPE html>
         }
         .hud-btn:hover { border-color: var(--gold); color: var(--gold); }
 
-        /* TOP RIGHT STREAM PANEL */
         .hud-tr {
-            position: fixed; top: 18px; right: 22px; width: 360px; max-width: 44vw;
+            position: fixed; top: 18px; right: 22px; width: 370px; max-width: 44vw;
             background: var(--panel); border: 1px solid var(--border); border-top: 2px solid var(--gold);
             border-radius: 12px; padding: 12px 15px; z-index: 10;
             box-shadow: 0 10px 30px rgba(0,0,0,0.65);
@@ -94,10 +103,9 @@ HTML_PAGE = """<!DOCTYPE html>
         }
         .tr-body {
             font-size: 13.5px; line-height: 1.45; color: #F1F5F9;
-            max-height: 140px; overflow-y: auto; user-select: text;
+            max-height: 145px; overflow-y: auto; user-select: text;
         }
 
-        /* CENTER CORE */
         .core-trigger {
             position: fixed; top: 46%; left: 50%; transform: translate(-50%, -50%);
             width: 160px; height: 160px; border-radius: 50%; z-index: 8;
@@ -113,7 +121,6 @@ HTML_PAGE = """<!DOCTYPE html>
             color: var(--gold); margin-top: 4px;
         }
 
-        /* NODES */
         .node-item {
             position: fixed; transform: translate(-50%, -50%); z-index: 7;
             display: flex; align-items: center; gap: 9px;
@@ -134,7 +141,6 @@ HTML_PAGE = """<!DOCTYPE html>
         .node-item.active-node .node-dot { background: var(--gold); box-shadow: 0 0 10px var(--gold); }
         .node-title { font-size: 12.5px; font-weight: 700; color: #F8FAFC; }
 
-        /* POPUP WINDOW */
         .holo-modal {
             position: fixed; top: 46%; left: 50%; transform: translate(-50%, -50%);
             width: 480px; max-width: 92vw; background: rgba(7, 13, 27, 0.97);
@@ -155,7 +161,6 @@ HTML_PAGE = """<!DOCTYPE html>
             border-left: 3px solid var(--gold); border-radius: 7px; margin-bottom: 7px;
         }
 
-        /* BOTTOM CONSOLE */
         .bottom-dock {
             position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%);
             width: 600px; max-width: 94vw; z-index: 12;
@@ -199,10 +204,11 @@ HTML_PAGE = """<!DOCTYPE html>
 
     <!-- TOP LEFT -->
     <div class="hud-tl">
-        <div class="sys-title">NEO <span style="font-size:11px; color:var(--gold); letter-spacing:2px;">ALWAYS-ON VOICE OS</span></div>
-        <div class="sys-sub" id="sysMeta">HAMBURG • SYNCHRONISIERT</div>
+        <div class="sys-title">NEO <span style="font-size:11px; color:var(--gold); letter-spacing:2px;">AUTONOMOUS GUARDIAN</span></div>
+        <div class="sys-sub" id="sysMeta">HAMBURG • 24/7 AKTIV</div>
         <div class="hud-controls">
-            <button type="button" class="hud-btn" id="wBtn" onclick="toggleWake()" style="border-color:#10B981; color:#10B981;">● HEY NEO: IMMER AKTIV</button>
+            <button type="button" class="hud-btn" id="wBtn" onclick="toggleWake()" style="border-color:#10B981; color:#10B981;">● HEY NEO: AKTIV</button>
+            <button type="button" class="hud-btn" style="border-color:var(--cyan); color:var(--cyan);">● AUTO-MONITOR: AN</button>
             <button type="button" class="hud-btn" id="mBtn" onclick="toggleMode()">MODUS: ARBEIT</button>
             <button type="button" class="hud-btn" onclick="openHolo('calendar')">KALENDER</button>
             <button type="button" class="hud-btn" onclick="openHolo('codes')">CODES (<span id="nCount">0</span>)</button>
@@ -212,16 +218,16 @@ HTML_PAGE = """<!DOCTYPE html>
     <!-- TOP RIGHT OUTPUT -->
     <div class="hud-tr">
         <div class="tr-head">
-            <span>LIVE VOICE STREAM</span>
-            <span id="streamStatus">WARTE AUF "HEY NEO"</span>
+            <span>PROACTIVE VOICE & TELEGRAM</span>
+            <span id="streamStatus">ÜBERWACHT TERMINE</span>
         </div>
-        <div class="tr-body" id="replyBox">Sage einfach „Hey Neo“ (z.B. „Hey Neo, gib mir mein Morning Brief“). Ich höre dauerhaft zu!</div>
+        <div class="tr-body" id="replyBox">NEO überwacht deinen Kalender und Telegram im Hintergrund. Bei wichtigen Ereignissen melde ich mich von selbst!</div>
     </div>
 
     <!-- CENTER REACTOR -->
     <div class="core-trigger" onclick="manualListenTrigger()">
         <div class="core-label">NEO</div>
-        <div class="core-sub" id="coreState">SAY "HEY NEO"</div>
+        <div class="core-sub" id="coreState">AUTONOMOUS</div>
     </div>
 
     <!-- NODES -->
@@ -241,7 +247,7 @@ HTML_PAGE = """<!DOCTYPE html>
         <div class="act-strip" id="actBar"></div>
         <div class="cmd-bar">
             <button type="button" class="mic-round" onclick="manualListenTrigger()">🎙️</button>
-            <input type="text" id="msg" placeholder="Oder hier schreiben & Enter drücken..." onkeydown="if(event.key==='Enter')sendTxt()">
+            <input type="text" id="msg" placeholder="Befehl oder Autorisierung anfordern..." onkeydown="if(event.key==='Enter')sendTxt()">
             <button type="button" class="exec-btn" onclick="sendTxt()">SENDEN</button>
         </div>
     </div>
@@ -252,7 +258,6 @@ HTML_PAGE = """<!DOCTYPE html>
     <script>
         const isMobile = /Android|iPhone|iPad/i.test(navigator.userAgent);
 
-        // Kurzer Bestätigungston wenn "Hey Neo" erkannt wird
         function beep(f1, f2) {
             try {
                 const ac = new (window.AudioContext || window.webkitAudioContext)();
@@ -260,10 +265,10 @@ HTML_PAGE = """<!DOCTYPE html>
                 const g = ac.createGain();
                 osc.connect(g); g.connect(ac.destination);
                 osc.frequency.setValueAtTime(f1, ac.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(f2, ac.currentTime + 0.11);
-                g.gain.setValueAtTime(0.12, ac.currentTime);
-                g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.13);
-                osc.start(); osc.stop(ac.currentTime + 0.14);
+                osc.frequency.exponentialRampToValueAtTime(f2, ac.currentTime + 0.12);
+                g.gain.setValueAtTime(0.14, ac.currentTime);
+                g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.14);
+                osc.start(); osc.stop(ac.currentTime + 0.15);
             } catch(e){}
         }
 
@@ -276,7 +281,7 @@ HTML_PAGE = """<!DOCTYPE html>
             { id: 'offer',    label: '📐 Angebot Rechner', rx: 0.77, ry: 0.25, action: () => openHolo('calc') },
             { id: 'camera',   label: '📸 Mängel-Foto',     rx: 0.84, ry: 0.45, action: () => document.getElementById('cam').click() },
             { id: 'trans',    label: '🌐 Dolmetscher DE/SQ',rx: 0.78, ry: 0.65, action: () => { const i = document.getElementById('msg'); i.focus(); i.value = 'Übersetze ins Albanische: '; } },
-            { id: 'telegram', label: '✈️ Telegram Alert',  rx: 0.66, ry: 0.77, action: () => sendTg() }
+            { id: 'telegram', label: '✈️ Autorisierung',   rx: 0.66, ry: 0.77, action: () => sendTg() }
         ];
 
         const nodesLayer = document.getElementById('nodesLayer');
@@ -423,7 +428,7 @@ HTML_PAGE = """<!DOCTYPE html>
                             <option value="3x pro Woche">3x pro Woche</option>
                             <option value="5x pro Woche">5x pro Woche</option>
                         </select>
-                        <button type="button" class="gold-pill" onclick="const q=document.getElementById('cQm').value||600;const f=document.getElementById('cFreq').value;closeHolo();quickCmd('Kalkuliere ein Reinigungsangebot für '+q+' Quadratmeter Büro, '+f+', und erstelle den Angebotstext.');">JETZT BERECHNEN</button>
+                        <button type="button" class="gold-pill" onclick="const q=document.getElementById('cQm').value||600;const f=document.getElementById('cFreq').value;closeHolo();quickCmd('Kalkuliere ein Reinigungsangebot für '+q+' Quadratmeter Büro, '+f+', und sende mir das Angebot zur Autorisierung auf Telegram.');">BERECHNEN & AUTORISIEREN</button>
                     </div>`;
             }
         }
@@ -437,20 +442,20 @@ HTML_PAGE = """<!DOCTYPE html>
             if (s === 'listening') { cSt.innerText = 'ICH HÖRE ZU...'; sSt.innerText = 'SPRICH JETZT'; }
             else if (s === 'thinking') { cSt.innerText = 'DENKT NACH...'; sSt.innerText = 'ANALYSE...'; }
             else if (s === 'speaking') { cSt.innerText = 'NEO SPRICHT'; sSt.innerText = 'AUDIO AKTIV'; }
-            else { cSt.innerText = activeSession ? 'SPRICH WEITER...' : 'SAY "HEY NEO"'; sSt.innerText = activeSession ? 'DIALOG AKTIV' : 'LAUSCHT ("HEY NEO")'; }
+            else { cSt.innerText = activeSession ? 'SPRICH WEITER...' : 'AUTONOMOUS'; sSt.innerText = activeSession ? 'DIALOG AKTIV' : 'ÜBERWACHT TERMINE'; }
         }
 
-        // --- 4. 100% HANDS-FREE CONTINUOUS SPEECH ENGINE (KEIN KLICKEN NÖTIG!) ---
-        let wakeOn = true;          // Immer aktiv!
-        let activeSession = false;  // Wenn true, nimmt NEO jeden Satz direkt an (ohne "Hey Neo")
-        let isBusy = false;         // True während NEO denkt oder spricht
+        // --- 4. HANDS-FREE VOICE + PROACTIVE HEARTBEAT ---
+        let wakeOn = true;
+        let activeSession = false;
+        let isBusy = false;
         let srInstance = null;
 
         function toggleWake() {
             wakeOn = !wakeOn;
             const b = document.getElementById('wBtn');
             if (wakeOn) {
-                b.innerText = '● HEY NEO: IMMER AKTIV';
+                b.innerText = '● HEY NEO: AKTIV';
                 b.style.borderColor = '#10B981';
                 b.style.color = '#10B981';
                 startAlwaysListening();
@@ -465,10 +470,7 @@ HTML_PAGE = """<!DOCTYPE html>
         }
 
         function manualListenTrigger() {
-            if (isBusy) {
-                player.pause();
-                isBusy = false;
-            }
+            if (isBusy) { player.pause(); isBusy = false; }
             activeSession = true;
             beep(520, 920);
             setSt('listening');
@@ -479,10 +481,7 @@ HTML_PAGE = """<!DOCTYPE html>
         function startAlwaysListening() {
             if (!wakeOn || isBusy) return;
             const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if (!SR) {
-                document.getElementById('replyBox').innerText = "Bitte Google Chrome oder Edge für Hands-Free 'Hey Neo' nutzen.";
-                return;
-            }
+            if (!SR) return;
             if (srInstance) {
                 try { srInstance.onend = null; srInstance.abort(); } catch(e){}
                 srInstance = null;
@@ -499,7 +498,6 @@ HTML_PAGE = """<!DOCTYPE html>
                     const raw = event.results[i][0].transcript.trim();
                     const low = raw.toLowerCase();
 
-                    // Live-Vorschau während Margil spricht
                     if (!event.results[i].isFinal) {
                         if (activeSession || low.includes('neo') || low.includes('nio')) {
                             setSt('listening');
@@ -508,20 +506,17 @@ HTML_PAGE = """<!DOCTYPE html>
                         continue;
                     }
 
-                    // Finaler Satz erkannt!
                     const wakeMatch = low.match(/\b(hey neo|hey nio|hallo neo|ok neo|neo)\b/);
                     if (wakeMatch) {
                         const idx = low.indexOf(wakeMatch[0]) + wakeMatch[0].length;
                         const commandAfterWake = raw.slice(idx).replace(/^[,.\s]+/, '').trim();
 
                         if (commandAfterWake.length > 2) {
-                            // Margil hat direkt gesagt: "Hey Neo, wie ist das Wetter?"
                             activeSession = true;
                             beep(640, 880);
                             processVoiceText(commandAfterWake);
                             return;
                         } else {
-                            // Margil hat nur "Hey Neo" gesagt -> Dialog-Modus öffnen!
                             activeSession = true;
                             beep(520, 960);
                             setSt('listening');
@@ -529,7 +524,6 @@ HTML_PAGE = """<!DOCTYPE html>
                             return;
                         }
                     } else if (activeSession && raw.length > 1) {
-                        // Im aktiven Gespräch braucht Margil NICHT nochmal "Hey Neo" zu sagen
                         beep(640, 880);
                         processVoiceText(raw);
                         return;
@@ -539,16 +533,11 @@ HTML_PAGE = """<!DOCTYPE html>
 
             srInstance.onend = () => {
                 srInstance = null;
-                if (wakeOn && !isBusy) {
-                    setTimeout(() => startAlwaysListening(), 250);
-                }
+                if (wakeOn && !isBusy) setTimeout(() => startAlwaysListening(), 250);
             };
-
             srInstance.onerror = () => {
                 srInstance = null;
-                if (wakeOn && !isBusy) {
-                    setTimeout(() => startAlwaysListening(), 600);
-                }
+                if (wakeOn && !isBusy) setTimeout(() => startAlwaysListening(), 600);
             };
 
             try { srInstance.start(); } catch(e) { srInstance = null; }
@@ -561,38 +550,72 @@ HTML_PAGE = """<!DOCTYPE html>
             sendNeo({ message: spokenText });
         }
 
-        player.onplay = () => {
-            isBusy = true;
-            setSt('speaking');
-        };
+        // --- PROACTIVE HEARTBEAT: PRÜFT ALLE 12 SEKUNDEN AUF PROAKTIVE MELDUNGEN ODER TELEGRAM-ENTSCHEIDUNGEN ---
+        async function checkProactiveAlerts() {
+            if (isBusy) return;
+            try {
+                const res = await fetch('/proactive_poll');
+                const data = await res.json();
+                if (data.alert && data.alert.text) {
+                    isBusy = true;
+                    if (srInstance) { try { srInstance.onend = null; srInstance.abort(); } catch(e){} srInstance = null; }
+                    beep(740, 1080);
+                    document.getElementById('replyBox').innerText = "🔔 " + data.alert.text;
 
+                    if (data.alert.action_url) {
+                        document.getElementById('actBar').innerHTML = '';
+                        const a = document.createElement('a');
+                        a.href = data.alert.action_url;
+                        a.target = '_blank';
+                        a.className = 'gold-pill';
+                        a.innerText = data.alert.action_label || 'Jetzt öffnen';
+                        document.getElementById('actBar').appendChild(a);
+                    }
+
+                    if (data.alert.audio) {
+                        player.src = "data:audio/mp3;base64," + data.alert.audio;
+                        player.play().catch(() => {
+                            isBusy = false; setSt(null);
+                            if (wakeOn) startAlwaysListening();
+                        });
+                    } else {
+                        isBusy = false;
+                        if (wakeOn) startAlwaysListening();
+                    }
+                }
+            } catch (e) {}
+        }
+        setInterval(checkProactiveAlerts, 12000);
+
+        player.onplay = () => { isBusy = true; setSt('speaking'); };
         player.onended = () => {
             isBusy = false;
             setSt(activeSession ? 'listening' : null);
             if (wakeOn) setTimeout(() => startAlwaysListening(), 250);
         };
-
         player.onerror = () => {
-            isBusy = false;
-            setSt(null);
+            isBusy = false; setSt(null);
             if (wakeOn) setTimeout(() => startAlwaysListening(), 350);
         };
 
         async function sendTg() {
             document.getElementById('replyBox').innerText = "Sende Autorisierungsanfrage an Telegram...";
             try {
-                const r = await fetch('/telegram_notify', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({text:"📞 NEO Autorisierung angefordert!"}) });
+                const r = await fetch('/telegram_notify', {
+                    method:'POST',
+                    headers:{'Content-Type':'application/json'},
+                    body: JSON.stringify({text:"🔔 NEO Wichtige Anfrage:\nMargil, bitte autorisiere den nächsten Schritt (Briefing & Route für das nächste Objekt freigeben)."})
+                });
                 const d = await r.json();
-                document.getElementById('replyBox').innerText = d.ok ? "✅ Telegram-Benachrichtigung erfolgreich gesendet!" : ("⚠️ " + (d.error || "Telegram Fehler"));
+                document.getElementById('replyBox').innerText = d.ok ? "✅ Autorisierungs-Anfrage an dein Telegram gesendet! Klicke dort auf 'Autorisieren'." : ("⚠️ " + (d.error || "Telegram Fehler"));
             } catch(e) { document.getElementById('replyBox').innerText = "Verbindungsfehler zu Telegram."; }
         }
 
         function handleImg(ev) {
             const f = ev.target.files[0]; if (!f) return;
-            isBusy = true;
-            setSt('thinking');
+            isBusy = true; setSt('thinking');
             const r = new FileReader();
-            r.onload = e => sendNeo({ image: e.target.result.split(',')[1], message: "Erstelle einen professionellen Objekt-Mängelbericht." });
+            r.onload = e => sendNeo({ image: e.target.result.split(',')[1], message: "Erstelle einen professionellen Objekt-Mängelbericht und frage nach meiner Autorisierung für den Versand." });
             r.readAsDataURL(f);
         }
 
@@ -601,9 +624,7 @@ HTML_PAGE = """<!DOCTYPE html>
             const inp = document.getElementById('msg');
             if (!inp.value.trim()) return;
             const v = inp.value.trim(); inp.value = '';
-            isBusy = true;
-            setSt('thinking');
-            sendNeo({ message: v });
+            isBusy = true; setSt('thinking'); sendNeo({ message: v });
         }
 
         async function sendNeo(payload) {
@@ -657,7 +678,6 @@ HTML_PAGE = """<!DOCTYPE html>
             }
         }
 
-        // Startet sofort beim Laden der Seite das permanente Lauschen auf "Hey Neo"!
         window.addEventListener('load', () => {
             startAlwaysListening();
         });
@@ -688,6 +708,7 @@ def parse_upcoming_events():
                     dt += timedelta(hours=1)
                 if dt >= now:
                     out.append((dt, {
+                        "dt_iso": dt.isoformat(),
                         "time": dt.strftime("%d.%m. %H:%M") if "T" in clean else dt.strftime("%d.%m."),
                         "title": tm.group(1).strip().replace("\\n", " ").replace("\\,", ","),
                         "loc": lm.group(1).strip().replace("\\n", " ") if lm else ""
@@ -699,14 +720,15 @@ def parse_upcoming_events():
     except Exception:
         return ICAL_CACHE["events"]
 
-SYSTEM_PROMPT = """Du bist NEO, der hochintelligente KI-Assistent von Margil (Kundenbetreuer Gebäudereinigung Hamburg).
+SYSTEM_PROMPT = """Du bist NEO, der proaktive, autonome KI-Assistent von Margil (Kundenbetreuer Gebäudereinigung Hamburg).
 Modus: {mode} | Zeit: {local_time}. Antworte souverän, ruhig, kurz und ohne Markdown/Sternchen.
+- WICHTIG (AUTORISIERUNG): Wenn es um ein Angebot, einen Mängelbericht, eine wichtige Kunden-Nachricht oder eine ausdrückliche Bitte um Autorisierung geht, fülle `telegram_auth_request` mit einer klaren Zusammenfassung für Telegram aus, damit Margil auf seinem Handy auf 'Autorisieren' klicken kann!
 - Morning Brief / Auto-Briefing: Nächste Termine + Codes aus Notizen + Google Maps URL in `action_url` (`action_label`: "Navigation starten").
 - Dolmetscher DE <-> SQ: Bei Übersetzung ins Albanische `voice_lang`: "sq" und Übersetzung in `copy_text`, sonst "de".
 - Kalkulator: Büro ~220 m²/Std, 31,50 €/Std netto (4,33 Wochen/Monat). Fertiges Angebot in `copy_text` + WhatsApp URL (`https://wa.me/?text=URL_ENCODED`, `action_label`: "WhatsApp öffnen").
 - Gespräch Ende ("Danke", "Stopp", "Pause"): `end_conversation`: true.
 Antworte NUR als JSON:
-{{"reply":"","voice_lang":"de","copy_text":"","new_memory":"","action_url":"","action_label":"","end_conversation":false}}"""
+{{"reply":"","voice_lang":"de","copy_text":"","telegram_auth_request":"","new_memory":"","action_url":"","action_label":"","end_conversation":false}}"""
 
 async def make_voice(text, lang="de"):
     clean = text.replace("*", "").replace("#", "").strip()
@@ -727,9 +749,143 @@ def generate_with_fallback(client, parts, config):
             continue
     raise last_err
 
+def tg_call(method, payload=None):
+    token = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
+    if not token:
+        return None
+    url = f"https://api.telegram.org/bot{token}/{method}"
+    try:
+        if payload:
+            req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"), headers={"Content-Type": "application/json"})
+        else:
+            req = urllib.request.Request(url)
+        with urllib.request.urlopen(req, timeout=8) as r:
+            return json.loads(r.read().decode("utf-8"))
+    except Exception:
+        return None
+
+def send_tg_authorization(text, action_meta=None):
+    cid = PROACTIVE_STATE.get("chat_id") or os.environ.get("TELEGRAM_CHAT_ID", "").strip()
+    if not cid:
+        u = tg_call("getUpdates")
+        if u and u.get("result"):
+            for item in reversed(u["result"]):
+                if "message" in item:
+                    cid = str(item["message"]["chat"]["id"])
+                    PROACTIVE_STATE["chat_id"] = cid
+                    break
+    if not cid:
+        return False
+
+    if action_meta:
+        PROACTIVE_STATE["pending_action"] = action_meta
+
+    res = tg_call("sendMessage", {
+        "chat_id": cid,
+        "text": text,
+        "reply_markup": {
+            "inline_keyboard": [[
+                {"text": "✅ Autorisieren", "callback_data": "auth_approve"},
+                {"text": "❌ Ablehnen", "callback_data": "auth_reject"}
+            ]]
+        }
+    })
+    return bool(res and res.get("ok"))
+
+def queue_voice_alert(text, action_url="", action_label=""):
+    try:
+        audio_b64 = asyncio.run(make_voice(text, "de"))
+    except Exception:
+        audio_b64 = ""
+    PROACTIVE_STATE["voice_alerts"].append({
+        "text": text,
+        "audio": audio_b64,
+        "action_url": action_url,
+        "action_label": action_label
+    })
+
+def autonomous_guardian_loop():
+    """Überwacht im Hintergrund alle 15 Sekunden Kalender & Telegram-Entscheidungen (ohne Server-Last)."""
+    while True:
+        time.sleep(15)
+        try:
+            # 1. Telegram Rückmeldungen (Klick auf 'Autorisieren' / 'Ablehnen' oder Textnachricht) prüfen
+            updates = tg_call("getUpdates", {"offset": PROACTIVE_STATE["last_update_id"] + 1, "timeout": 2})
+            if updates and updates.get("ok"):
+                for upd in updates.get("result", []):
+                    PROACTIVE_STATE["last_update_id"] = upd["update_id"]
+
+                    if "callback_query" in upd:
+                        cb = upd["callback_query"]
+                        cid = str(cb["message"]["chat"]["id"])
+                        PROACTIVE_STATE["chat_id"] = cid
+                        data_cb = cb.get("data", "")
+                        tg_call("answerCallbackQuery", {"callback_query_id": cb["id"]})
+
+                        pending = PROACTIVE_STATE.get("pending_action") or {}
+                        if data_cb == "auth_approve":
+                            tg_call("sendMessage", {"chat_id": cid, "text": "✅ Autorisierung bestätigt, Margil! NEO führt die Aktion jetzt aus."})
+                            spoken = pending.get("approve_speech", "Margil, deine Autorisierung über Telegram ist eingegangen. Ich habe die Aktion freigegeben.")
+                            queue_voice_alert(spoken, pending.get("action_url", ""), pending.get("action_label", "Jetzt öffnen"))
+                            PROACTIVE_STATE["pending_action"] = None
+                        elif data_cb == "auth_reject":
+                            tg_call("sendMessage", {"chat_id": cid, "text": "❌ Vorgang abgelehnt und gestoppt."})
+                            queue_voice_alert("Margil, du hast den Vorgang über Telegram abgelehnt. Ich habe alles gestoppt.")
+                            PROACTIVE_STATE["pending_action"] = None
+
+                    elif "message" in upd:
+                        msg = upd["message"]
+                        cid = str(msg["chat"]["id"])
+                        PROACTIVE_STATE["chat_id"] = cid
+                        txt = msg.get("text", "").strip()
+                        if txt.lower() in ["/start", "hallo", "hi"]:
+                            tg_call("sendMessage", {
+                                "chat_id": cid,
+                                "text": f"🤖 NEO Autonomous Guardian ist aktiv, Margil!\nIch informiere dich hier automatisch über Termine und wichtige Freigaben.\n(Chat-ID: {cid})"
+                            })
+                        elif txt:
+                            tg_call("sendMessage", {"chat_id": cid, "text": f"📩 Befehl empfangen: „{txt}“ – wird an dein NEO Cockpit übertragen."})
+                            queue_voice_alert(f"Margil, neue Nachricht über Telegram erhalten: {txt}")
+
+            # 2. Kalender automatisch auf bevorstehende Termine (in den nächsten 35 Min.) prüfen
+            events = parse_upcoming_events()
+            now_dt = datetime.now()
+            for ev in events:
+                dt_iso = ev.get("dt_iso", "")
+                if not dt_iso or dt_iso in PROACTIVE_STATE["notified_events"]:
+                    continue
+                ev_dt = datetime.fromisoformat(dt_iso)
+                diff_min = (ev_dt - now_dt).total_seconds() / 60.0
+
+                if 0 < diff_min <= 35:
+                    PROACTIVE_STATE["notified_events"].add(dt_iso)
+                    loc = ev.get("loc", "")
+                    maps_url = f"https://www.google.com/maps/dir/?api=1&destination={urllib.parse.quote(loc)}&travelmode=driving" if loc else ""
+                    speech_alert = f"Entschuldige die Unterbrechung, Margil. In {int(diff_min)} Minuten steht dein Termin {ev['title']} an. Ich habe dir die Anfrage zur Routen-Autorisierung auf Telegram geschickt."
+                    queue_voice_alert(speech_alert, maps_url, "Navigation starten")
+                    send_tg_authorization(
+                        f"🔔 NEO PROAKTIVER TERMIN-ALARM:\n\n📅 {ev['time']} – {ev['title']}\n📍 Ort: {loc or 'Nicht angegeben'}\n\nSoll ich das Auto-Briefing und die Google Maps Route im Cockpit freigeben?",
+                        action_meta={
+                            "approve_speech": f"Autorisierung erhalten, Margil. Die Route für {ev['title']} ist jetzt auf deinem Bildschirm bereit.",
+                            "action_url": maps_url,
+                            "action_label": "Navigation starten"
+                        }
+                    )
+        except Exception:
+            pass
+
+threading.Thread(target=autonomous_guardian_loop, daemon=True).start()
+
 @app.route("/")
 def home():
     return render_template_string(HTML_PAGE)
+
+@app.route("/proactive_poll")
+def proactive_poll():
+    if PROACTIVE_STATE["voice_alerts"]:
+        alert = PROACTIVE_STATE["voice_alerts"].pop(0)
+        return jsonify({"alert": alert})
+    return jsonify({"alert": None})
 
 @app.route("/avatar")
 def avatar():
@@ -761,26 +917,17 @@ def icon():
 
 @app.route("/telegram_notify", methods=["POST"])
 def tg_notify():
-    token = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
-    chat_id = os.environ.get("TELEGRAM_CHAT_ID", "").strip()
-    if not token:
-        return jsonify({"ok": False, "error": "TELEGRAM_BOT_TOKEN fehlt in Render"})
-    if not chat_id:
-        try:
-            u = json.loads(urllib.request.urlopen(f"https://api.telegram.org/bot{token}/getUpdates", timeout=5).read().decode())
-            if u.get("result"):
-                chat_id = str(u["result"][-1]["message"]["chat"]["id"])
-        except Exception:
-            pass
-    if not chat_id:
-        return jsonify({"ok": False, "error": "Bitte sende zuerst 'Hallo' an deinen Bot in Telegram"})
-    payload = json.dumps({
-        "chat_id": chat_id,
-        "text": (request.json or {}).get("text", "🔔 NEO Autorisierung"),
-        "reply_markup": {"inline_keyboard": [[{"text": "✅ Autorisieren", "callback_data": "ok"}, {"text": "❌ Ablehnen", "callback_data": "no"}]]}
-    }).encode("utf-8")
-    req = urllib.request.Request(f"https://api.telegram.org/bot{token}/sendMessage", data=payload, headers={"Content-Type": "application/json"})
-    urllib.request.urlopen(req, timeout=5)
+    text = (request.json or {}).get("text", "🔔 NEO Autorisierung angefordert")
+    ok = send_tg_authorization(
+        text,
+        action_meta={
+            "approve_speech": "Vielen Dank, Margil. Du hast die Anfrage soeben über Telegram autorisiert. Ich führe den nächsten Schritt aus.",
+            "action_url": "",
+            "action_label": ""
+        }
+    )
+    if not ok:
+        return jsonify({"ok": False, "error": "Bitte sende einmal 'Hallo' an deinen Bot in Telegram!"})
     return jsonify({"ok": True})
 
 @app.route("/chat", methods=["POST"])
@@ -812,6 +959,18 @@ def chat():
         m = re.search(r'\{.*\}', resp.text.strip(), re.DOTALL)
         res = json.loads(m.group(0)) if m else {"reply": resp.text.strip()}
         reply = res.get("reply", "Zu Befehl, Margil.")
+
+        # Wenn Gemini erkennt, dass eine Autorisierung nötig ist, sofort an Telegram senden!
+        if res.get("telegram_auth_request"):
+            send_tg_authorization(
+                f"🔔 NEO AUTORISIERUNG ERFORDERLICH:\n\n{res['telegram_auth_request']}",
+                action_meta={
+                    "approve_speech": "Margil, deine Freigabe über Telegram wurde bestätigt. Der Vorgang ist jetzt aktiv.",
+                    "action_url": res.get("action_url", ""),
+                    "action_label": res.get("action_label", "Öffnen")
+                }
+            )
+
         audio = asyncio.run(make_voice(reply, res.get("voice_lang", "de")))
         return jsonify({
             "reply": reply,
