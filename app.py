@@ -34,13 +34,13 @@ HTML_PAGE = """<!DOCTYPE html>
 
         :root {
             --bg-deep: #030508;
-            --hud-panel: rgba(4, 12, 24, 0.88);
+            --hud-panel: rgba(4, 14, 28, 0.9);
             --neon-cyan: #00f3ff;
             --neon-purple: #b000ff;
             --neon-orange: #ff9900;
             --text-main: #e0fbfc;
-            --text-dim: #64748b;
-            --border-glow: rgba(0, 243, 255, 0.4);
+            --text-dim: #7986ab;
+            --border-glow: rgba(0, 243, 255, 0.45);
         }
 
         * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
@@ -51,10 +51,10 @@ HTML_PAGE = """<!DOCTYPE html>
             color: var(--text-main);
             font-family: 'Courier New', Courier, monospace;
             background-image: 
-                radial-gradient(circle at 50% 50%, rgba(0, 243, 255, 0.08) 0%, transparent 85%),
-                linear-gradient(rgba(0,243,255,0.02) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0,243,255,0.02) 1px, transparent 1px);
-            background-size: 100% 100%, 25px 25px, 25px 25px;
+                radial-gradient(circle at 50% 50%, rgba(0, 243, 255, 0.08) 0%, transparent 90%),
+                linear-gradient(rgba(0,243,255,0.025) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,243,255,0.025) 1px, transparent 1px);
+            background-size: 100% 100%, 30px 30px, 30px 30px;
         }
 
         .desktop-view { display: none; width: 100vw; height: 100vh; }
@@ -116,7 +116,7 @@ HTML_PAGE = """<!DOCTYPE html>
             margin-top: 8px; cursor: pointer; text-align: center; text-decoration: none; font-size: 11px;
         }
 
-        /* ================= DESKTOP VIEW (HOLOGRAPHIC SCI-FI HUD COMMAND CENTER) ================= */
+        /* ================= DESKTOP VIEW (ADVANCED SCI-FI HUD) ================= */
         .hud-header {
             display: flex; justify-content: space-between; align-items: center;
             background: var(--hud-panel); border: 1px solid var(--border-glow);
@@ -133,49 +133,65 @@ HTML_PAGE = """<!DOCTYPE html>
 
         .hud-main-grid {
             display: grid;
-            grid-template-columns: 340px 1fr 340px;
+            grid-template-columns: 320px 1fr 320px;
             gap: 15px; flex: 1; margin: 12px 0; align-items: stretch;
         }
 
         .hud-box {
             background: var(--hud-panel); border: 1px solid var(--border-glow);
-            border-radius: 8px; padding: 18px; backdrop-filter: blur(15px);
+            border-radius: 8px; padding: 15px; backdrop-filter: blur(15px);
             box-shadow: inset 0 0 20px rgba(0, 243, 255, 0.05), 0 0 25px rgba(0, 243, 255, 0.08);
-            display: flex; flex-direction: column; gap: 12px; position: relative;
+            display: flex; flex-direction: column; gap: 10px; position: relative;
         }
         .hud-box h3 {
-            font-size: 11px; color: var(--neon-orange); margin: 0 0 5px 0;
-            letter-spacing: 2px; border-bottom: 1px dashed rgba(255,153,0,0.4); padding-bottom: 6px;
+            font-size: 11px; color: var(--neon-orange); margin: 0 0 4px 0;
+            letter-spacing: 2px; border-bottom: 1px dashed rgba(255,153,0,0.4); padding-bottom: 4px;
             text-transform: uppercase;
         }
 
-        /* Desktop Central Hologram Constellation */
+        /* Central Holographic Stage with Node Network Background */
         .hud-center-stage {
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            position: relative; background: radial-gradient(circle, rgba(0,243,255,0.06) 0%, transparent 70%);
-            border: 1px solid rgba(0, 243, 255, 0.2); border-radius: 8px; padding: 20px;
+            position: relative; background: radial-gradient(circle, rgba(0,243,255,0.08) 0%, rgba(176,0,255,0.03) 60%, transparent 90%);
+            border: 1px solid rgba(0, 243, 255, 0.25); border-radius: 8px; padding: 20px; overflow: hidden;
         }
+
+        /* SVG Node Network Lines */
+        .node-svg-overlay {
+            position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; opacity: 0.6;
+        }
+
         .hud-core-ring {
-            width: 180px; height: 180px;
-            background: radial-gradient(circle, var(--neon-cyan) 0%, rgba(176,0,255,0.3) 65%, transparent 100%);
-            border-radius: 50%; box-shadow: 0 0 60px var(--neon-cyan);
+            width: 150px; height: 150px;
+            background: radial-gradient(circle, var(--neon-cyan) 0%, rgba(176,0,255,0.4) 65%, transparent 100%);
+            border-radius: 50%; box-shadow: 0 0 50px var(--neon-cyan);
             display: flex; align-items: center; justify-content: center;
             animation: pulseCore 4s infinite alternate; cursor: pointer; z-index: 3;
             border: 3px solid var(--neon-cyan); position: relative;
         }
-        .hud-core-ring span { font-weight: bold; color: #030508; font-size: 14px; letter-spacing: 2px; }
+        .hud-core-ring span { font-weight: bold; color: #030508; font-size: 13px; letter-spacing: 2px; }
 
         .hologram-orbit {
-            display: flex; gap: 10px; margin-top: 25px; z-index: 3; flex-wrap: wrap; justify-content: center;
+            display: flex; gap: 10px; margin-top: 20px; z-index: 3; flex-wrap: wrap; justify-content: center;
         }
         .orbit-node {
-            background: rgba(0, 243, 255, 0.08); border: 1px solid var(--neon-cyan);
-            padding: 8px 15px; border-radius: 4px; font-size: 10.5px; color: var(--neon-cyan);
+            background: rgba(4, 14, 28, 0.85); border: 1px solid var(--neon-cyan);
+            padding: 8px 14px; border-radius: 6px; font-size: 10.5px; color: var(--neon-cyan);
             cursor: pointer; transition: 0.3s; backdrop-filter: blur(8px);
-            letter-spacing: 1px;
+            letter-spacing: 1px; box-shadow: 0 0 10px rgba(0,243,255,0.2);
         }
         .orbit-node:hover {
             background: var(--neon-cyan); color: #030508; box-shadow: 0 0 20px var(--neon-cyan);
+        }
+
+        /* Telemetry Visualizers */
+        .telemetry-bar {
+            width: 100%; background: rgba(0,0,0,0.5); border: 1px solid rgba(0,243,255,0.2);
+            height: 6px; border-radius: 3px; overflow: hidden; margin-top: 2px;
+        }
+        .telemetry-fill {
+            height: 100%; background: linear-gradient(90deg, var(--neon-cyan), var(--neon-orange)); width: 78%;
+            box-shadow: 0 0 8px var(--neon-cyan);
         }
 
         .hud-footer {
@@ -250,34 +266,53 @@ HTML_PAGE = """<!DOCTYPE html>
     </div>
 
 
-    <!-- ================= DESKTOP VIEW (HOLOGRAPHIC SCI-FI HUD COMMAND CENTER) ================= -->
+    <!-- ================= DESKTOP VIEW (ADVANCED HUD COMMAND CENTER) ================= -->
     <div class="desktop-view">
         <header class="hud-header">
             <h1>NEO // ENTERPRISE OS - COMMAND CENTER</h1>
-            <div style="font-size: 11.5px; color: var(--text-dim); font-family: 'Courier New', monospace;">
+            <div style="font-size: 11px; color: var(--text-dim); font-family: 'Courier New', monospace;">
                 OPERATOR: <span style="color: var(--neon-cyan);">MARGIL MOLLAJ (WISAG HAMBURG)</span> | DATE: <span id="pc-date">--.--.----</span> | WEATHER: <span style="color: var(--neon-cyan);" id="pc-weather">Hamburg 14°C</span>
             </div>
         </header>
 
         <div class="hud-main-grid">
-            <!-- Left HUD Panel -->
+            <!-- Left Panel -->
             <div class="hud-box">
                 <h3>Operations & Field Data</h3>
-                <p style="font-size: 11px; color: var(--text-dim); line-height: 1.4;">Aktive Routen & Inspektionen im Sektor Hamburg-Nord / Altona.</p>
-                <div style="background: rgba(0,0,0,0.5); padding: 12px; border-radius: 4px; border-left: 2px solid var(--neon-cyan); margin-top: 5px;">
-                    <strong style="font-size: 11.5px; color: var(--neon-cyan);">HafenCity & Weser-Ems</strong>
-                    <p style="font-size: 10.5px; color: var(--text-dim); margin-top: 5px;">5 Objekte zugewiesen. Sicherheitsprotokolle und Schließanlagen im Normalbetrieb.</p>
+                <p style="font-size: 10.5px; color: var(--text-dim); line-height: 1.4;">Aktive Routen & Inspektionen im Sektor Hamburg-Nord / Altona.</p>
+                
+                <div style="background: rgba(0,0,0,0.5); padding: 10px; border-radius: 4px; border-left: 2px solid var(--neon-cyan); margin-top: 2px;">
+                    <strong style="font-size: 11px; color: var(--neon-cyan);">HafenCity & Weser-Ems</strong>
+                    <p style="font-size: 10px; color: var(--text-dim); margin-top: 3px;">5 Objekte zugewiesen. Sicherheitsprotokolle aktiv.</p>
                 </div>
-                <h3 style="margin-top: 15px;">Secure Vault</h3>
-                <p style="font-size: 10.5px; color: var(--text-dim);">Schnellzugriff auf Torcodes, Schließzylinder und Kundenkontakt.</p>
+
+                <h3 style="margin-top: 10px;">Secure Vault</h3>
+                <p style="font-size: 10px; color: var(--text-dim);">Torcodes & Schließzylinder Schnellzugriff.</p>
+                
+                <div style="margin-top: auto;">
+                    <span style="font-size: 10px; color: var(--text-dim);">SYSTEM EFFICIENCY</span>
+                    <div class="telemetry-bar"><div class="telemetry-fill" style="width: 94%;"></div></div>
+                </div>
             </div>
 
-            <!-- Central Holographic Stage -->
+            <!-- Central Holographic Stage with Node Network -->
             <div class="hud-center-stage">
-                <div style="position: absolute; top: 10px; font-size: 10px; color: var(--text-dim); letter-spacing: 2px;">NEURAL CORE // SYSTEM ACTIVE</div>
+                <!-- SVG Network Connecting Lines -->
+                <svg class="node-svg-overlay" viewBox="0 0 600 400" preserveAspectRatio="none">
+                    <line x1="300" y1="200" x2="100" y2="100" stroke="#00f3ff" stroke-width="1" stroke-dasharray="4 4" opacity="0.5"/>
+                    <line x1="300" y1="200" x2="500" y2="100" stroke="#00f3ff" stroke-width="1" stroke-dasharray="4 4" opacity="0.5"/>
+                    <line x1="300" y1="200" x2="120" y2="320" stroke="#ff9900" stroke-width="1" stroke-dasharray="4 4" opacity="0.5"/>
+                    <line x1="300" y1="200" x2="480" y2="320" stroke="#ff9900" stroke-width="1" stroke-dasharray="4 4" opacity="0.5"/>
+                    <circle cx="100" cy="100" r="4" fill="#00f3ff"/><circle cx="500" cy="100" r="4" fill="#00f3ff"/>
+                    <circle cx="120" cy="320" r="4" fill="#ff9900"/><circle cx="480" cy="320" r="4" fill="#ff9900"/>
+                </svg>
+
+                <div style="position: absolute; top: 10px; font-size: 10px; color: var(--text-dim); letter-spacing: 2px;">NEURAL NODE CONSTELLATION // ACTIVE</div>
+                
                 <div class="hud-core-ring" onclick="toggleListening()">
                     <span>NEO CORE</span>
                 </div>
+
                 <div class="hologram-orbit">
                     <div class="orbit-node" onclick="openModal('Angebots-Rechner', 'Tarif: 31.50 €/h aktiv. Berechnungen in Echtzeit für Hamburg.')">Angebots-Rechner</div>
                     <div class="orbit-node" onclick="openModal('WhatsApp Direct', 'Direktverbindung zu Hausverwaltung & Kunden aktiv.')">WhatsApp Direct</div>
@@ -286,18 +321,23 @@ HTML_PAGE = """<!DOCTYPE html>
                 </div>
             </div>
 
-            <!-- Right HUD Panel -->
+            <!-- Right Panel -->
             <div class="hud-box">
                 <h3>Sales & Bidding Engine</h3>
-                <p style="font-size: 11px; color: var(--text-dim);">Standard Tarif WISAG Gebäudereinigung:</p>
-                <div style="font-size: 18px; color: var(--neon-orange); font-weight: bold; margin: 5px 0;">31.50 € / Stunde</div>
-                <p style="font-size: 10.5px; color: var(--text-dim);">Optimiert für schnelle Hausverwaltung-Angebote und Sofortkalkulation.</p>
+                <p style="font-size: 10.5px; color: var(--text-dim);">Standard Tarif WISAG Gebäudereinigung:</p>
+                <div style="font-size: 17px; color: var(--neon-orange); font-weight: bold; margin: 4px 0;">31.50 € / Stunde</div>
+                <p style="font-size: 10px; color: var(--text-dim);">Sofortkalkulation für Hausverwaltung in Hamburg.</p>
                 
-                <h3 style="margin-top: 20px;">System Telemetry</h3>
-                <div style="font-size: 10.5px; color: var(--text-dim); line-height: 1.6; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 4px;">
+                <h3 style="margin-top: 15px;">System Telemetry</h3>
+                <div style="font-size: 10px; color: var(--text-dim); line-height: 1.5; background: rgba(0,0,0,0.4); padding: 8px; border-radius: 4px;">
                     Uptime: 99.9% // Sektor Hamburg<br>
                     Latency: 0.04ms (Render Edge)<br>
-                    Encryption: AES-256 Enterprise Link
+                    Encryption: AES-256 Link
+                </div>
+
+                <div style="margin-top: auto;">
+                    <span style="font-size: 10px; color: var(--text-dim);">NEURAL LOAD</span>
+                    <div class="telemetry-bar"><div class="telemetry-fill" style="width: 82%;"></div></div>
                 </div>
             </div>
         </div>
