@@ -28,7 +28,7 @@ HTML_PAGE = """<!DOCTYPE html>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#030712">
     <link rel="manifest" href="/manifest.json">
-    <title>N.E.O. // COMMAND OS</title>
+    <title>N.E.O. // SECOND BRAIN OS</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
 
@@ -36,10 +36,11 @@ HTML_PAGE = """<!DOCTYPE html>
             --cyan: #00E5FF;
             --orange: #FF9900;
             --bg: #030712;
-            --panel: rgba(8, 15, 30, 0.9);
-            --border: rgba(0, 229, 255, 0.25);
+            --panel: rgba(10, 18, 35, 0.92);
+            --border: rgba(0, 229, 255, 0.22);
             --text: #F8FAFC;
             --muted: #64748B;
+            --green: #10B981;
         }
 
         body.listening { --cyan: #10B981; }
@@ -49,256 +50,207 @@ HTML_PAGE = """<!DOCTYPE html>
         * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
 
         html, body {
-            margin: 0; padding: 0; width: 100vw; height: 100vh; overflow: hidden;
+            margin: 0; padding: 0; width: 100vw; height: 100vh; overflow-x: hidden;
             background-color: var(--bg);
-            background-image:
-                radial-gradient(circle at 50% 42%, rgba(0, 229, 255, 0.08) 0%, transparent 65%),
-                linear-gradient(rgba(0, 229, 255, 0.025) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0, 229, 255, 0.025) 1px, transparent 1px);
-            background-size: 100% 100%, 32px 32px, 32px 32px;
             color: var(--text);
             font-family: 'Rajdhani', sans-serif;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            align-items: center;
+        }
+
+        /* TOP DASHBOARD HEADER */
+        .top-bar {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px 20px; background: var(--panel); border-bottom: 1px solid var(--border);
+            font-family: 'JetBrains Mono', monospace; font-size: 11px;
+        }
+        .top-title { color: var(--cyan); font-weight: 700; letter-spacing: 2px; font-size: 14px; }
+        .metrics { display: flex; gap: 15px; color: var(--muted); }
+        .metrics span b { color: var(--text); }
+
+        /* MAIN GRID CONTAINER (Second Brain Style) */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 280px 1fr 300px;
+            gap: 14px;
             padding: 16px;
+            max-width: 1400px;
+            margin: 0 auto;
         }
 
-        /* TOP HEADER */
-        .header {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 2px;
-            z-index: 10;
+        @media(max-width: 1024px) {
+            .dashboard-grid { grid-template-columns: 1fr; }
         }
-        .title {
-            font-size: 28px;
-            font-weight: 700;
-            letter-spacing: 8px;
-            color: var(--text);
-            text-shadow: 0 0 20px rgba(0, 229, 255, 0.5);
-            margin: 0;
-        }
-        .status-badge {
-            display: flex;
-            align-items: center;
-            gap: 6px;
+
+        /* MODULE CARDS */
+        .card {
             background: var(--panel);
             border: 1px solid var(--border);
-            padding: 3px 12px;
-            border-radius: 999px;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 10.5px;
-            letter-spacing: 1.5px;
-            color: var(--cyan);
-            text-transform: uppercase;
-        }
-        .status-dot {
-            width: 5px; height: 5px;
-            border-radius: 50%;
-            background: var(--cyan);
-            box-shadow: 0 0 8px var(--cyan);
-            animation: pulseDot 2s infinite;
-        }
-        @keyframes pulseDot {
-            0% { opacity: 0.4; }
-            50% { opacity: 1; transform: scale(1.2); }
-            100% { opacity: 0.4; }
-        }
-
-        /* CENTER HOLOGRAPHIC STAGE */
-        .hologram-stage {
-            position: relative;
-            width: 260px;
-            height: 260px;
+            border-radius: 10px;
+            padding: 14px;
             display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            z-index: 5;
-            margin: auto 0;
-        }
-        .holo-glow {
-            position: absolute;
-            inset: 0;
-            border-radius: 50%;
-            background: radial-gradient(circle, rgba(255,153,0,0.2) 0%, rgba(0,229,255,0.1) 50%, transparent 75%);
-            animation: pulseGlow 4s ease-in-out infinite alternate;
-        }
-        @keyframes pulseGlow {
-            0% { transform: scale(0.9); opacity: 0.6; }
-            100% { transform: scale(1.15); opacity: 1; }
-        }
-        .holo-svg {
-            width: 100%;
-            height: 100%;
-            filter: drop-shadow(0 0 15px rgba(0, 229, 255, 0.5));
-            animation: floatHolo 5s ease-in-out infinite;
-        }
-        @keyframes floatHolo {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-6px); }
-        }
-
-        /* COMMAND DOCK (ELEGANT BUTTONS) */
-        .command-dock {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
+            flex-direction: column;
             gap: 8px;
-            max-width: 600px;
-            z-index: 10;
-            margin-bottom: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            transition: border-color 0.2s;
         }
-        .cmd-btn {
-            background: var(--panel);
-            border: 1px solid var(--border);
-            color: var(--text);
-            padding: 7px 14px;
-            border-radius: 999px;
-            font-size: 12px;
-            font-weight: 600;
-            letter-spacing: 0.5px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-            display: flex;
-            align-items: center;
-            gap: 6px;
+        .card:hover { border-color: var(--cyan); }
+        .card-header {
+            display: flex; justify-content: space-between; align-items: center;
+            font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700;
+            color: var(--orange); border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px;
         }
-        .cmd-btn:hover {
-            border-color: var(--cyan);
-            color: var(--cyan);
-            box-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
-            transform: translateY(-2px);
+        .card-title { font-size: 15px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 6px; }
+        .card-desc { font-size: 12.5px; color: var(--muted); line-height: 1.35; }
+        
+        .badge-enabled {
+            background: rgba(16, 185, 129, 0.15); color: var(--green);
+            padding: 2px 6px; border-radius: 4px; font-size: 9.5px; font-weight: 700;
         }
 
-        /* BOTTOM MIC & STATUS */
-        .bottom-bar {
+        /* CENTER CORE PANEL */
+        .center-core-panel {
+            background: rgba(6, 11, 22, 0.95);
+            border: 1px solid var(--cyan);
+            border-radius: 14px;
+            padding: 20px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 6px;
-            z-index: 10;
-        }
-        .wake-text {
-            font-size: 16px;
-            font-weight: 600;
-            letter-spacing: 1.5px;
-            color: var(--text);
-            margin: 0;
-            text-shadow: 0 0 10px rgba(0,229,255,0.4);
-        }
-        .mic-btn {
-            width: 54px; height: 54px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, rgba(0,229,255,0.2), rgba(255,153,0,0.2));
-            border: 1.5px solid var(--cyan);
-            color: var(--text);
-            font-size: 20px;
-            display: flex;
-            align-items: center;
             justify-content: center;
-            cursor: pointer;
-            box-shadow: 0 0 20px rgba(0, 229, 255, 0.3);
-            transition: transform 0.2s;
+            text-align: center;
+            position: relative;
+            box-shadow: 0 0 30px rgba(0,229,255,0.15);
         }
-        .mic-btn:active { transform: scale(0.92); }
+        .hologram-stage {
+            width: 220px; height: 220px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; position: relative; margin: 10px 0;
+        }
+        .holo-svg { width: 100%; height: 100%; filter: drop-shadow(0 0 12px rgba(0,229,255,0.5)); }
 
-        /* HOLOGRAPHIC MODAL */
+        .action-btn {
+            background: linear-gradient(135deg, rgba(0,229,255,0.2), rgba(255,153,0,0.2));
+            border: 1px solid var(--cyan); color: var(--text);
+            padding: 8px 16px; border-radius: 99px; font-weight: 700; font-size: 12px;
+            cursor: pointer; transition: 0.2s; font-family: 'JetBrains Mono', monospace;
+        }
+        .action-btn:hover { background: var(--cyan); color: #030712; box-shadow: 0 0 15px var(--cyan); }
+
+        /* MODAL */
         .holo-modal {
-            position: fixed; inset: 0; background: rgba(3, 7, 18, 0.85);
+            position: fixed; inset: 0; background: rgba(3, 7, 18, 0.88);
             backdrop-filter: blur(8px); z-index: 50; display: none;
             align-items: center; justify-content: center; padding: 16px;
         }
         .holo-modal.open { display: flex; }
         .holo-box {
             background: var(--panel); border: 1px solid var(--cyan);
-            box-shadow: 0 0 35px rgba(0, 229, 255, 0.25);
-            border-radius: 14px; width: 100%; max-width: 440px;
-            padding: 20px; display: flex; flex-direction: column; gap: 14px;
+            border-radius: 12px; width: 100%; max-width: 440px;
+            padding: 20px; display: flex; flex-direction: column; gap: 12px;
         }
         .holo-head {
             display: flex; justify-content: space-between; align-items: center;
             border-bottom: 1px solid var(--border); padding-bottom: 8px;
-            font-size: 14px; font-weight: 700; color: var(--cyan); letter-spacing: 1px;
+            font-size: 13px; font-weight: 700; color: var(--cyan);
         }
-        .holo-content { max-height: 260px; overflow-y: auto; font-size: 13.5px; display: flex; flex-direction: column; gap: 8px; }
-        .holo-row {
-            padding: 8px 12px; background: rgba(0, 229, 255, 0.05);
-            border-left: 3px solid var(--orange); border-radius: 6px;
-        }
-        .gold-pill {
-            background: var(--orange); color: #030712; border: none; border-radius: 999px;
-            padding: 8px 16px; font-size: 12px; font-weight: 700; cursor: pointer; text-align: center;
-        }
-        input, select {
-            background: #030712; border: 1px solid var(--border); color: #fff;
-            padding: 9px 12px; border-radius: 6px; font-family: 'Rajdhani', sans-serif; font-size: 14px;
-        }
+        .holo-content { max-height: 260px; overflow-y: auto; font-size: 13px; display: flex; flex-direction: column; gap: 6px; }
+        .holo-row { padding: 8px; background: rgba(0,229,255,0.05); border-left: 3px solid var(--orange); border-radius: 4px; }
+        input, select { background: #030712; border: 1px solid var(--border); color: #fff; padding: 8px; border-radius: 6px; font-family: 'Rajdhani'; }
     </style>
 </head>
 <body>
-    <!-- TOP HEADER -->
-    <div class="header">
-        <h1 class="title">N E O</h1>
-        <div class="status-badge">
-            <span class="status-dot"></span>
-            <span id="statusText">HAMBURG • AKTIV</span>
+    <!-- TOP STATS BAR -->
+    <div class="top-bar">
+        <div class="top-title">N.E.O. // SECOND BRAIN OS</div>
+        <div class="metrics">
+            <span>MODUS: <b>ARBEIT</b></span>
+            <span>STATUS: <b style="color:var(--green);">LIVE 24/7</b></span>
         </div>
     </div>
 
-    <!-- CENTER HOLOGRAPHIC CORE -->
-    <div class="hologram-stage" onclick="toggleListening()" title="Tippen zum Sprechen">
-        <div class="holo-glow"></div>
-        <svg class="holo-svg" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="150" cy="150" r="125" fill="none" stroke="rgba(0,229,255,0.12)" stroke-width="1" stroke-dasharray="8 8"/>
-            <circle cx="150" cy="150" r="100" fill="none" stroke="rgba(255,153,0,0.15)" stroke-width="1"/>
-            <circle cx="150" cy="135" r="35" fill="url(#orangeGlow)" opacity="0.85"/>
-            <defs>
-                <radialGradient id="orangeGlow" cx="50%" cy="50%" r="50%">
-                    <stop offset="0%" stop-color="#FF9900" stop-opacity="0.95"/>
-                    <stop offset="60%" stop-color="#FF5500" stop-opacity="0.4"/>
-                    <stop offset="100%" stop-color="#030712" stop-opacity="0"/>
-                </radialGradient>
-            </defs>
-            <g stroke="rgba(0,229,255,0.75)" stroke-width="1.5" fill="none" stroke-linecap="round">
-                <path d="M60,250 Q100,210 150,210 Q200,210 240,250" opacity="0.9"/>
-                <path d="M80,265 Q150,230 220,265" stroke="rgba(255,153,0,0.85)" stroke-width="1"/>
-                <path d="M130,210 L130,165" />
-                <path d="M170,210 L170,165" />
-                <path d="M120,165 Q110,120 125,85 Q135,60 150,55 Q165,60 175,85 Q190,120 180,165" />
-                <path d="M125,125 Q150,135 175,125" stroke="rgba(255,153,0,0.7)" />
-                <path d="M130,145 Q150,155 170,145" stroke="rgba(0,229,255,0.9)" />
-            </g>
-            <g fill="#00E5FF">
-                <circle cx="150" cy="55" r="3" fill="#FF9900"/>
-                <circle cx="125" cy="90" r="2" />
-                <circle cx="175" cy="90" r="2" />
-                <circle cx="150" cy="135" r="3.5" fill="#FF9900" />
-                <circle cx="110" cy="180" r="2" />
-                <circle cx="190" cy="180" r="2" />
-                <circle cx="150" cy="210" r="3" fill="#FF9900" />
-            </g>
-        </svg>
-    </div>
+    <!-- DASHBOARD GRID -->
+    <div class="dashboard-grid">
+        <!-- LEFT COLUMN: INPUTS & BRIEFING -->
+        <div style="display:flex; flex-direction:column; gap:14px;">
+            <div class="card" onclick="quickCmd('Gib mir mein Morning Briefing mit Terminen heute.')" style="cursor:pointer;">
+                <div class="card-header"><span>$/brief-mode</span><span class="badge-enabled">ENABLED</span></div>
+                <div class="card-title">☀️ Morning Brief</div>
+                <div class="card-desc">Liest heutige Termine & Objekt-Codes aus.</div>
+            </div>
 
-    <!-- COMMAND DOCK (ELEGANT BUTTONS) -->
-    <div class="command-dock">
-        <button class="cmd-btn" onclick="quickCmd('Gib mir mein Morning Briefing mit Terminen heute.')">☀️ Morning Brief</button>
-        <button class="cmd-btn" onclick="openHolo('calendar')">📅 Kalender</button>
-        <button class="cmd-btn" onclick="openHolo('calc')">📐 Rechner</button>
-        <button class="cmd-btn" onclick="openHolo('codes')">🔐 Objekt-Codes</button>
-        <button class="cmd-btn" onclick="document.getElementById('cam').click()">📸 Mängel-Foto</button>
-        <button class="cmd-btn" onclick="sendTg()">✈️ Telegram Auth</button>
-    </div>
+            <div class="card" onclick="openHolo('calendar')" style="cursor:pointer;">
+                <div class="card-header"><span>📅 /calendar</span><span class="badge-enabled">SYNCED</span></div>
+                <div class="card-title">Kalender Termine</div>
+                <div class="card-desc">Aktuelle Einsätze und Objektstandorte in Hamburg.</div>
+            </div>
 
-    <!-- BOTTOM WAKE & MIC -->
-    <div class="bottom-bar">
-        <p class="wake-text" id="wakePrompt">Sage: „Hey Neo“</p>
-        <div class="mic-btn" onclick="toggleListening()">🎙️</div>
+            <div class="card" onclick="openHolo('codes')" style="cursor:pointer;">
+                <div class="card-header"><span>🔐 /memory</span><span class="badge-enabled">ACTIVE</span></div>
+                <div class="card-title">Objekt-Codes</div>
+                <div class="card-desc">Sichere Notizen und Zugangscodes verwalten.</div>
+            </div>
+        </div>
+
+        <!-- CENTER COLUMN: HOLOGRAPHIC CORE & VOICE -->
+        <div class="center-core-panel">
+            <div class="card-header" style="width:100%; justify-content:center; border:none; color:var(--cyan);">BRAIN MODE // ACTIVE VOICE STREAM</div>
+            
+            <div class="hologram-stage" onclick="toggleListening()">
+                <svg class="holo-svg" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="150" cy="150" r="125" fill="none" stroke="rgba(0,229,255,0.12)" stroke-width="1" stroke-dasharray="8 8"/>
+                    <circle cx="150" cy="150" r="100" fill="none" stroke="rgba(255,153,0,0.15)" stroke-width="1"/>
+                    <circle cx="150" cy="135" r="35" fill="url(#orangeGlow)" opacity="0.85"/>
+                    <defs>
+                        <radialGradient id="orangeGlow" cx="50%" cy="50%" r="50%">
+                            <stop offset="0%" stop-color="#FF9900" stop-opacity="0.95"/>
+                            <stop offset="60%" stop-color="#FF5500" stop-opacity="0.4"/>
+                            <stop offset="100%" stop-color="#030712" stop-opacity="0"/>
+                        </radialGradient>
+                    </defs>
+                    <g stroke="rgba(0,229,255,0.75)" stroke-width="1.5" fill="none" stroke-linecap="round">
+                        <path d="M60,250 Q100,210 150,210 Q200,210 240,250" opacity="0.9"/>
+                        <path d="M80,265 Q150,230 220,265" stroke="rgba(255,153,0,0.85)" stroke-width="1"/>
+                        <path d="M130,210 L130,165" />
+                        <path d="M170,210 L170,165" />
+                        <path d="M120,165 Q110,120 125,85 Q135,60 150,55 Q165,60 175,85 Q190,120 180,165" />
+                        <path d="M125,125 Q150,135 175,125" stroke="rgba(255,153,0,0.7)" />
+                        <path d="M130,145 Q150,155 170,145" stroke="rgba(0,229,255,0.9)" />
+                    </g>
+                    <g fill="#00E5FF">
+                        <circle cx="150" cy="55" r="3" fill="#FF9900"/>
+                        <circle cx="125" cy="90" r="2" />
+                        <circle cx="175" cy="90" r="2" />
+                        <circle cx="150" cy="135" r="3.5" fill="#FF9900" />
+                        <circle cx="110" cy="180" r="2" />
+                        <circle cx="190" cy="180" r="2" />
+                        <circle cx="150" cy="210" r="3" fill="#FF9900" />
+                    </g>
+                </svg>
+            </div>
+
+            <div id="wakePrompt" style="font-size:16px; font-weight:700; margin-bottom: 10px; color:var(--text);">Sage: „Hey Neo“</div>
+            <button class="action-btn" onclick="toggleListening()">🎙️ Sprachbefehl starten</button>
+        </div>
+
+        <!-- RIGHT COLUMN: TOOLS & AUTOMATION -->
+        <div style="display:flex; flex-direction:column; gap:14px;">
+            <div class="card" onclick="openHolo('calc')" style="cursor:pointer;">
+                <div class="card-header"><span>📐 /calculator</span><span class="badge-enabled">READY</span></div>
+                <div class="card-title">Angebots-Rechner</div>
+                <div class="card-desc">Berechnet Reinigungen (31,50 €/Std).</div>
+            </div>
+
+            <div class="card" onclick="document.getElementById('cam').click()" style="cursor:pointer;">
+                <div class="card-header"><span>📸 /vision</span><span class="badge-enabled">AI ACTIVE</span></div>
+                <div class="card-title">Mängel-Foto</div>
+                <div class="card-desc">Objekt-Mängel fotografieren und analysieren.</div>
+            </div>
+
+            <div class="card" onclick="sendTg()" style="cursor:pointer;">
+                <div class="card-header"><span>✈️ /auth</span><span class="badge-enabled">SECURE</span></div>
+                <div class="card-title">Telegram Auth</div>
+                <div class="card-desc">Sichert Freigaben direkt über Telegram ab.</div>
+            </div>
+        </div>
     </div>
 
     <!-- HOLOGRAPHIC MODAL -->
@@ -306,7 +258,7 @@ HTML_PAGE = """<!DOCTYPE html>
         <div class="holo-box">
             <div class="holo-head">
                 <span id="holoTitle">DATEN</span>
-                <button class="cmd-btn" style="padding: 2px 8px;" onclick="closeHolo()">✕</button>
+                <button class="action-btn" style="padding:2px 8px;" onclick="closeHolo()">✕</button>
             </div>
             <div class="holo-content" id="holoBody"></div>
         </div>
@@ -346,8 +298,8 @@ HTML_PAGE = """<!DOCTYPE html>
                     : '<div style="color:var(--muted);">Keine Termine gefunden.</div>';
             } else if (type === 'codes') {
                 title.innerText = `OBJEKT-CODES & NOTIZEN (${mem.length})`;
-                let list = mem.length ? mem.map((x, i) => `<div class="holo-row" style="display:flex;justify-content:space-between;align-items:center;"><span>${x}</span><button class="gold-pill" style="padding:2px 8px;" onclick="mem.splice(${i},1);localStorage.setItem('neo_memory',JSON.stringify(mem));openHolo('codes');">✕</button></div>`).join('') : '<div style="color:var(--muted);">Keine Codes gespeichert.</div>';
-                body.innerHTML = `<div style="display:flex;gap:6px;margin-bottom:8px;"><input id="newCode" type="text" placeholder="Neuer Code..." style="flex:1;"><button class="gold-pill" onclick="if(document.getElementById('newCode').value.trim()){mem.push(document.getElementById('newCode').value.trim());localStorage.setItem('neo_memory',JSON.stringify(mem));openHolo('codes');}">Speichern</button></div>` + list;
+                let list = mem.length ? mem.map((x, i) => `<div class="holo-row" style="display:flex;justify-content:space-between;align-items:center;"><span>${x}</span><button class="action-btn" style="padding:2px 6px;" onclick="mem.splice(${i},1);localStorage.setItem('neo_memory',JSON.stringify(mem));openHolo('codes');">✕</button></div>`).join('') : '<div style="color:var(--muted);">Keine Codes gespeichert.</div>';
+                body.innerHTML = `<div style="display:flex;gap:6px;margin-bottom:8px;"><input id="newCode" type="text" placeholder="Neuer Code..." style="flex:1;"><button class="action-btn" onclick="if(document.getElementById('newCode').value.trim()){mem.push(document.getElementById('newCode').value.trim());localStorage.setItem('neo_memory',JSON.stringify(mem));openHolo('codes');}">Speichern</button></div>` + list;
             } else if (type === 'calc') {
                 title.innerText = 'ANGEBOTS-KALKULATOR (31,50 €/Std)';
                 body.innerHTML = `<div style="display:flex;flex-direction:column;gap:10px;">
@@ -358,7 +310,7 @@ HTML_PAGE = """<!DOCTYPE html>
                         <option value="3x pro Woche">3x pro Woche</option>
                         <option value="5x pro Woche">5x pro Woche</option>
                     </select>
-                    <button class="gold-pill" onclick="closeHolo();quickCmd('Kalkuliere ein Reinigungsangebot für '+document.getElementById('cQm').value+' m², '+document.getElementById('cFreq').value+', und erstelle den Angebotstext.');">ANGEBOT ERSTELLEN</button>
+                    <button class="action-btn" onclick="closeHolo();quickCmd('Kalkuliere ein Reinigungsangebot für '+document.getElementById('cQm').value+' m², '+document.getElementById('cFreq').value+', und erstelle den Angebotstext.');">ANGEBOT ERSTELLEN</button>
                 </div>`;
             }
         }
@@ -582,7 +534,7 @@ def tg_notify():
     urllib.request.urlopen(req, timeout=5)
     return jsonify({"ok": True})
 
-@app.route("/chat", methods=["POST"])
+@app.route("/chat", produces=["application/json"], methods=["POST"])
 def chat():
     try:
         api_key = os.environ.get("GEMINI_API_KEY", "").strip()
