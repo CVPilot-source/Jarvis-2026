@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEO // ENTERPRISE OS - WISAG Hamburg</title>
+    <style>
+        :root {
+            --bg-deep: #050811;
+            --panel-bg: rgba(6, 15, 30, 0.75);
+            --neon-cyan: #00f3ff;
+            --neon-purple: #b000ff;
+            --neon-orange: #ff9900;
+            --text-main: #e0fbfc;
+            --text-dim: #8892b0;
+            --border-glow: rgba(0, 243, 255, 0.3);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        body {
+            background-color: var(--bg-deep);
+            color: var(--text-main);
+            min-height: 100vh;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 50% 50%, rgba(0, 243, 255, 0.05) 0%, transparent 70%),
+                linear-gradient(rgba(0,0,0,0.5) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,0,0,0.5) 1px, transparent 1px);
+            background-size: 100% 100%, 20px 20px, 20px 20px;
+        }
+
+        /* --- LAYOUT SWITCHER --- */
+        .desktop-view { display: none; }
+        .mobile-view { display: block; }
+
+        @media (min-width: 1024px) {
+            .desktop-view { display: flex; }
+            .mobile-view { display: none; }
+        }
+
+        /* ================= MOBILE VIEW (Vertical Floating Node Network) ================= */
+        .mobile-container {
+            max-width: 480px;
+            margin: 0 auto;
+            padding: 15px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .mobile-header {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-glow);
+            border-radius: 12px;
+            padding: 12px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.1);
+        }
+
+        .mobile-header h1 {
+            font-size: 14px;
+            letter-spacing: 1px;
+            color: var(--neon-cyan);
+        }
+
+        .mobile-header .meta {
+            font-size: 11px;
+            color: var(--text-dim);
+            text-align: right;
+        }
+
+        /* Mobile Core Area */
+        .mobile-core-box {
+            text-align: center;
+            margin: 20px 0;
+            position: relative;
+        }
+
+        .core-pulse {
+            width: 90px;
+            height: 90px;
+            background: radial-gradient(circle, var(--neon-cyan) 0%, rgba(0,243,255,0.2) 70%, transparent 100%);
+            border-radius: 50%;
+            margin: 0 auto 10px auto;
+            box-shadow: 0 0 25px var(--neon-cyan);
+            animation: pulseCore 3s infinite alternate;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .core-pulse::after {
+            content: '';
+            width: 50px;
+            height: 50px;
+            border: 2px dashed var(--text-main);
+            border-radius: 50%;
+            animation: spin 10s linear infinite;
+        }
+
+        @keyframes pulseCore {
+            0% { transform: scale(0.95); box-shadow: 0 0 15px var(--neon-cyan); }
+            100% { transform: scale(1.05); box-shadow: 0 0 35px var(--neon-cyan); }
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .voice-bar {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-glow);
+            border-radius: 20px;
+            padding: 10px 15px;
+            font-size: 12px;
+            color: var(--neon-cyan);
+            display: inline-block;
+            box-shadow: 0 0 10px rgba(0,243,255,0.1);
+        }
+
+        /* Mobile Cards / Nodes */
+        .mobile-cards {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .m-card {
+            background: var(--panel-bg);
+            border: 1px solid rgba(0, 243, 255, 0.2);
+            border-radius: 12px;
+            padding: 14px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .m-card:active {
+            border-color: var(--neon-cyan);
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.3);
+        }
+
+        .m-card h3 {
+            font-size: 12px;
+            color: var(--neon-orange);
+            margin-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .m-card p {
+            font-size: 11px;
+            color: var(--text-dim);
+        }
+
+        /* Calculator inside Mobile Card */
+        .calc-box input {
+            width: 100%;
+            background: rgba(0,0,0,0.5);
+            border: 1px solid var(--border-glow);
+            color: var(--text-main);
+            padding: 8px;
+            border-radius: 6px;
+            margin-top: 6px;
+            font-size: 13px;
+        }
+
+        .calc-result {
+            margin-top: 8px;
+            font-size: 13px;
+            color: var(--neon-orange);
+            font-weight: bold;
+        }
+
+        .action-btn {
+            display: block;
+            width: 100%;
+            background: linear-gradient(135deg, var(--neon-orange), #ff5500);
+            color: #000;
+            border: none;
+            padding: 10px;
+            border-radius: 6px;
+            font-weight: bold;
+            margin-top: 10px;
+            cursor: pointer;
+            text-align: center;
+            text-decoration: none;
+            font-size: 12px;
+        }
+
+
+        /* ================= DESKTOP VIEW (Widescreen HUD Command Center) ================= */
+        .desktop-container {
+            width: 100vw;
+            height: 100vh;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+        }
+
+        .hud-topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--panel-bg);
+            border: 1px solid var(--border-glow);
+            padding: 15px 25px;
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+        }
+
+        .hud-topbar h1 {
+            font-size: 18px;
+            color: var(--neon-cyan);
+            letter-spacing: 2px;
+        }
+
+        .hud-grid {
+            display: grid;
+            grid-template-columns: 300px 1fr 300px;
+            gap: 20px;
+            flex: 1;
+            margin: 20px 0;
+            align-items: center;
+        }
+
+        .hud-panel {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-glow);
+            border-radius: 10px;
+            padding: 20px;
+            height: 100%;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.05);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .hud-panel h2 {
+            font-size: 13px;
+            color: var(--neon-orange);
+            border-bottom: 1px solid rgba(255,153,0,0.3);
+            padding-bottom: 5px;
+            letter-spacing: 1px;
+        }
+
+        /* Desktop Central Node Constellation */
+        .desktop-center {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            height: 100%;
+        }
+
+        .pc-core {
+            width: 140px;
+            height: 140px;
+            background: radial-gradient(circle, var(--neon-cyan) 0%, rgba(176,0,255,0.3) 60%, transparent 100%);
+            border-radius: 50%;
+            box-shadow: 0 0 40px var(--neon-cyan);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: pulseCore 4s infinite alternate;
+            cursor: pointer;
+            z-index: 2;
+        }
+
+        .pc-core span {
+            font-weight: bold;
+            color: #000;
+            font-size: 14px;
+            letter-spacing: 1px;
+        }
+
+        .desktop-nodes-row {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
+            z-index: 2;
+        }
+
+        .d-node {
+            background: rgba(0, 243, 255, 0.1);
+            border: 1px solid var(--neon-cyan);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 11px;
+            color: var(--neon-cyan);
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .d-node:hover {
+            background: var(--neon-cyan);
+            color: #000;
+            box-shadow: 0 0 15px var(--neon-cyan);
+        }
+
+        .hud-footer {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-glow);
+            padding: 12px 25px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            color: var(--text-dim);
+        }
+
+        /* Modal Overlay */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(5px);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background: var(--panel-bg);
+            border: 1px solid var(--neon-cyan);
+            padding: 25px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 0 30px rgba(0,243,255,0.3);
+        }
+        .close-modal {
+            float: right;
+            color: var(--neon-orange);
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ================= MOBILE INTERFACE ================= -->
+    <div class="mobile-view">
+        <div class="mobile-container">
+            <header class="mobile-header">
+                <div>
+                    <h1>NEO // ENTERPRISE OS</h1>
+                    <p style="font-size: 10px; color: var(--text-dim);">MARGIL MOLLAJ // WISAG</p>
+                </div>
+                <div class="meta">
+                    <span id="m-date">15.11.2026</span><br>
+                    <span style="color: var(--neon-cyan);">Hamburg 14°C</span>
+                </div>
+            </header>
+
+            <div class="mobile-core-box">
+                <div class="core-pulse" onclick="triggerCore()"></div>
+                <div class="voice-bar">🎙️ „Hey Neo“ - Bereit in Hamburg</div>
+            </div>
+
+            <div class="mobile-cards">
+                <!-- Morning Briefing -->
+                <div class="m-card" onclick="openModal('Briefing', '5 Objekte zur Kontrolle in Hamburg-Nord & Altona. Priorität: Tiefenreinigung HafenCity.')">
+                    <h3><span>📅 MORNING BRIEFING</span> <span>Hamburg-Nord</span></h3>
+                    <p>5 Objekte zur Kontrolle. Tippen für Details & Routen.</p>
+                </div>
+
+                <!-- Angebots Rechner -->
+                <div class="m-card" onclick="event.stopPropagation();">
+                    <h3><span>💰 ANGEBOTS-RECHNER</span> <span style="color:var(--neon-cyan);">31.50 €/h</span></h3>
+                    <p>Fläche (m²):</p>
+                    <input type="number" id="m-area" value="300" oninput="calculateMobile()">
+                    <div class="calc-result" id="m-total">Gesamt: 9,450.00 € netto</div>
+                    <a href="#" id="m-whatsapp-btn" class="action-btn" onclick="sendWhatsApp()">Angebot via WhatsApp senden</a>
+                </div>
+
+                <!-- Objekt Codes -->
+                <div class="m-card" onclick="openModal('Objekt Codes', 'Objekt 1045 (Westhafen): Torcode 2379\nObjekt 882 (Altona): Schlüsselkasten #4')">
+                    <h3><span>🔑 OBJEKT-CODES & SCHLÜSSEL</span> <span>WISAG HH</span></h3>
+                    <p>Torcodes für HafenCity & Altona aufrufen.</p>
+                </div>
+
+                <!-- Field Inspector -->
+                <div class="m-card" onclick="openModal('Field Inspector', 'Foto hochladen -> NEO generiert professionellen Mängelbericht auf Deutsch für den Kunden.')">
+                    <h3><span>📷 FIELD INSPECTOR</span> <span>Mängelbericht</span></h3>
+                    <p>Schäden dokumentieren & Bericht erstellen.</p>
+                </div>
+            </div>
+
+            <footer style="text-align: center; font-size: 10px; color: var(--text-dim); padding: 5px;">
+                SECURE ENTERPRISE LINK // WESER-EMS SECTOR ACTIVE
+            </footer>
+        </div>
+    </div>
+
+
+    <!-- ================= DESKTOP INTERFACE ================= -->
+    <div class="desktop-view">
+        <div class="desktop-container">
+            <header class="hud-topbar">
+                <h1>NEO // ENTERPRISE OS - COMMAND CENTER</h1>
+                <div style="font-size: 13px; color: var(--text-dim);">
+                    OPERATOR: <span style="color: var(--neon-cyan);">MARGIL MOLLAJ (WISAG HAMBURG)</span> | DATE: <span id="pc-date">15.11.2026</span> | WEATHER: <span style="color: var(--neon-cyan);">Hamburg 14°C</span>
+                </div>
+            </header>
+
+            <div class="hud-grid">
+                <!-- Left Panel -->
+                <div class="hud-panel">
+                    <h2>OPERATIONS & BRIEFING</h2>
+                    <p style="font-size: 12px; color: var(--text-dim);">Aktive Routen & Inspektionen:</p>
+                    <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 6px; border-left: 2px solid var(--neon-cyan);">
+                        <strong style="font-size: 12px; color: var(--neon-cyan);">Hamburg-Nord / HafenCity</strong>
+                        <p style="font-size: 11px; color: var(--text-dim); margin-top: 5px;">5 Objekte heute zugewiesen. Alle Sicherheitsprotokolle aktiv.</p>
+                    </div>
+                    <h2 style="margin-top: 10px;">OBJEKT-SICHERHEIT</h2>
+                    <p style="font-size: 11px; color: var(--text-dim);">Schnellzugriff auf Torcodes & Schließanlagen für Kundenbetreuung.</p>
+                </div>
+
+                <!-- Center Core & Nodes -->
+                <div class="desktop-center">
+                    <div class="pc-core" onclick="triggerCore()">
+                        <span>NEO CORE</span>
+                    </div>
+                    <div class="desktop-nodes-row">
+                        <div class="d-node" onclick="openModal('Angebots-Rechner', 'Tarif: 31.50 €/h aktiv. Nutzen Sie das Mobile-Panel für Sofort-Berechnungen.')">Angebots-Rechner</div>
+                        <div class="d-node" onclick="openModal('WhatsApp', 'Direktverbindung zu Hausverwaltung & Kunden aktiv.')">WhatsApp Direct</div>
+                        <div class="d-node" onclick="openModal('Field Inspector', 'Mängelberichte & Sonderreinigung Dokumentation.')">Field Inspector</div>
+                        <div class="d-node" onclick="openModal('Email', 'Verbindung mit margil.mollaj@wisag.de gesichert.')">Outlook Sync</div>
+                    </div>
+                </div>
+
+                <!-- Right Panel -->
+                <div class="hud-panel">
+                    <h2>SALES & BIDDING</h2>
+                    <p style="font-size: 12px; color: var(--text-dim);">Standard Tarif WISAG:</p>
+                    <div style="font-size: 18px; color: var(--neon-orange); font-weight: bold;">31.50 € / Stunde</div>
+                    <p style="font-size: 11px; color: var(--text-dim);">Optimiert für schnelle Hausverwaltung-Angebote in Hamburg.</p>
+                    
+                    <h2 style="margin-top: 15px;">SYSTEM STATUS</h2>
+                    <p style="font-size: 11px; color: var(--text-dim);">Uptime: 99.9%<br>Latency: 0.04ms<br>Security: Encrypted Enterprise Link</p>
+                </div>
+            </div>
+
+            <footer class="hud-footer">
+                <span>STATUS: ONLINE // WESER-EMS SECTOR</span>
+                <span>„Hey Neo“ Voice Assistant Ready</span>
+                <span>RENDER CLOUD HOSTED</span>
+            </footer>
+        </div>
+    </div>
+
+    <!-- Generic Modal -->
+    <div id="genericModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeModal()">&times;</span>
+            <h3 id="modal-title" style="color: var(--neon-cyan); margin-bottom: 10px; font-size: 14px;"></h3>
+            <p id="modal-text" style="font-size: 12px; color: var(--text-dim); line-height: 1.5; white-space: pre-line;"></p>
+        </div>
+    </div>
+
+    <script>
+        // Live Date Update
+        const today = new Date().toLocaleDateString('de-DE');
+        document.getElementById('m-date').innerText = today;
+        document.getElementById('pc-date').innerText = today;
+
+        // Calculator Logic (31.50 €/h standard rate estimation formula)
+        function calculateMobile() {
+            const area = document.getElementById('m-area').value;
+            // Standard formula estimation: area * rate factor
+            const rate = 31.50;
+            const total = area * 31.50; // Simple calculation model
+            document.getElementById('m-total').innerText = `Gesamt: ${total.toLocaleString('de-DE', {minimumFractionDigits: 2})} € netto`;
+        }
+
+        function sendWhatsApp() {
+            const area = document.getElementById('m-area').value;
+            const total = document.getElementById('m-total').innerText;
+            const text = encodeURIComponent(`Guten Tag, hier ist das Angebot der WISAG für Ihre Fläche (${area} m²): ${total} (Basis 31.50 €/h). Mit freundlichen Grüßen, Margil Mollaj`);
+            window.open(`https://wa.me/?text=${text}`, '_blank');
+        }
+
+        function triggerCore() {
+            alert("NEO Core aktiviert: Bereit für Sprachbefehle in Hamburg!");
+        }
+
+        function openModal(title, text) {
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-text').innerText = text;
+            document.getElementById('genericModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('genericModal').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
