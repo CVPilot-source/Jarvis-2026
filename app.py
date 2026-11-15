@@ -66,7 +66,7 @@ HTML_PAGE = """<!DOCTYPE html>
         .metrics { display: flex; gap: 15px; color: var(--muted); }
         .metrics span b { color: var(--text); }
 
-        /* MAIN GRID CONTAINER (Second Brain Style) */
+        /* MAIN GRID CONTAINER */
         .dashboard-grid {
             display: grid;
             grid-template-columns: 280px 1fr 300px;
@@ -169,7 +169,7 @@ HTML_PAGE = """<!DOCTYPE html>
 
     <!-- DASHBOARD GRID -->
     <div class="dashboard-grid">
-        <!-- LEFT COLUMN: INPUTS & BRIEFING -->
+        <!-- LEFT COLUMN -->
         <div style="display:flex; flex-direction:column; gap:14px;">
             <div class="card" onclick="quickCmd('Gib mir mein Morning Briefing mit Terminen heute.')" style="cursor:pointer;">
                 <div class="card-header"><span>$/brief-mode</span><span class="badge-enabled">ENABLED</span></div>
@@ -190,7 +190,7 @@ HTML_PAGE = """<!DOCTYPE html>
             </div>
         </div>
 
-        <!-- CENTER COLUMN: HOLOGRAPHIC CORE & VOICE -->
+        <!-- CENTER COLUMN -->
         <div class="center-core-panel">
             <div class="card-header" style="width:100%; justify-content:center; border:none; color:var(--cyan);">BRAIN MODE // ACTIVE VOICE STREAM</div>
             
@@ -231,7 +231,7 @@ HTML_PAGE = """<!DOCTYPE html>
             <button class="action-btn" onclick="toggleListening()">🎙️ Sprachbefehl starten</button>
         </div>
 
-        <!-- RIGHT COLUMN: TOOLS & AUTOMATION -->
+        <!-- RIGHT COLUMN -->
         <div style="display:flex; flex-direction:column; gap:14px;">
             <div class="card" onclick="openHolo('calc')" style="cursor:pointer;">
                 <div class="card-header"><span>📐 /calculator</span><span class="badge-enabled">READY</span></div>
@@ -534,7 +534,7 @@ def tg_notify():
     urllib.request.urlopen(req, timeout=5)
     return jsonify({"ok": True})
 
-@app.route("/chat", produces=["application/json"], methods=["POST"])
+@app.route("/chat", methods=["POST"])
 def chat():
     try:
         api_key = os.environ.get("GEMINI_API_KEY", "").strip()
