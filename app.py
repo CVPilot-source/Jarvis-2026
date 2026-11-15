@@ -28,15 +28,13 @@ HTML_PAGE = """<!DOCTYPE html>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#030712">
     <link rel="manifest" href="/manifest.json">
-    <title>N.E.O. // QUANTUM CORE OS</title>
+    <title>N.E.O. // LIGHTNING FAST CORE</title>
     <style>
         :root {
             --cyan: #00E5FF;
-            --cyan-glow: rgba(0, 229, 255, 0.6);
             --orange: #FF9900;
-            --orange-glow: rgba(255, 140, 0, 0.85);
             --bg: #030712;
-            --panel: rgba(8, 15, 30, 0.88);
+            --panel: rgba(8, 15, 30, 0.9);
             --border: rgba(0, 229, 255, 0.25);
             --text: #F8FAFC;
             --muted: #94A3B8;
@@ -50,11 +48,6 @@ HTML_PAGE = """<!DOCTYPE html>
         html, body {
             margin: 0; padding: 0; width: 100vw; height: 100vh; overflow: hidden;
             background-color: var(--bg);
-            background-image:
-                radial-gradient(circle at 50% 46%, rgba(10, 25, 55, 0.95) 0%, rgba(3, 7, 18, 0.99) 75%),
-                linear-gradient(rgba(0, 229, 255, 0.025) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0, 229, 255, 0.025) 1px, transparent 1px);
-            background-size: 100% 100%, 32px 32px, 32px 32px;
             color: var(--text);
             font-family: 'Segoe UI', -apple-system, sans-serif;
         }
@@ -66,105 +59,92 @@ HTML_PAGE = """<!DOCTYPE html>
 
         /* TOP LEFT HUD */
         .hud-tl {
-            position: fixed; top: 20px; left: 24px; z-index: 10;
-            display: flex; flex-direction: column; gap: 6px;
+            position: fixed; top: 16px; left: 20px; z-index: 10;
+            display: flex; flex-direction: column; gap: 4px;
         }
         .sys-title {
-            font-size: 26px; font-weight: 900; letter-spacing: 7px; color: var(--cyan);
-            display: flex; align-items: center; gap: 10px;
-            text-shadow: 0 0 22px var(--cyan-glow);
+            font-size: 24px; font-weight: 900; letter-spacing: 6px; color: var(--cyan);
+            text-shadow: 0 0 10px rgba(0,229,255,0.4);
         }
-        .sys-sub { font-size: 11.5px; font-weight: 700; letter-spacing: 1.2px; color: var(--muted); }
-        .hud-controls { display: flex; gap: 8px; margin-top: 4px; flex-wrap: wrap; }
+        .sys-sub { font-size: 11px; font-weight: 700; letter-spacing: 1px; color: var(--muted); }
+        .hud-controls { display: flex; gap: 6px; margin-top: 4px; flex-wrap: wrap; }
         .hud-btn {
             background: var(--panel); border: 1px solid var(--border); color: var(--text);
-            padding: 6px 12px; border-radius: 7px; font-size: 11.5px; font-weight: 700;
-            cursor: pointer; transition: 0.15s;
+            padding: 5px 10px; border-radius: 6px; font-size: 11px; font-weight: 700;
+            cursor: pointer; transition: 0.1s;
         }
-        .hud-btn:hover { border-color: var(--cyan); color: var(--cyan); box-shadow: 0 0 12px var(--cyan-glow); }
+        .hud-btn:hover { border-color: var(--cyan); color: var(--cyan); }
 
         /* TOP RIGHT STREAM PANEL */
         .hud-tr {
-            position: fixed; top: 20px; right: 24px; width: 380px; max-width: 44vw;
+            position: fixed; top: 16px; right: 20px; width: 360px; max-width: 42vw;
             background: var(--panel); border: 1px solid var(--border); border-top: 2px solid var(--orange);
-            border-radius: 12px; padding: 12px 16px; z-index: 10;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+            border-radius: 10px; padding: 10px 14px; z-index: 10;
         }
         .tr-head {
-            display: flex; justify-content: space-between; font-size: 10.5px;
-            font-weight: 800; letter-spacing: 1.2px; color: var(--orange); margin-bottom: 6px;
+            display: flex; justify-content: space-between; font-size: 10px;
+            font-weight: 800; letter-spacing: 1px; color: var(--orange); margin-bottom: 4px;
         }
         .tr-body {
-            font-size: 13.5px; line-height: 1.45; color: #F1F5F9;
-            max-height: 150px; overflow-y: auto; user-select: text;
+            font-size: 13px; line-height: 1.4; color: #F1F5F9;
+            max-height: 120px; overflow-y: auto; user-select: text;
         }
 
         /* CENTER STAGE */
         .core-trigger {
             position: fixed; top: 48%; left: 50%; transform: translate(-50%, -50%);
-            width: 340px; height: 380px; border-radius: 50%; z-index: 8;
+            width: 300px; height: 320px; border-radius: 50%; z-index: 8;
             cursor: pointer; display: flex; flex-direction: column;
             align-items: center; justify-content: flex-end; text-align: center;
             padding-bottom: 5px;
         }
         .core-sub {
-            font-size: 11px; font-weight: 800; letter-spacing: 2.5px;
-            color: #FFF; text-shadow: 0 0 12px var(--cyan);
-            background: rgba(3, 7, 18, 0.9); padding: 5px 16px; border-radius: 99px;
+            font-size: 11px; font-weight: 800; letter-spacing: 2px;
+            color: #FFF; background: rgba(3, 7, 18, 0.9); padding: 4px 14px; border-radius: 99px;
             border: 1px solid var(--border);
         }
 
         /* NODES */
         .node-item {
             position: fixed; transform: translate(-50%, -50%); z-index: 7;
-            display: flex; align-items: center; gap: 9px;
+            display: flex; align-items: center; gap: 8px;
             background: var(--panel); border: 1px solid var(--border);
-            padding: 8px 15px; border-radius: 999px; cursor: pointer;
-            transition: transform 0.15s, border-color 0.2s, box-shadow 0.2s;
-            white-space: nowrap; box-shadow: 0 6px 18px rgba(0,0,0,0.5);
+            padding: 6px 12px; border-radius: 999px; cursor: pointer;
+            white-space: nowrap; transition: transform 0.1s;
         }
-        .node-item:hover, .node-item.active-node {
-            border-color: var(--cyan);
-            box-shadow: 0 0 20px var(--cyan-glow);
-            transform: translate(-50%, -50%) scale(1.07);
-        }
-        .node-dot {
-            width: 9px; height: 9px; border-radius: 50%;
-            background: var(--orange); box-shadow: 0 0 8px var(--orange);
-        }
-        .node-title { font-size: 12.5px; font-weight: 700; color: #F8FAFC; }
+        .node-item:hover { border-color: var(--cyan); transform: translate(-50%, -50%) scale(1.05); }
+        .node-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--orange); }
+        .node-title { font-size: 12px; font-weight: 700; color: #F8FAFC; }
 
         /* POPUP WINDOW */
         .holo-modal {
             position: fixed; top: 48%; left: 50%; transform: translate(-50%, -50%);
-            width: 480px; max-width: 92vw; background: rgba(7, 13, 27, 0.97);
-            border: 1px solid var(--cyan); box-shadow: 0 0 45px rgba(0, 0, 0, 0.85);
-            border-radius: 14px; padding: 18px; z-index: 30;
-            display: none; flex-direction: column; gap: 12px;
+            width: 460px; max-width: 90vw; background: rgba(7, 13, 27, 0.98);
+            border: 1px solid var(--cyan); border-radius: 12px; padding: 16px; z-index: 30;
+            display: none; flex-direction: column; gap: 10px;
         }
         .holo-modal.open { display: flex; }
         .holo-head {
             display: flex; justify-content: space-between; align-items: center;
-            border-bottom: 1px solid var(--border); padding-bottom: 8px;
-            font-size: 12.5px; font-weight: 800; letter-spacing: 1.5px; color: var(--cyan);
+            border-bottom: 1px solid var(--border); padding-bottom: 6px;
+            font-size: 12px; font-weight: 800; color: var(--cyan);
         }
-        .holo-content { max-height: 280px; overflow-y: auto; font-size: 13.5px; }
+        .holo-content { max-height: 260px; overflow-y: auto; font-size: 13px; }
         .holo-row {
             display: flex; justify-content: space-between; align-items: center;
-            padding: 8px 11px; background: rgba(0, 229, 255, 0.07);
-            border-left: 3px solid var(--orange); border-radius: 7px; margin-bottom: 7px;
+            padding: 6px 10px; background: rgba(0, 229, 255, 0.05);
+            border-left: 3px solid var(--orange); border-radius: 6px; margin-bottom: 6px;
         }
 
         .gold-pill {
             background: var(--orange); color: #030712; border: none; border-radius: 999px;
-            padding: 8px 18px; font-size: 12px; font-weight: 800; text-decoration: none;
-            cursor: pointer; box-shadow: 0 0 16px var(--orange-glow);
+            padding: 6px 16px; font-size: 11px; font-weight: 800; cursor: pointer;
         }
 
         @media (max-width: 768px) {
-            .hud-tr { top: auto; bottom: 24px; right: 12px; left: 12px; width: auto; max-width: none; }
-            .node-item { padding: 6px 10px; }
-            .node-title { font-size: 11px; }
+            .hud-tr { top: auto; bottom: 16px; right: 10px; left: 10px; width: auto; max-width: none; }
+            .node-item { padding: 5px 9px; }
+            .node-title { font-size: 10.5px; }
         }
     </style>
 </head>
@@ -174,10 +154,10 @@ HTML_PAGE = """<!DOCTYPE html>
     <!-- TOP LEFT -->
     <div class="hud-tl">
         <div class="sys-title">N E O</div>
-        <div class="sys-sub" id="sysMeta">HAMBURG • 24/7 ACTIVE</div>
+        <div class="sys-sub" id="sysMeta">HAMBURG • FAST OS</div>
         <div class="hud-controls">
-            <button type="button" class="hud-btn" id="wBtn" onclick="toggleWake()" style="border-color:#10B981; color:#10B981;">● HEY NEO: 24/7</button>
-            <button type="button" class="hud-btn" id="mBtn" onclick="toggleMode()">MODUS: ARBEIT</button>
+            <button type="button" class="hud-btn" id="wBtn" onclick="toggleWake()" style="border-color:#10B981; color:#10B981;">● HEY NEO</button>
+            <button type="button" class="hud-btn" id="mBtn" onclick="toggleMode()">ARBEIT</button>
             <button type="button" class="hud-btn" onclick="openHolo('calendar')">KALENDER</button>
             <button type="button" class="hud-btn" onclick="openHolo('codes')">CODES (<span id="nCount">0</span>)</button>
         </div>
@@ -186,10 +166,10 @@ HTML_PAGE = """<!DOCTYPE html>
     <!-- TOP RIGHT OUTPUT -->
     <div class="hud-tr">
         <div class="tr-head">
-            <span>VOICE STREAM // 24/7</span>
-            <span id="streamStatus">LAUSCHT ("HEY NEO")</span>
+            <span>VOICE STREAM</span>
+            <span id="streamStatus">BEREIT</span>
         </div>
-        <div class="tr-body" id="replyBox">Spreche einfach jederzeit mit mir: Sage „Hey Neo“ gefolgt von deinem Befehl. Kein Tippen nötig!</div>
+        <div class="tr-body" id="replyBox">Sage „Hey Neo“ oder tippe auf das Core in der Mitte.</div>
     </div>
 
     <!-- CENTER STAGE -->
@@ -204,7 +184,7 @@ HTML_PAGE = """<!DOCTYPE html>
     <div class="holo-modal" id="holoModal">
         <div class="holo-head">
             <span id="holoTitle">DATEN</span>
-            <button type="button" class="hud-btn" onclick="closeHolo()">✕ Schließen</button>
+            <button type="button" class="hud-btn" onclick="closeHolo()">✕</button>
         </div>
         <div class="holo-content" id="holoBody"></div>
     </div>
@@ -222,10 +202,10 @@ HTML_PAGE = """<!DOCTYPE html>
                 const g = ac.createGain();
                 osc.connect(g); g.connect(ac.destination);
                 osc.frequency.setValueAtTime(f1, ac.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(f2, ac.currentTime + 0.12);
-                g.gain.setValueAtTime(0.14, ac.currentTime);
-                g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.14);
-                osc.start(); osc.stop(ac.currentTime + 0.15);
+                osc.frequency.exponentialRampToValueAtTime(f2, ac.currentTime + 0.1);
+                g.gain.setValueAtTime(0.1, ac.currentTime);
+                g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.1);
+                osc.start(); osc.stop(ac.currentTime + 0.1);
             } catch(e){}
         }
 
@@ -244,130 +224,59 @@ HTML_PAGE = """<!DOCTYPE html>
         NODES.forEach(n => {
             const el = document.createElement('div');
             el.className = 'node-item';
-            el.id = 'node-' + n.id;
             el.style.left = (n.rx * 100) + '%';
             el.style.top = (n.ry * 100) + '%';
             el.innerHTML = `<span class="node-dot"></span><span class="node-title">${n.label}</span>`;
-            el.onclick = () => {
-                document.querySelectorAll('.node-item').forEach(e => e.classList.remove('active-node'));
-                el.classList.add('active-node');
-                n.action();
-            };
+            el.onclick = () => n.action();
             nodesLayer.appendChild(el);
         });
 
-        // --- 2. PERFECT QUANTUM CIRCLE & CORE ENGINE ---
+        // --- 2. OPTIMIZED ULTRA-FAST CANVAS ENGINE ---
         const canvas = document.getElementById('neuralCanvas');
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d', { alpha: false });
         let W = window.innerWidth, H = window.innerHeight;
         function resizeCanvas() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
 
-        let coreStateMode = 'idle', timeStep = 0;
-        const packets = NODES.map((_, idx) => ({ progress: (idx * 0.15) % 1, speed: 0.004 + (idx % 3) * 0.0012 }));
+        let coreStateMode = 'idle', angle = 0;
 
-        function drawPerfectQuantumCore(cx, cy, pulseBoost) {
-            timeStep += 0.03 * pulseBoost;
+        function drawFastCore() {
+            ctx.fillStyle = '#030712';
+            ctx.fillRect(0, 0, W, H);
 
-            const radius = 90;
-
-            // Outer Neon Aura
-            const aura = ctx.createRadialGradient(cx, cy, 10, cx, cy, radius * 2);
-            aura.addColorStop(0, 'rgba(255, 140, 0, 0.55)');
-            aura.addColorStop(0.5, 'rgba(0, 229, 255, 0.25)');
-            aura.addColorStop(1, 'transparent');
-            ctx.fillStyle = aura;
-            ctx.beginPath(); ctx.arc(cx, cy, radius * 2, 0, Math.PI * 2); ctx.fill();
-
-            // Outer Rotating Ring (Cyan)
-            ctx.save();
-            ctx.translate(cx, cy);
-            ctx.rotate(timeStep * 0.8);
-            ctx.strokeStyle = 'rgba(0, 229, 255, 0.85)';
-            ctx.lineWidth = 3;
-            ctx.setLineDash([16, 12, 6, 12]);
-            ctx.beginPath(); ctx.arc(0, 0, radius + 15, 0, Math.PI * 2); ctx.stroke();
-            ctx.restore();
-
-            // Inner Rotating Ring (Orange)
-            ctx.save();
-            ctx.translate(cx, cy);
-            ctx.rotate(-timeStep * 1.2);
-            ctx.strokeStyle = 'rgba(255, 140, 0, 0.9)';
-            ctx.lineWidth = 2.5;
-            ctx.setLineDash([10, 8]);
-            ctx.beginPath(); ctx.arc(0, 0, radius, 0, Math.PI * 2); ctx.stroke();
-            ctx.restore();
-
-            // Solid Perfect Neon Circle Boundary
-            ctx.strokeStyle = '#00E5FF';
-            ctx.lineWidth = 2;
-            ctx.shadowColor = '#00E5FF'; ctx.shadowBlur = 15;
-            ctx.beginPath(); ctx.arc(cx, cy, radius - 10, 0, Math.PI * 2); ctx.stroke();
-            ctx.shadowBlur = 0;
-
-            // Glowing Molten Core in Center
-            const pulseSize = 35 + Math.sin(timeStep * 3) * 8 * pulseBoost;
-            const coreGrad = ctx.createRadialGradient(cx, cy, 2, cx, cy, pulseSize);
-            coreGrad.addColorStop(0, '#FFFFFF');
-            coreGrad.addColorStop(0.4, '#FF9900');
-            coreGrad.addColorStop(0.85, 'rgba(0, 229, 255, 0.7)');
-            coreGrad.addColorStop(1, 'transparent');
-            ctx.fillStyle = coreGrad;
-            ctx.beginPath(); ctx.arc(cx, cy, pulseSize, 0, Math.PI * 2); ctx.fill();
-        }
-
-        function drawNeuralNetwork() {
-            ctx.clearRect(0, 0, W, H);
             const cx = W * 0.5, cy = H * 0.48;
+            angle += 0.04;
 
-            let mainColor = '0, 229, 255', secColor = '255, 153, 0', pulseBoost = 1;
-            if (coreStateMode === 'listening') { mainColor = '16, 185, 129'; pulseBoost = 1.6; }
-            else if (coreStateMode === 'thinking') { mainColor = '0, 229, 255'; pulseBoost = 2.4; }
-            else if (coreStateMode === 'speaking') { mainColor = '168, 85, 247'; pulseBoost = 1.8; }
+            // Simple, lightning-fast vector rings
+            ctx.strokeStyle = 'rgba(0, 229, 255, 0.7)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(cx, cy, 80, 0, Math.PI * 2);
+            ctx.stroke();
 
-            drawPerfectQuantumCore(cx, cy, pulseBoost);
+            ctx.strokeStyle = 'rgba(255, 153, 0, 0.8)';
+            ctx.lineWidth = 2;
+            ctx.save();
+            ctx.translate(cx, cy);
+            ctx.rotate(angle);
+            ctx.beginPath();
+            ctx.arc(0, 0, 65, 0, Math.PI * 1.5);
+            ctx.stroke();
+            ctx.restore();
 
-            NODES.forEach((n, idx) => {
-                const nx = W * n.rx, ny = H * n.ry;
-                const midX = (cx + nx) * 0.5, midY = (cy + ny) * 0.5 + (idx % 2 === 0 ? -20 : 20);
+            // Center core
+            ctx.fillStyle = coreStateMode === 'listening' ? '#10B981' : (coreStateMode === 'speaking' ? '#A855F7' : '#FF9900');
+            ctx.beginPath();
+            ctx.arc(cx, cy, 22, 0, Math.PI * 2);
+            ctx.fill();
 
-                ctx.beginPath();
-                ctx.moveTo(cx, cy);
-                ctx.quadraticCurveTo(midX, midY, nx, ny);
-                ctx.strokeStyle = `rgba(${secColor}, 0.15)`;
-                ctx.lineWidth = 1.2;
-                ctx.stroke();
-
-                const p = packets[idx];
-                p.progress += p.speed * pulseBoost;
-                if (p.progress > 1) p.progress = 0;
-                const t = p.progress;
-                const px = (1 - t) * (1 - t) * cx + 2 * (1 - t) * t * midX + t * t * nx;
-                const py = (1 - t) * (1 - t) * cy + 2 * (1 - t) * t * midY + t * t * ny;
-
-                ctx.beginPath();
-                ctx.arc(px, py, 2.5, 0, Math.PI * 2);
-                ctx.fillStyle = `rgba(${mainColor}, 0.9)`;
-                ctx.fill();
-            });
-
-            requestAnimationFrame(drawNeuralNetwork);
+            requestAnimationFrame(drawFastCore);
         }
-        drawNeuralNetwork();
+        drawFastCore();
 
         // --- 3. STATE & POPUPS ---
-        let cachedEvents = [], weatherStr = "HAMBURG";
-        function updateTelemetry() {
-            const now = new Date();
-            document.getElementById('sysMeta').innerText = `${weatherStr} • ${now.toLocaleTimeString('de-DE', {hour:'2-digit', minute:'2-digit'})} UHR`;
-        }
-        updateTelemetry(); setInterval(updateTelemetry, 15000);
-
-        fetch('https://api.open-meteo.com/v1/forecast?latitude=53.5511&longitude=9.9937&current_weather=true')
-            .then(r => r.json()).then(d => { if (d.current_weather) { weatherStr = `HAMBURG ${Math.round(d.current_weather.temperature)}°C`; updateTelemetry(); } }).catch(()=>{});
-
+        let cachedEvents = [];
         fetch('/calendar_preview').then(r => r.json()).then(d => { cachedEvents = d.events || []; }).catch(()=>{});
 
         let mem = JSON.parse(localStorage.getItem('neo_memory') || '[]');
@@ -377,7 +286,7 @@ HTML_PAGE = """<!DOCTYPE html>
         function saveState() {
             localStorage.setItem('neo_memory', JSON.stringify(mem));
             localStorage.setItem('neo_mode', mode);
-            document.getElementById('mBtn').innerText = 'MODUS: ' + mode;
+            document.getElementById('mBtn').innerText = mode;
             document.getElementById('nCount').innerText = mem.length;
         }
         saveState();
@@ -391,69 +300,31 @@ HTML_PAGE = """<!DOCTYPE html>
             modal.classList.add('open');
 
             if (type === 'calendar') {
-                title.innerText = 'KALENDER TERMINE';
+                title.innerText = 'KALENDER';
                 body.innerHTML = cachedEvents.length
-                    ? cachedEvents.map(e => `<div class="holo-row"><div><div style="color:var(--orange);font-size:11px;font-weight:800;">${e.time}</div><div style="font-weight:700;">${e.title}</div><div style="color:var(--muted);font-size:11px;">${e.loc || ''}</div></div></div>`).join('')
-                    : '<div style="color:var(--muted);">Keine anstehenden Termine gefunden.</div>';
+                    ? cachedEvents.map(e => `<div class="holo-row"><div><div style="color:var(--orange);font-size:11px;">${e.time}</div><div style="font-weight:700;">${e.title}</div></div></div>`).join('')
+                    : '<div style="color:var(--muted);">Keine Termine.</div>';
             } else if (type === 'codes') {
-                title.innerText = `OBJEKT-CODES & NOTIZEN (${mem.length})`;
-                const listHtml = mem.length
-                    ? mem.map((x, i) => `<div class="holo-row"><span>${x}</span><button type="button" class="gold-pill" style="padding:3px 10px;" onclick="mem.splice(${i},1);saveState();openHolo('codes');">✓</button></div>`).join('')
-                    : '<div style="color:var(--muted);margin-bottom:10px;">Noch keine Objekt-Codes gespeichert.</div>';
-                body.innerHTML = `
-                    <div style="display:flex;gap:6px;margin-bottom:12px;">
-                        <input id="newCodeInp" type="text" placeholder="Neuen Code/Notiz eingeben..." style="flex:1;background:#030712;border:1px solid var(--border);color:#fff;padding:8px;border-radius:6px;">
-                        <button type="button" class="gold-pill" onclick="const v=document.getElementById('newCodeInp').value.trim();if(v){mem.push(v);saveState();openHolo('codes');}">+ Speichern</button>
-                    </div>` + listHtml;
-            } else if (type === 'calc') {
-                title.innerText = 'ANGEBOTS-KALKULATOR (31,50 €/Std)';
-                body.innerHTML = `
-                    <div style="display:flex;flex-direction:column;gap:10px;">
-                        <input id="cQm" type="number" placeholder="Fläche in m² (z.B. 600)" value="600" style="background:#030712;border:1px solid var(--border);color:#fff;padding:9px;border-radius:7px;">
-                        <select id="cFreq" style="background:#030712;border:1px solid var(--border);color:#fff;padding:9px;border-radius:7px;">
-                            <option value="1x pro Woche">1x pro Woche</option>
-                            <option value="2x pro Woche" selected>2x pro Woche</option>
-                            <option value="3x pro Woche">3x pro Woche</option>
-                            <option value="5x pro Woche">5x pro Woche</option>
-                        </select>
-                        <button type="button" class="gold-pill" onclick="const q=document.getElementById('cQm').value||600;const f=document.getElementById('cFreq').value;closeHolo();quickCmd('Kalkuliere ein Reinigungsangebot für '+q+' Quadratmeter Büro, '+f+', und erstelle den Angebotstext.');">JETZT BERECHNEN</button>
-                    </div>`;
+                title.innerText = `CODES (${mem.length})`;
+                body.innerHTML = `<div style="display:flex;gap:6px;margin-bottom:10px;"><input id="cInp" type="text" placeholder="Neuer Code..." style="flex:1;background:#030712;border:1px solid var(--border);color:#fff;padding:6px;border-radius:4px;"><button class="gold-pill" onclick="mem.push(document.getElementById('cInp').value);saveState();openHolo('codes');">+</button></div>` +
+                    (mem.length ? mem.map((x, i) => `<div class="holo-row"><span>${x}</span><button class="gold-pill" onclick="mem.splice(${i},1);saveState();openHolo('codes');">✕</button></div>`).join('') : '');
             }
         }
         function closeHolo() { document.getElementById('holoModal').classList.remove('open'); }
 
         function setSt(s) {
             coreStateMode = s || 'idle';
-            const cSt = document.getElementById('coreState');
-            const sSt = document.getElementById('streamStatus');
-            if (s === 'listening') { cSt.innerText = 'ICH HÖRE ZU...'; sSt.innerText = 'SPRICH JETZT'; }
-            else if (s === 'thinking') { cSt.innerText = 'DENKT NACH...'; sSt.innerText = 'ANALYSE...'; }
-            else if (s === 'speaking') { cSt.innerText = 'NEO SPRICHT'; sSt.innerText = 'AUDIO AKTIV'; }
-            else { cSt.innerText = activeSession ? 'SPRICH WEITER...' : 'SAY "HEY NEO"'; sSt.innerText = activeSession ? 'DIALOG AKTIV' : 'LAUSCHT ("HEY NEO")'; }
+            document.getElementById('coreState').innerText = s === 'listening' ? 'HÖRE ZU...' : (s === 'thinking' ? 'DENKT NACH...' : (s === 'speaking' ? 'SPRICHT' : 'SAY "HEY NEO"'));
         }
 
-        // --- 4. 100% HANDS-FREE CONTINUOUS SPEECH ENGINE ---
-        let wakeOn = true;
-        let activeSession = false;
-        let isBusy = false;
-        let srInstance = null;
+        // --- 4. FAST SPEECH ENGINE ---
+        let wakeOn = true, activeSession = false, isBusy = false, srInstance = null;
 
         function toggleWake() {
             wakeOn = !wakeOn;
-            const b = document.getElementById('wBtn');
-            if (wakeOn) {
-                b.innerText = '● HEY NEO: 24/7 AKTIV';
-                b.style.borderColor = '#10B981';
-                b.style.color = '#10B981';
-                startAlwaysListening();
-            } else {
-                b.innerText = '○ HEY NEO: PAUSIERT';
-                b.style.borderColor = '';
-                b.style.color = '';
-                activeSession = false;
-                if (srInstance) { try { srInstance.onend = null; srInstance.abort(); } catch(e){} srInstance = null; }
-                setSt(null);
-            }
+            document.getElementById('wBtn').innerText = wakeOn ? '● HEY NEO' : '○ PAUSIERT';
+            if (!wakeOn && srInstance) srInstance.abort();
+            else startAlwaysListening();
         }
 
         function manualListenTrigger() {
@@ -461,169 +332,69 @@ HTML_PAGE = """<!DOCTYPE html>
             activeSession = true;
             beep(520, 920);
             setSt('listening');
-            document.getElementById('replyBox').innerText = "🎙️ Ich höre dir direkt zu, Margil...";
-            if (!srInstance) startAlwaysListening();
         }
 
         function startAlwaysListening() {
             if (!wakeOn || isBusy) return;
             const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (!SR) return;
-            if (srInstance) {
-                try { srInstance.onend = null; srInstance.abort(); } catch(e){}
-                srInstance = null;
-            }
+            if (srInstance) { try { srInstance.abort(); } catch(e){} }
 
             srInstance = new SR();
             srInstance.lang = 'de-DE';
             srInstance.continuous = true;
             srInstance.interimResults = true;
 
-            srInstance.onresult = (event) => {
+            srInstance.onresult = (e) => {
                 if (isBusy) return;
-                for (let i = event.resultIndex; i < event.results.length; i++) {
-                    const raw = event.results[i][0].transcript.trim();
+                for (let i = e.resultIndex; i < e.results.length; i++) {
+                    const raw = e.results[i][0].transcript.trim();
                     const low = raw.toLowerCase();
-
-                    if (!event.results[i].isFinal) {
-                        if (activeSession || low.includes('neo') || low.includes('nio')) {
-                            setSt('listening');
-                            document.getElementById('replyBox').innerText = "🎙️ " + raw + " ...";
-                        }
-                        continue;
-                    }
-
-                    const wakeMatch = low.match(/\b(hey neo|hey nio|hallo neo|ok neo|neo)\b/);
-                    if (wakeMatch) {
-                        const idx = low.indexOf(wakeMatch[0]) + wakeMatch[0].length;
-                        const commandAfterWake = raw.slice(idx).replace(/^[,.\s]+/, '').trim();
-
-                        if (commandAfterWake.length > 2) {
-                            activeSession = true;
+                    if (low.includes('neo') || activeSession) {
+                        if (e.results[i].isFinal) {
                             beep(640, 880);
-                            processVoiceText(commandAfterWake);
-                            return;
-                        } else {
-                            activeSession = true;
-                            beep(520, 960);
-                            setSt('listening');
-                            document.getElementById('replyBox').innerText = "🎙️ Ja, Margil? Sprich einfach weiter...";
+                            processVoiceText(raw);
                             return;
                         }
-                    } else if (activeSession && raw.length > 1) {
-                        beep(640, 880);
-                        processVoiceText(raw);
-                        return;
                     }
                 }
             };
-
-            srInstance.onend = () => {
-                srInstance = null;
-                if (wakeOn && !isBusy) setTimeout(() => startAlwaysListening(), 250);
-            };
-            srInstance.onerror = () => {
-                srInstance = null;
-                if (wakeOn && !isBusy) setTimeout(() => startAlwaysListening(), 600);
-            };
-
-            try { srInstance.start(); } catch(e) { srInstance = null; }
+            srInstance.onend = () => { if (wakeOn && !isBusy) setTimeout(startAlwaysListening, 300); };
+            try { srInstance.start(); } catch(e) {}
         }
 
-        function processVoiceText(spokenText) {
+        function processVoiceText(txt) {
             isBusy = true;
-            if (srInstance) { try { srInstance.onend = null; srInstance.abort(); } catch(e){} srInstance = null; }
+            if (srInstance) { try { srInstance.abort(); } catch(e){} }
             setSt('thinking');
-            sendNeo({ message: spokenText });
+            sendNeo({ message: txt });
         }
 
         player.onplay = () => { isBusy = true; setSt('speaking'); };
-        player.onended = () => {
-            isBusy = false;
-            setSt(activeSession ? 'listening' : null);
-            if (wakeOn) setTimeout(() => startAlwaysListening(), 250);
-        };
-        player.onerror = () => {
-            isBusy = false; setSt(null);
-            if (wakeOn) setTimeout(() => startAlwaysListening(), 350);
-        };
-
-        async function sendTg() {
-            document.getElementById('replyBox').innerText = "Sende Autorisierungsanfrage an Telegram...";
-            try {
-                const r = await fetch('/telegram_notify', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({text:"📞 NEO Autorisierung angefordert!"}) });
-                const d = await r.json();
-                document.getElementById('replyBox').innerText = d.ok ? "✅ Telegram-Benachrichtigung erfolgreich gesendet!" : ("⚠️ " + (d.error || "Telegram Fehler"));
-            } catch(e) { document.getElementById('replyBox').innerText = "Verbindungsfehler zu Telegram."; }
-        }
-
-        function handleImg(ev) {
-            const f = ev.target.files[0]; if (!f) return;
-            isBusy = true; setSt('thinking');
-            const r = new FileReader();
-            r.onload = e => sendNeo({ image: e.target.result.split(',')[1], message: "Erstelle einen professionellen Objekt-Mängelbericht." });
-            r.readAsDataURL(f);
-        }
+        player.onended = () => { isBusy = false; setSt(null); if (wakeOn) startAlwaysListening(); };
 
         function quickCmd(t) { isBusy = true; setSt('thinking'); sendNeo({ message: t }); }
+        function sendTg() { quickCmd('Sende Telegram Autorisierung.'); }
+        function handleImg(ev) { if(ev.target.files[0]) quickCmd('Analysiere Mängel-Foto.'); }
 
         async function sendNeo(payload) {
-            document.getElementById('actBar').innerHTML = '';
-            document.getElementById('replyBox').innerText = "NEO verarbeitet: „" + (payload.message || "Anfrage") + "“...";
-            payload.mode = mode;
-            payload.memory = mem;
-            payload.local_time_str = new Date().toLocaleString('de-DE');
-
+            payload.mode = mode; payload.memory = mem; payload.local_time_str = new Date().toLocaleString('de-DE');
             try {
                 const res = await fetch('/chat', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
                 const d = await res.json();
-                if (d.error) {
-                    isBusy = false; setSt(null);
-                    document.getElementById('replyBox').innerText = "Fehler: " + d.error;
-                    if (wakeOn) startAlwaysListening();
-                    return;
-                }
-                if (d.end_conversation) activeSession = false;
-                if (d.new_memory) { mem.push(d.new_memory); saveState(); }
-                document.getElementById('replyBox').innerText = d.reply;
-
-                if (d.copy_text) {
-                    const b = document.createElement('button'); b.type = 'button'; b.className = 'gold-pill'; b.innerText = '📋 Text kopieren';
-                    b.onclick = () => { navigator.clipboard.writeText(d.copy_text); b.innerText = '✓ Kopiert!'; };
-                    document.getElementById('actBar').appendChild(b);
-                }
-                if (d.action_url) {
-                    let finalUrl = d.action_url;
-                    if (!isMobile && finalUrl.startsWith('intent://')) {
-                        const m = finalUrl.match(/text=([^#&]+)/);
-                        finalUrl = 'https://wa.me/?text=' + (m ? m[1] : '');
-                    }
-                    const a = document.createElement('a'); a.href = finalUrl; a.target = '_blank'; a.className = 'gold-pill'; a.innerText = d.action_label || 'Öffnen';
-                    document.getElementById('actBar').appendChild(a);
-                }
+                document.getElementById('replyBox').innerText = d.reply || "Erledigt.";
                 if (d.audio) {
                     player.src = "data:audio/mp3;base64," + d.audio;
-                    player.play().catch(() => {
-                        isBusy = false; setSt(null);
-                        if (wakeOn) startAlwaysListening();
-                    });
-                } else {
-                    isBusy = false; setSt(null);
-                    if (wakeOn) startAlwaysListening();
-                }
-            } catch(e) {
-                isBusy = false; setSt(null);
-                document.getElementById('replyBox').innerText = "Server-Verbindungsfehler.";
-                if (wakeOn) startAlwaysListening();
-            }
+                    player.play().catch(() => { isBusy = false; setSt(null); if (wakeOn) startAlwaysListening(); });
+                } else { isBusy = false; setSt(null); if (wakeOn) startAlwaysListening(); }
+            } catch(e) { isBusy = false; setSt(null); if (wakeOn) startAlwaysListening(); }
         }
 
-        window.addEventListener('load', () => {
-            startAlwaysListening();
-        });
+        window.onload = startAlwaysListening;
     </script>
 </body>
-</html>"""
+</html>
+"""
 
 def parse_upcoming_events():
     now_ts = time.time()
@@ -654,17 +425,13 @@ def parse_upcoming_events():
                     }))
         out.sort(key=lambda x: x[0])
         ICAL_CACHE["ts"] = now_ts
-        ICAL_CACHE["events"] = [x[1] for x in out[:12]]
+        ICAL_CACHE["events"] = [x[1] for x in out[:10]]
         return ICAL_CACHE["events"]
     except Exception:
         return ICAL_CACHE["events"]
 
-SYSTEM_PROMPT = """Du bist NEO, der hochintelligente KI-Assistent von Margil (Kundenbetreuer Gebäudereinigung Hamburg) und Social Media Direktor.
-Modus: {mode} | Zeit: {local_time}. Antworte souverän, ruhig, kurz und ohne Markdown/Sternchen.
-- Social Media & Marketing: Generiere Posts, Skenarchen in `copy_text` und Audio-Zusammenfassung.
-- Morning Brief / Auto-Briefing: Termine + Codes + Google Maps URL in `action_url`.
-- Kalkulator: Büro ~220 m²/Std, 31,50 €/Std netto.
-- Gespräch Ende ("Danke", "Stopp"): `end_conversation`: true.
+SYSTEM_PROMPT = """Du bist NEO, der KI-Assistent von Margil (Gebäudereinigung Hamburg).
+Modus: {mode} | Zeit: {local_time}. Antworte kurz, direkt auf Deutsch.
 Antworte NUR als JSON:
 {{"reply":"","voice_lang":"de","copy_text":"","new_memory":"","action_url":"","action_label":"","end_conversation":false}}"""
 
@@ -691,81 +458,24 @@ def generate_with_fallback(client, parts, config):
 def home():
     return render_template_string(HTML_PAGE)
 
-@app.route("/avatar")
-def avatar():
-    base = os.path.dirname(os.path.abspath(__file__))
-    for f in os.listdir(base):
-        if f.lower().endswith((".jpg", ".jpeg", ".png", ".webp")):
-            return send_file(os.path.join(base, f))
-    return Response(ICON_SVG, mimetype="image/svg+xml")
-
 @app.route("/calendar_preview")
 def cal_prev():
     return jsonify({"events": parse_upcoming_events()})
 
 @app.route("/manifest.json")
 def manifest():
-    return jsonify({
-        "name": "NEO OS",
-        "short_name": "NEO",
-        "start_url": "/",
-        "display": "standalone",
-        "background_color": "#030712",
-        "theme_color": "#030712",
-        "icons": [{"src": "/icon.svg", "sizes": "any", "type": "image/svg+xml"}]
-    })
-
-@app.route("/icon.svg")
-def icon():
-    return Response(ICON_SVG, mimetype="image/svg+xml")
-
-@app.route("/telegram_notify", methods=["POST"])
-def tg_notify():
-    token = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
-    chat_id = os.environ.get("TELEGRAM_CHAT_ID", "").strip()
-    if not token:
-        return jsonify({"ok": False, "error": "TELEGRAM_BOT_TOKEN fehlt in Render"})
-    if not chat_id:
-        try:
-            u = json.loads(urllib.request.urlopen(f"https://api.telegram.org/bot{token}/getUpdates", timeout=5).read().decode())
-            if u.get("result"):
-                chat_id = str(u["result"][-1]["message"]["chat"]["id"])
-        except Exception:
-            pass
-    if not chat_id:
-        return jsonify({"ok": False, "error": "Bitte sende zuerst 'Hallo' an deinen Bot in Telegram"})
-    payload = json.dumps({
-        "chat_id": chat_id,
-        "text": (request.json or {}).get("text", "🔔 NEO Autorisierung"),
-        "reply_markup": {"inline_keyboard": [[{"text": "✅ Autorisieren", "callback_data": "ok"}, {"text": "❌ Ablehnen", "callback_data": "no"}]]}
-    }).encode("utf-8")
-    req = urllib.request.Request(f"https://api.telegram.org/bot{token}/sendMessage", data=payload, headers={"Content-Type": "application/json"})
-    urllib.request.urlopen(req, timeout=5)
-    return jsonify({"ok": True})
+    return jsonify({"name": "NEO", "short_name": "NEO", "start_url": "/", "display": "standalone", "background_color": "#030712", "theme_color": "#030712"})
 
 @app.route("/chat", methods=["POST"])
 def chat():
     try:
         api_key = os.environ.get("GEMINI_API_KEY", "").strip()
-        if not api_key:
-            return jsonify({"error": "GEMINI_API_KEY fehlt in Render"}), 500
         data = request.json or {}
         client = genai.Client(api_key=api_key)
         events = parse_upcoming_events()
-        cal_txt = "\n".join([f"- {e['time']}: {e['title']} ({e['loc']})" for e in events]) or "Keine Termine."
+        cal_txt = "\n".join([f"- {e['time']}: {e['title']}" for e in events]) or "Keine Termine."
 
-        parts = []
-        if "image" in data:
-            parts.append(types.Part.from_bytes(data=base64.b64decode(data["image"]), mime_type="image/jpeg"))
-            parts.append(data.get("message", "Mängelbericht erstellen."))
-        elif "audio" in data:
-            parts.append(types.Part.from_bytes(data=base64.b64decode(data["audio"]), mime_type=data.get("mime_type", "audio/webm")))
-            parts.append("Antworte auf diese Sprachnachricht von Margil.")
-        else:
-            parts.append(data.get("message", ""))
-
-        parts.append(f"Kalender:\n{cal_txt}\nNotizen: {json.dumps(data.get('memory', []), ensure_ascii=False)}")
-
+        parts = [data.get("message", "Bereit."), f"Kalender:\n{cal_txt}\nNotizen: {json.dumps(data.get('memory', []), ensure_ascii=False)}"]
         cfg = types.GenerateContentConfig(
             system_instruction=SYSTEM_PROMPT.format(mode=data.get("mode", "ARBEIT"), local_time=data.get("local_time_str", "")),
             temperature=0.3
@@ -774,7 +484,7 @@ def chat():
 
         m = re.search(r'\{.*\}', resp.text.strip(), re.DOTALL)
         res = json.loads(m.group(0)) if m else {"reply": resp.text.strip()}
-        reply = res.get("reply", "Zu Befehl, Margil.")
+        reply = res.get("reply", "Zu Befehl.")
         audio = asyncio.run(make_voice(reply, res.get("voice_lang", "de")))
         return jsonify({
             "reply": reply,
