@@ -6,7 +6,7 @@ import base64
 import asyncio
 import urllib.request
 from datetime import datetime, timedelta
-from flask import Flask, request, jsonify, render_template_string, Response, send_file
+from flask import Flask, request, jsonify, render_template_string, Response
 from google import genai
 from google.genai import types
 import edge_tts
@@ -36,10 +36,10 @@ HTML_PAGE = """<!DOCTYPE html>
             --cyan: #00E5FF;
             --orange: #FF9900;
             --bg: #030712;
-            --panel: rgba(6, 12, 24, 0.85);
-            --panel-hover: rgba(10, 20, 38, 0.95);
-            --border: rgba(0, 229, 255, 0.25);
-            --border-glow: rgba(0, 229, 255, 0.6);
+            --panel: rgba(6, 12, 24, 0.9);
+            --panel-hover: rgba(10, 20, 38, 0.98);
+            --border: rgba(0, 229, 255, 0.3);
+            --border-glow: rgba(0, 229, 255, 0.7);
             --text: #F8FAFC;
             --muted: #64748B;
             --green: #10B981;
@@ -55,9 +55,9 @@ HTML_PAGE = """<!DOCTYPE html>
             margin: 0; padding: 0; width: 100vw; height: 100vh; overflow-x: hidden;
             background-color: var(--bg);
             background-image: 
-                radial-gradient(circle at 50% 50%, rgba(0, 229, 255, 0.05) 0%, transparent 80%),
-                linear-gradient(rgba(0, 229, 255, 0.015) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0, 229, 255, 0.015) 1px, transparent 1px);
+                radial-gradient(circle at 50% 50%, rgba(0, 229, 255, 0.07) 0%, transparent 80%),
+                linear-gradient(rgba(0, 229, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 229, 255, 0.02) 1px, transparent 1px);
             background-size: 100% 100%, 40px 40px, 40px 40px;
             color: var(--text);
             font-family: 'Rajdhani', sans-serif;
@@ -66,20 +66,20 @@ HTML_PAGE = """<!DOCTYPE html>
         /* TOP CYBER BAR */
         .top-bar {
             display: flex; justify-content: space-between; align-items: center;
-            padding: 14px 24px; background: var(--panel); backdrop-filter: blur(12px);
-            border-bottom: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; font-size: 11.5px;
+            padding: 14px 24px; background: var(--panel); backdrop-filter: blur(15px);
+            border-bottom: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; font-size: 12px;
         }
-        .top-title { color: var(--cyan); font-weight: 700; letter-spacing: 3px; font-size: 16px; text-shadow: 0 0 10px rgba(0,229,255,0.4); }
+        .top-title { color: var(--cyan); font-weight: 700; letter-spacing: 4px; font-size: 16px; text-shadow: 0 0 12px rgba(0,229,255,0.5); }
         .metrics { display: flex; gap: 20px; color: var(--muted); }
         .metrics span b { color: var(--text); }
 
         /* DASHBOARD GRID */
         .dashboard-grid {
             display: grid;
-            grid-template-columns: 300px 1fr 310px;
-            gap: 16px;
+            grid-template-columns: 310px 1fr 320px;
+            gap: 18px;
             padding: 20px;
-            max-width: 1450px;
+            max-width: 1500px;
             margin: 0 auto;
         }
 
@@ -90,36 +90,36 @@ HTML_PAGE = """<!DOCTYPE html>
         /* MODERN GLASS CARDS */
         .card {
             background: var(--panel);
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(12px);
             border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 16px;
+            border-radius: 14px;
+            padding: 18px;
             display: flex;
             flex-direction: column;
             gap: 10px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
             cursor: pointer;
             transition: all 0.25s ease;
             position: relative;
             overflow: hidden;
         }
         .card::before {
-            content: ''; position: absolute; top: 0; left: 0; width: 3px; height: 100%;
-            background: var(--orange); opacity: 0.7;
+            content: ''; position: absolute; top: 0; left: 0; width: 3.5px; height: 100%;
+            background: var(--orange); opacity: 0.8;
         }
         .card:hover {
             background: var(--panel-hover);
             border-color: var(--border-glow);
-            box-shadow: 0 0 25px rgba(0, 229, 255, 0.2);
-            transform: translateY(-2px);
+            box-shadow: 0 0 30px rgba(0, 229, 255, 0.25);
+            transform: translateY(-3px);
         }
         .card-header {
             display: flex; justify-content: space-between; align-items: center;
-            font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700;
+            font-family: 'JetBrains Mono', monospace; font-size: 11.5px; font-weight: 700;
             color: var(--orange); border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 6px;
         }
-        .card-title { font-size: 16px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 8px; }
-        .card-desc { font-size: 13px; color: var(--muted); line-height: 1.4; }
+        .card-title { font-size: 17px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 8px; }
+        .card-desc { font-size: 13.5px; color: var(--muted); line-height: 1.45; }
         
         .badge-enabled {
             background: rgba(16, 185, 129, 0.15); color: var(--green);
@@ -129,65 +129,65 @@ HTML_PAGE = """<!DOCTYPE html>
 
         /* CENTER CORE PANEL */
         .center-core-panel {
-            background: rgba(4, 9, 18, 0.9);
-            backdrop-filter: blur(15px);
-            border: 1px solid var(--border-glow);
-            border-radius: 16px;
-            padding: 24px;
+            background: rgba(4, 9, 18, 0.92);
+            backdrop-filter: blur(20px);
+            border: 1.5px solid var(--border-glow);
+            border-radius: 18px;
+            padding: 28px;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             text-align: center;
             position: relative;
-            box-shadow: 0 0 40px rgba(0,229,255,0.15);
+            box-shadow: 0 0 50px rgba(0,229,255,0.2);
         }
         .hologram-stage {
-            width: 240px; height: 240px;
+            width: 260px; height: 260px;
             display: flex; align-items: center; justify-content: center;
-            cursor: pointer; position: relative; margin: 10px 0;
+            cursor: pointer; position: relative; margin: 12px 0;
         }
-        .holo-svg { width: 100%; height: 100%; filter: drop-shadow(0 0 20px rgba(0,229,255,0.6)); }
+        .holo-svg { width: 100%; height: 100%; filter: drop-shadow(0 0 25px rgba(0,229,255,0.7)); }
 
         .action-btn {
             background: linear-gradient(135deg, rgba(0,229,255,0.25), rgba(255,153,0,0.25));
             border: 1px solid var(--cyan); color: var(--text);
-            padding: 10px 22px; border-radius: 99px; font-weight: 700; font-size: 13px;
+            padding: 11px 24px; border-radius: 99px; font-weight: 700; font-size: 13.5px;
             cursor: pointer; transition: 0.25s; font-family: 'JetBrains Mono', monospace;
-            box-shadow: 0 0 15px rgba(0,229,255,0.2);
+            box-shadow: 0 0 20px rgba(0,229,255,0.25);
         }
-        .action-btn:hover { background: var(--cyan); color: #030712; box-shadow: 0 0 25px var(--cyan); transform: scale(1.05); }
+        .action-btn:hover { background: var(--cyan); color: #030712; box-shadow: 0 0 30px var(--cyan); transform: scale(1.06); }
 
         /* LIVE TERMINAL FEED */
         .terminal-box {
-            width: 100%; background: rgba(2, 5, 10, 0.9);
-            border: 1px solid rgba(0,229,255,0.15); border-radius: 8px;
-            padding: 10px 14px; font-family: 'JetBrains Mono', monospace;
-            font-size: 11px; color: var(--cyan); text-align: left;
-            margin-top: 14px; min-height: 45px; max-height: 60px; overflow: hidden;
+            width: 100%; background: rgba(2, 5, 10, 0.95);
+            border: 1px solid rgba(0,229,255,0.2); border-radius: 10px;
+            padding: 12px 16px; font-family: 'JetBrains Mono', monospace;
+            font-size: 11.5px; color: var(--cyan); text-align: left;
+            margin-top: 16px; min-height: 50px; max-height: 70px; overflow: hidden;
         }
 
         /* MODAL */
         .holo-modal {
-            position: fixed; inset: 0; background: rgba(3, 7, 18, 0.88);
-            backdrop-filter: blur(12px); z-index: 50; display: none;
+            position: fixed; inset: 0; background: rgba(3, 7, 18, 0.9);
+            backdrop-filter: blur(15px); z-index: 50; display: none;
             align-items: center; justify-content: center; padding: 16px;
         }
         .holo-modal.open { display: flex; }
         .holo-box {
             background: var(--panel); border: 1px solid var(--cyan);
-            border-radius: 14px; width: 100%; max-width: 460px;
-            padding: 24px; display: flex; flex-direction: column; gap: 14px;
-            box-shadow: 0 0 50px rgba(0,229,255,0.3);
+            border-radius: 16px; width: 100%; max-width: 480px;
+            padding: 26px; display: flex; flex-direction: column; gap: 16px;
+            box-shadow: 0 0 60px rgba(0,229,255,0.35);
         }
         .holo-head {
             display: flex; justify-content: space-between; align-items: center;
             border-bottom: 1px solid var(--border); padding-bottom: 10px;
-            font-size: 14px; font-weight: 700; color: var(--cyan);
+            font-size: 15px; font-weight: 700; color: var(--cyan);
         }
-        .holo-content { max-height: 280px; overflow-y: auto; font-size: 13.5px; display: flex; flex-direction: column; gap: 8px; }
+        .holo-content { max-height: 300px; overflow-y: auto; font-size: 14px; display: flex; flex-direction: column; gap: 8px; }
         .holo-row { padding: 10px; background: rgba(0,229,255,0.06); border-left: 3px solid var(--orange); border-radius: 6px; }
-        input, select { background: #030712; border: 1px solid var(--border); color: #fff; padding: 10px; border-radius: 8px; font-family: 'Rajdhani'; font-size: 14px; }
+        input, select { background: #030712; border: 1px solid var(--border); color: #fff; padding: 11px; border-radius: 8px; font-family: 'Rajdhani'; font-size: 14.5px; }
     </style>
 </head>
 <body>
@@ -203,7 +203,7 @@ HTML_PAGE = """<!DOCTYPE html>
     <!-- DASHBOARD GRID -->
     <div class="dashboard-grid">
         <!-- LEFT COLUMN -->
-        <div style="display:flex; flex-direction:column; gap:16px;">
+        <div style="display:flex; flex-direction:column; gap:18px;">
             <div class="card" onclick="quickCmd('Gib mir mein Morning Briefing mit Terminen heute.')">
                 <div class="card-header"><span>$/brief-mode</span><span class="badge-enabled">ACTIVE</span></div>
                 <div class="card-title">☀️ Morning Brief</div>
@@ -225,13 +225,13 @@ HTML_PAGE = """<!DOCTYPE html>
 
         <!-- CENTER COLUMN -->
         <div class="center-core-panel">
-            <div class="card-header" style="width:100%; justify-content:center; border:none; color:var(--cyan); letter-spacing: 2px;">NEURAL CORE // ACTIVE VOICE INTERFACE</div>
+            <div class="card-header" style="width:100%; justify-content:center; border:none; color:var(--cyan); letter-spacing: 2.5px;">NEURAL CORE // ACTIVE VOICE INTERFACE</div>
             
             <div class="hologram-stage" onclick="toggleListening()">
                 <svg class="holo-svg" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="150" cy="150" r="125" fill="none" stroke="rgba(0,229,255,0.15)" stroke-width="1.5" stroke-dasharray="10 6"/>
-                    <circle cx="150" cy="150" r="100" fill="none" stroke="rgba(255,153,0,0.2)" stroke-width="1"/>
-                    <circle cx="150" cy="135" r="38" fill="url(#orangeGlow)" opacity="0.9"/>
+                    <circle cx="150" cy="150" r="125" fill="none" stroke="rgba(0,229,255,0.18)" stroke-width="1.5" stroke-dasharray="10 6"/>
+                    <circle cx="150" cy="150" r="100" fill="none" stroke="rgba(255,153,0,0.22)" stroke-width="1"/>
+                    <circle cx="150" cy="135" r="38" fill="url(#orangeGlow)" opacity="0.95"/>
                     <defs>
                         <radialGradient id="orangeGlow" cx="50%" cy="50%" r="50%">
                             <stop offset="0%" stop-color="#FF9900" stop-opacity="1"/>
@@ -239,13 +239,13 @@ HTML_PAGE = """<!DOCTYPE html>
                             <stop offset="100%" stop-color="#030712" stop-opacity="0"/>
                         </radialGradient>
                     </defs>
-                    <g stroke="rgba(0,229,255,0.85)" stroke-width="1.8" fill="none" stroke-linecap="round">
+                    <g stroke="rgba(0,229,255,0.9)" stroke-width="1.8" fill="none" stroke-linecap="round">
                         <path d="M60,250 Q100,210 150,210 Q200,210 240,250" opacity="0.95"/>
-                        <path d="M80,265 Q150,230 220,265" stroke="rgba(255,153,0,0.9)" stroke-width="1.2"/>
+                        <path d="M80,265 Q150,230 220,265" stroke="rgba(255,153,0,0.95)" stroke-width="1.2"/>
                         <path d="M130,210 L130,165" />
                         <path d="M170,210 L170,165" />
                         <path d="M120,165 Q110,120 125,85 Q135,60 150,55 Q165,60 175,85 Q190,120 180,165" />
-                        <path d="M125,125 Q150,135 175,125" stroke="rgba(255,153,0,0.8)" />
+                        <path d="M125,125 Q150,135 175,125" stroke="rgba(255,153,0,0.85)" />
                         <path d="M130,145 Q150,155 170,145" stroke="rgba(0,229,255,1)" />
                     </g>
                     <g fill="#00E5FF">
@@ -260,16 +260,16 @@ HTML_PAGE = """<!DOCTYPE html>
                 </svg>
             </div>
 
-            <div id="wakePrompt" style="font-size:18px; font-weight:700; margin-bottom: 10px; color:var(--text); letter-spacing: 1px;">Sage: „Hey Neo“</div>
+            <div id="wakePrompt" style="font-size:19px; font-weight:700; margin-bottom: 12px; color:var(--text); letter-spacing: 1px;">Sage: „Hey Neo“</div>
             <button class="action-btn" onclick="toggleListening()">🎙️ Sprachbefehl starten</button>
             
             <div class="terminal-box" id="terminalLog">
-                > System bereit. Lauscht im Hintergrund...
+                > NEO Core v3.8 online. Lauscht im Hintergrund...
             </div>
         </div>
 
         <!-- RIGHT COLUMN -->
-        <div style="display:flex; flex-direction:column; gap:16px;">
+        <div style="display:flex; flex-direction:column; gap:18px;">
             <div class="card" onclick="openHolo('calc')">
                 <div class="card-header"><span>📐 /calculator</span><span class="badge-enabled">READY</span></div>
                 <div class="card-title">Angebots-Rechner</div>
@@ -312,9 +312,7 @@ HTML_PAGE = """<!DOCTYPE html>
         const wakePrompt = document.getElementById('wakePrompt');
         const terminalLog = document.getElementById('terminalLog');
 
-        function logTerm(txt) {
-            terminalLog.innerText = "> " + txt;
-        }
+        function logTerm(txt) { terminalLog.innerText = "> " + txt; }
 
         fetch('/calendar_preview').then(r => r.json()).then(d => { cachedEvents = d.events || []; }).catch(()=>{});
         let mem = JSON.parse(localStorage.getItem('neo_memory') || '[]');
@@ -324,7 +322,7 @@ HTML_PAGE = """<!DOCTYPE html>
             if (state === 'listening') { wakePrompt.innerText = "Ich höre zu..."; logTerm("Sprachstrom aktiv. Empfange Audio..."); }
             else if (state === 'thinking') { wakePrompt.innerText = "Analysiere..."; logTerm("Verarbeite Anfrage über Gemini AI..."); }
             else if (state === 'speaking') { wakePrompt.innerText = "NEO spricht..."; logTerm("Generiere Edge-TTS Audioausgabe..."); }
-            else { wakePrompt.innerText = "Sage: „Hey Neo“"; logTerm("System bereit. Lauscht im Hintergrund..."); }
+            else { wakePrompt.innerText = "Sage: „Hey Neo“"; logTerm("NEO Core online. Lauscht im Hintergrund..."); }
         }
 
         function openHolo(type) {
