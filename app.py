@@ -43,6 +43,7 @@ HTML_PAGE = """<!DOCTYPE html>
             --text: #F8FAFC;
             --muted: #94A3B8;
             --success: #10B981;
+            --whatsapp: #25D366;
         }
 
         body.listening { --accent: #10B981; --accent-glow: rgba(16, 185, 129, 0.2); }
@@ -52,7 +53,7 @@ HTML_PAGE = """<!DOCTYPE html>
         * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
 
         html, body {
-            margin: 0; padding: 0; width: 100vw; height: 100vh; overflow: hidden;
+            margin: 0; padding: 0; width: 100vw; height: 100vh; overflow-x: hidden;
             background-color: var(--bg);
             color: var(--text);
             font-family: 'Inter', sans-serif;
@@ -61,105 +62,106 @@ HTML_PAGE = """<!DOCTYPE html>
         /* HEADER */
         .app-header {
             display: flex; justify-content: space-between; align-items: center;
-            height: 64px; padding: 0 24px; background: var(--card-bg);
-            border-bottom: 1px solid var(--card-border);
+            min-height: 56px; padding: 8px 16px; background: var(--card-bg);
+            border-bottom: 1px solid var(--card-border); flex-wrap: wrap; gap: 8px;
         }
-        .brand { display: flex; align-items: center; gap: 12px; }
-        .brand-logo { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 12px var(--accent); }
-        .brand-name { font-weight: 700; font-size: 15px; letter-spacing: 1px; color: #fff; }
+        .brand { display: flex; align-items: center; gap: 8px; }
+        .brand-logo { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 10px var(--accent); }
+        .brand-name { font-weight: 700; font-size: 13px; letter-spacing: 0.5px; color: #fff; }
         
-        .header-info { display: flex; align-items: center; gap: 12px; }
+        .header-info { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
         .weather-badge, .live-clock {
-            font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--accent);
+            font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--accent);
             background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.2);
-            padding: 5px 12px; border-radius: 8px; display: flex; align-items: center; gap: 6px;
+            padding: 4px 8px; border-radius: 6px; display: flex; align-items: center; gap: 4px;
         }
         .status-pill {
-            display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.03);
-            border: 1px solid var(--card-border); padding: 6px 14px; border-radius: 20px;
-            font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--muted);
+            display: flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.03);
+            border: 1px solid var(--card-border); padding: 4px 10px; border-radius: 16px;
+            font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted);
         }
-        .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--success); }
+        .status-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--success); }
 
         /* MAIN LAYOUT */
         .app-container {
             display: grid;
-            grid-template-columns: 320px 1fr 320px;
-            gap: 20px;
-            padding: 24px;
-            height: calc(100vh - 64px);
+            grid-template-columns: 280px 1fr 280px;
+            gap: 14px;
+            padding: 14px;
+            height: calc(100vh - 56px);
             max-width: 1600px;
             margin: 0 auto;
+            overflow-y: auto;
         }
 
-        @media(max-width: 1100px) {
-            .app-container { grid-template-columns: 1fr; height: auto; overflow-y: auto; }
+        @media(max-width: 1024px) {
+            .app-container { grid-template-columns: 1fr; height: auto; padding: 10px; }
+            html, body { height: auto; overflow-y: auto; }
         }
 
         /* CARDS / MODULES */
         .panel {
             background: var(--card-bg);
             border: 1px solid var(--card-border);
-            border-radius: 14px;
-            padding: 20px;
+            border-radius: 12px;
+            padding: 14px;
             display: flex;
             flex-direction: column;
-            gap: 16px;
+            gap: 10px;
         }
         .section-title {
-            font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 500;
-            text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted);
-            border-bottom: 1px solid var(--card-border); padding-bottom: 8px;
+            font-family: 'JetBrains Mono', monospace; font-size: 10.5px; font-weight: 500;
+            text-transform: uppercase; letter-spacing: 1px; color: var(--muted);
+            border-bottom: 1px solid var(--card-border); padding-bottom: 6px;
             display: flex; justify-content: space-between; align-items: center;
         }
         .nav-card {
             background: rgba(255,255,255,0.015);
             border: 1px solid var(--card-border);
-            border-radius: 10px;
-            padding: 14px 16px;
+            border-radius: 8px;
+            padding: 10px 12px;
             cursor: pointer;
             transition: all 0.2s ease;
-            display: flex; flex-direction: column; gap: 4px;
+            display: flex; flex-direction: column; gap: 3px;
         }
-            .nav-card:hover {
+        .nav-card:hover {
             background: var(--card-hover);
             border-color: rgba(255,255,255,0.15);
-            transform: translateY(-1px);
         }
-        .nav-card-title { font-weight: 600; font-size: 14px; color: #fff; display: flex; justify-content: space-between; align-items: center; }
-        .nav-card-desc { font-size: 12.5px; color: var(--muted); line-height: 1.4; }
+        .nav-card-title { font-weight: 600; font-size: 13px; color: #fff; display: flex; justify-content: space-between; align-items: center; }
+        .nav-card-desc { font-size: 11.5px; color: var(--muted); line-height: 1.3; }
 
         /* CENTER CORE */
         .core-display {
             background: linear-gradient(180deg, #12141C 0%, #0D0F17 100%);
             border: 1px solid var(--card-border);
-            border-radius: 16px;
+            border-radius: 12px;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 30px;
+            padding: 20px;
             text-align: center;
             position: relative;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
         }
 
         /* MINIMALIST PULSING ORB */
         .neural-orb-container {
-            width: 170px; height: 170px;
+            width: 140px; height: 140px;
             display: flex; align-items: center; justify-content: center;
-            cursor: pointer; position: relative; margin: 15px 0;
+            cursor: pointer; position: relative; margin: 10px 0;
         }
         .orb-ring {
             position: absolute; inset: 0; border-radius: 50%;
             border: 1px solid var(--accent); opacity: 0.3;
             animation: pulseOrb 3s infinite ease-in-out;
         }
-        .orb-ring:nth-child(2) { inset: -15px; opacity: 0.15; animation-delay: 1s; }
+        .orb-ring:nth-child(2) { inset: -12px; opacity: 0.15; animation-delay: 1s; }
         .orb-core {
-            width: 85px; height: 85px; border-radius: 50%;
+            width: 70px; height: 70px; border-radius: 50%;
             background: radial-gradient(circle, var(--accent) 0%, rgba(56,189,248,0.2) 60%, transparent 100%);
-            box-shadow: 0 0 40px var(--accent-glow);
+            box-shadow: 0 0 30px var(--accent-glow);
             transition: all 0.3s ease;
         }
         @keyframes pulseOrb {
@@ -168,49 +170,49 @@ HTML_PAGE = """<!DOCTYPE html>
             100% { transform: scale(0.95); opacity: 0.2; }
         }
 
-        .core-prompt { font-size: 18px; font-weight: 600; color: #fff; margin-bottom: 6px; }
-        .core-sub { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--muted); margin-bottom: 20px; }
+        .core-prompt { font-size: 16px; font-weight: 600; color: #fff; margin-bottom: 4px; }
+        .core-sub { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); margin-bottom: 14px; }
         
         .primary-btn {
             background: #fff; color: #090A0F; border: none;
-            padding: 10px 24px; border-radius: 8px; font-weight: 600; font-size: 13px;
+            padding: 8px 20px; border-radius: 6px; font-weight: 600; font-size: 12.5px;
             cursor: pointer; transition: all 0.2s; font-family: 'Inter', sans-serif;
         }
-        .primary-btn:hover { background: #E2E8F0; transform: translateY(-1px); }
+        .primary-btn:hover { background: #E2E8F0; }
 
         /* ACTIVITY LOG */
         .activity-log {
             width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--card-border);
-            border-radius: 8px; padding: 12px 16px; font-family: 'JetBrains Mono', monospace;
-            font-size: 11.5px; color: var(--accent); text-align: left; margin-top: 20px;
+            border-radius: 6px; padding: 8px 12px; font-family: 'JetBrains Mono', monospace;
+            font-size: 11px; color: var(--accent); text-align: left; margin-top: 14px;
         }
 
         /* MODAL */
         .modal-backdrop {
-            position: fixed; inset: 0; background: rgba(9, 10, 15, 0.8);
-            backdrop-filter: blur(8px); z-index: 100; display: none;
-            align-items: center; justify-content: center; padding: 20px;
+            position: fixed; inset: 0; background: rgba(9, 10, 15, 0.85);
+            backdrop-filter: blur(6px); z-index: 100; display: none;
+            align-items: center; justify-content: center; padding: 16px;
         }
         .modal-backdrop.open { display: flex; }
         .modal-box {
             background: var(--card-bg); border: 1px solid var(--card-border);
-            border-radius: 14px; width: 100%; max-width: 440px; padding: 24px;
-            display: flex; flex-direction: column; gap: 16px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+            border-radius: 12px; width: 100%; max-width: 400px; padding: 20px;
+            display: flex; flex-direction: column; gap: 12px;
+            box-shadow: 0 16px 32px rgba(0,0,0,0.6);
         }
         .modal-header {
             display: flex; justify-content: space-between; align-items: center;
-            font-weight: 600; font-size: 14px; color: #fff;
-            border-bottom: 1px solid var(--card-border); padding-bottom: 10px;
+            font-weight: 600; font-size: 13.5px; color: #fff;
+            border-bottom: 1px solid var(--card-border); padding-bottom: 8px;
         }
-        .modal-content { max-height: 280px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; font-size: 13.5px; }
-        .modal-row { background: rgba(255,255,255,0.02); border: 1px solid var(--card-border); padding: 10px 12px; border-radius: 8px; }
+        .modal-content { max-height: 260px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
+        .modal-row { background: rgba(255,255,255,0.02); border: 1px solid var(--card-border); padding: 8px 10px; border-radius: 6px; }
         
-        input, select {
+        input, select, textarea {
             background: #090A0F; border: 1px solid var(--card-border); color: #fff;
-            padding: 10px 12px; border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 13.5px; outline: none;
+            padding: 8px 10px; border-radius: 6px; font-family: 'Inter', sans-serif; font-size: 13px; outline: none; width: 100%;
         }
-        input:focus, select:focus { border-color: var(--accent); }
+        input:focus, select:focus, textarea:focus { border-color: var(--accent); }
     </style>
 </head>
 <body>
@@ -220,11 +222,11 @@ HTML_PAGE = """<!DOCTYPE html>
             <span class="brand-name">NEO // ENTERPRISE OS</span>
         </div>
         <div class="header-info">
-            <div class="weather-badge" id="weatherDisplay">☁️ Hamburg: Lade...</div>
+            <div class="weather-badge" id="weatherDisplay">🌡️ Hamburg: Lade...</div>
             <div class="live-clock" id="liveClockDisplay">--:--:--</div>
             <div class="status-pill">
                 <div class="status-dot"></div>
-                <span>HAMBURG ACTIVE</span>
+                <span>ACTIVE</span>
             </div>
         </div>
     </header>
@@ -235,24 +237,24 @@ HTML_PAGE = """<!DOCTYPE html>
             <div class="section-title"><span>Operations</span> <span id="eventCountBadge" style="color:var(--accent);">0 Termine</span></div>
             
             <div class="nav-card" onclick="quickCmd('Gib mir mein Morning Briefing mit Terminen heute.')">
-                <div class="nav-card-title"><span>☀️ Morning Brief</span> <span style="font-size:10px; color:var(--accent);">API</span></div>
+                <div class="nav-card-title"><span>☀️ Morning Brief</span> <span style="font-size:9.5px; color:var(--accent);">API</span></div>
                 <div class="nav-card-desc">Tagesübersicht und Einsätze in Hamburg.</div>
             </div>
 
             <div class="nav-card" onclick="openModal('calendar')">
-                <div class="nav-card-title"><span>📅 Kalender Sync</span> <span style="font-size:10px; color:var(--success);">LIVE</span></div>
+                <div class="nav-card-title"><span>📅 Kalender Sync</span> <span style="font-size:9.5px; color:var(--success);">LIVE</span></div>
                 <div class="nav-card-desc">Einsätze und Objektstandorte verwalten.</div>
             </div>
 
             <div class="nav-card" onclick="openModal('codes')">
-                <div class="nav-card-title"><span>🔐 Objekt-Codes</span> <span id="codeCountBadge" style="font-size:10px; color:var(--orange);">0 Codes</span></div>
+                <div class="nav-card-title"><span>🔐 Objekt-Codes</span> <span id="codeCountBadge" style="font-size:9.5px; color:var(--orange);">0 Codes</span></div>
                 <div class="nav-card-desc">Sichere Notizen und Zugangscodes.</div>
             </div>
         </div>
 
         <!-- CENTER CORE -->
         <div class="core-display">
-            <div style="font-family:'JetBrains Mono'; font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:1.5px;">Neural Voice Interface</div>
+            <div style="font-family:'JetBrains Mono'; font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:1px;">Neural Voice Interface</div>
             
             <div class="neural-orb-container" onclick="toggleListening()">
                 <div class="orb-ring"></div>
@@ -275,17 +277,17 @@ HTML_PAGE = """<!DOCTYPE html>
             <div class="section-title"><span>Business Tools</span> <span style="color:var(--success);">31.50 €/h</span></div>
 
             <div class="nav-card" onclick="openModal('calc')">
-                <div class="nav-card-title"><span>📐 Angebots-Rechner</span> <span style="font-size:10px; color:var(--accent);">PRO</span></div>
+                <div class="nav-card-title"><span>📐 Angebots-Rechner</span> <span style="font-size:9.5px; color:var(--accent);">PRO</span></div>
                 <div class="nav-card-desc">Kalkulation für Kunden in Hamburg.</div>
             </div>
 
-            <div class="nav-card" onclick="document.getElementById('cam').click()">
-                <div class="nav-card-title"><span>📸 Mängel-Foto</span> <span style="font-size:10px; color:var(--success);">VISION</span></div>
-                <div class="nav-card-desc">Objekt-Schäden fotografieren & analysieren.</div>
+            <div class="nav-card" onclick="openModal('whatsapp')">
+                <div class="nav-card-title"><span>💬 WhatsApp Business</span> <span style="font-size:9.5px; color:var(--whatsapp);">DIREKT</span></div>
+                <div class="nav-card-desc">Nachricht direkt an Kunden öffnen.</div>
             </div>
 
             <div class="nav-card" onclick="sendTelegramAuth()">
-                <div class="nav-card-title"><span>✈️ Telegram Auth</span> <span style="font-size:10px; color:var(--orange);">SECURE</span></div>
+                <div class="nav-card-title"><span>✈️ Telegram Auth</span> <span style="font-size:9.5px; color:var(--orange);">SECURE</span></div>
                 <div class="nav-card-desc">Echtzeit-Freigabe über Telegram Bot.</div>
             </div>
         </div>
@@ -306,7 +308,6 @@ HTML_PAGE = """<!DOCTYPE html>
     <audio id="audioPlayer" playsinline></audio>
 
     <script>
-        // LIVE CLOCK & WEATHER SCRIPT
         function updateClock() {
             const now = new Date();
             const timeStr = now.toLocaleTimeString('de-DE');
@@ -316,7 +317,6 @@ HTML_PAGE = """<!DOCTYPE html>
         setInterval(updateClock, 1000);
         updateClock();
 
-        // FETCH LIVE WEATHER FOR HAMBURG
         fetch('https://api.open-meteo.com/v1/forecast?latitude=53.5511&longitude=9.9937&current_weather=true')
             .then(r => r.json())
             .then(data => {
@@ -365,7 +365,7 @@ HTML_PAGE = """<!DOCTYPE html>
                 body.innerHTML = `<div style="display:flex; gap:8px; margin-bottom:4px;"><input id="inputCode" type="text" placeholder="Neuer Code..." style="flex:1;"><button class="primary-btn" onclick="if(document.getElementById('inputCode').value.trim()){localMemory.push(document.getElementById('inputCode').value.trim());localStorage.setItem('neo_memory',JSON.stringify(localMemory));document.getElementById('codeCountBadge').innerText = localMemory.length + ' Codes';openModal('codes');}">Speichern</button></div>` + list;
             } else if (type === 'calc') {
                 title.innerText = 'ANGEBOTS-KALKULATOR (31,50 €/Std)';
-                body.innerHTML = `<div style="display:flex; flex-direction:column; gap:12px;">
+                body.innerHTML = `<div style="display:flex; flex-direction:column; gap:10px;">
                     <input id="calcQm" type="number" placeholder="Fläche in m² (z.B. 600)" value="600">
                     <select id="calcFreq">
                         <option value="1x pro Woche">1x pro Woche</option>
@@ -375,9 +375,26 @@ HTML_PAGE = """<!DOCTYPE html>
                     </select>
                     <button class="primary-btn" onclick="closeModal(); quickCmd('Kalkuliere ein Reinigungsangebot für '+document.getElementById('calcQm').value+' m², '+document.getElementById('calcFreq').value+', und erstelle den Angebotstext.');">Angebot erstellen</button>
                 </div>`;
+            } else if (type === 'whatsapp') {
+                title.innerText = 'WHATSAPP DIREKT VERSAND';
+                body.innerHTML = `<div style="display:flex; flex-direction:column; gap:10px;">
+                    <input id="waPhone" type="text" placeholder="Nummer mit Ländercode (z.B. 4917...)">
+                    <textarea id="waText" rows="4" placeholder="Nachricht an den Kunden..."></textarea>
+                    <button class="primary-btn" onclick="openWhatsAppDirect()">WhatsApp öffnen & Senden</button>
+                </div>`;
             }
         }
         function closeModal() { document.getElementById('appModal').classList.remove('open'); }
+
+        function openWhatsAppDirect() {
+            const phone = document.getElementById('waPhone').value.trim().replace(/[^0-9]/g, '');
+            const text = document.getElementById('waText').value.trim();
+            if(!phone || !text) return;
+            closeModal();
+            logActivity("Öffne WhatsApp Business...");
+            const url = `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
+            window.open(url, '_blank');
+        }
 
         async function sendTelegramAuth() {
             logActivity("Sende Telegram Authentifizierung...");
