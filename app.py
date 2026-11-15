@@ -15,7 +15,7 @@ app = Flask(__name__)
 ICAL_CACHE = {"ts": 0, "events": []}
 
 ICON_SVG = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="115" fill="#050811"/>
+  <rect width="512" height="512" rx="115" fill="#030508"/>
   <circle cx="256" cy="256" r="155" fill="none" stroke="#00f3ff" stroke-width="8" stroke-dasharray="16 10"/>
   <circle cx="256" cy="256" r="110" fill="none" stroke="#ff9900" stroke-width="5"/>
   <circle cx="256" cy="256" r="24" fill="#ff9900"/>
@@ -26,21 +26,21 @@ HTML_PAGE = """<!DOCTYPE html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#050811">
+    <meta name="theme-color" content="#030508">
     <link rel="manifest" href="/manifest.json">
-    <title>NEO // ENTERPRISE OS - WISAG Hamburg</title>
+    <title>NEO // ENTERPRISE OS - COMMAND CENTER</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Courier+New:wght@400;700&family=Inter:wght@400;500;600;700&display=swap');
 
         :root {
-            --bg-deep: #050811;
-            --panel-bg: rgba(6, 15, 30, 0.82);
+            --bg-deep: #030508;
+            --hud-panel: rgba(4, 12, 24, 0.88);
             --neon-cyan: #00f3ff;
             --neon-purple: #b000ff;
             --neon-orange: #ff9900;
             --text-main: #e0fbfc;
-            --text-dim: #8892b0;
-            --border-glow: rgba(0, 243, 255, 0.35);
+            --text-dim: #64748b;
+            --border-glow: rgba(0, 243, 255, 0.4);
         }
 
         * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
@@ -51,108 +51,60 @@ HTML_PAGE = """<!DOCTYPE html>
             color: var(--text-main);
             font-family: 'Courier New', Courier, monospace;
             background-image: 
-                radial-gradient(circle at 50% 50%, rgba(0, 243, 255, 0.07) 0%, transparent 80%),
-                linear-gradient(rgba(0,243,255,0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0,243,255,0.03) 1px, transparent 1px);
-            background-size: 100% 100%, 30px 30px, 30px 30px;
+                radial-gradient(circle at 50% 50%, rgba(0, 243, 255, 0.08) 0%, transparent 85%),
+                linear-gradient(rgba(0,243,255,0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,243,255,0.02) 1px, transparent 1px);
+            background-size: 100% 100%, 25px 25px, 25px 25px;
         }
 
-        /* LAYOUT SWITCHER */
         .desktop-view { display: none; width: 100vw; height: 100vh; }
         .mobile-view { display: block; width: 100vw; height: 100vh; overflow-y: auto; }
 
         @media (min-width: 1024px) {
-            .desktop-view { display: flex; flex-direction: column; justify-content: space-between; padding: 20px; }
+            .desktop-view { display: flex; flex-direction: column; justify-content: space-between; padding: 15px; }
             .mobile-view { display: none; }
         }
 
         /* ================= MOBILE VIEW ================= */
         .mobile-container {
-            max-width: 480px;
-            margin: 0 auto;
-            padding: 15px;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
+            max-width: 480px; margin: 0 auto; padding: 15px; min-height: 100vh;
+            display: flex; flex-direction: column; justify-content: space-between;
         }
-
         .mobile-header {
-            background: var(--panel-bg);
-            border: 1px solid var(--border-glow);
-            border-radius: 12px;
-            padding: 12px 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            backdrop-filter: blur(12px);
-            box-shadow: 0 0 20px rgba(0, 243, 255, 0.15);
+            background: var(--hud-panel); border: 1px solid var(--border-glow);
+            border-radius: 12px; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center;
+            backdrop-filter: blur(12px); box-shadow: 0 0 20px rgba(0, 243, 255, 0.15);
         }
-
-        .mobile-core-box {
-            text-align: center;
-            margin: 15px 0;
-            position: relative;
-        }
-
+        .mobile-core-box { text-align: center; margin: 15px 0; position: relative; }
         .core-pulse {
-            width: 100px;
-            height: 100px;
+            width: 95px; height: 95px;
             background: radial-gradient(circle, var(--neon-cyan) 0%, rgba(176,0,255,0.4) 70%, transparent 100%);
-            border-radius: 50%;
-            margin: 0 auto 10px auto;
-            box-shadow: 0 0 35px var(--neon-cyan);
-            animation: pulseCore 3s infinite alternate;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            border-radius: 50%; margin: 0 auto 10px auto;
+            box-shadow: 0 0 35px var(--neon-cyan); animation: pulseCore 3s infinite alternate;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
             border: 2px solid var(--neon-cyan);
         }
-
         .core-pulse::after {
-            content: '';
-            width: 60px;
-            height: 60px;
-            border: 2px dashed var(--text-main);
-            border-radius: 50%;
-            animation: spin 12s linear infinite;
+            content: ''; width: 55px; height: 55px; border: 2px dashed var(--text-main);
+            border-radius: 50%; animation: spin 12s linear infinite;
         }
-
         @keyframes pulseCore {
             0% { transform: scale(0.95); box-shadow: 0 0 20px var(--neon-cyan); }
             100% { transform: scale(1.06); box-shadow: 0 0 45px var(--neon-cyan); }
         }
-
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
         .voice-bar {
-            background: var(--panel-bg);
-            border: 1px solid var(--border-glow);
-            border-radius: 20px;
-            padding: 8px 15px;
-            font-size: 11px;
-            color: var(--neon-cyan);
-            display: inline-block;
-            box-shadow: 0 0 10px rgba(0,243,255,0.15);
+            background: var(--hud-panel); border: 1px solid var(--border-glow);
+            border-radius: 20px; padding: 8px 15px; font-size: 11px; color: var(--neon-cyan);
+            display: inline-block; box-shadow: 0 0 10px rgba(0,243,255,0.15);
         }
-
         .mobile-cards { display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; }
-
         .m-card {
-            background: var(--panel-bg);
-            border: 1px solid rgba(0, 243, 255, 0.25);
-            border-radius: 12px;
-            padding: 12px 14px;
-            backdrop-filter: blur(10px);
-            transition: all 0.2s;
-            cursor: pointer;
+            background: var(--hud-panel); border: 1px solid rgba(0, 243, 255, 0.25);
+            border-radius: 12px; padding: 12px 14px; backdrop-filter: blur(10px); cursor: pointer;
         }
-
-        .m-card:hover { border-color: var(--neon-cyan); box-shadow: 0 0 15px rgba(0,243,255,0.2); }
         .m-card h3 { font-size: 11px; color: var(--neon-orange); margin-bottom: 4px; display: flex; justify-content: space-between; }
         .m-card p { font-size: 11px; color: var(--text-dim); }
-
         .calc-box input {
             width: 100%; background: rgba(0,0,0,0.6); border: 1px solid var(--border-glow);
             color: var(--text-main); padding: 6px 8px; border-radius: 6px; margin-top: 4px; font-size: 12px;
@@ -164,93 +116,83 @@ HTML_PAGE = """<!DOCTYPE html>
             margin-top: 8px; cursor: pointer; text-align: center; text-decoration: none; font-size: 11px;
         }
 
-        /* ================= DESKTOP VIEW (SCI-FI HUD COMMAND CENTER) ================= */
-        .hud-topbar {
+        /* ================= DESKTOP VIEW (HOLOGRAPHIC SCI-FI HUD COMMAND CENTER) ================= */
+        .hud-header {
             display: flex; justify-content: space-between; align-items: center;
-            background: var(--panel-bg); border: 1px solid var(--border-glow);
-            padding: 14px 25px; border-radius: 10px; backdrop-filter: blur(12px);
-            box-shadow: 0 0 25px rgba(0,243,255,0.15);
+            background: var(--hud-panel); border: 1px solid var(--border-glow);
+            padding: 12px 25px; border-radius: 6px; backdrop-filter: blur(15px);
+            box-shadow: 0 0 30px rgba(0, 243, 255, 0.2);
+            position: relative;
         }
-        .hud-topbar h1 { font-size: 15px; color: var(--neon-cyan); letter-spacing: 2px; }
+        .hud-header::before, .hud-header::after {
+            content: ''; position: absolute; width: 10px; height: 10px; border-color: var(--neon-cyan); border-style: solid;
+        }
+        .hud-header::before { top: -2px; left: -2px; border-width: 2px 0 0 2px; }
+        .hud-header::after { bottom: -2px; right: -2px; border-width: 0 2px 2px 0; }
+        .hud-header h1 { font-size: 14px; color: var(--neon-cyan); letter-spacing: 3px; margin: 0; }
 
-        .hud-grid {
+        .hud-main-grid {
             display: grid;
-            grid-template-columns: 320px 1fr 320px;
-            gap: 20px;
-            flex: 1;
-            margin: 15px 0;
-            align-items: center;
+            grid-template-columns: 340px 1fr 340px;
+            gap: 15px; flex: 1; margin: 12px 0; align-items: stretch;
         }
 
-        .hud-panel {
-            background: var(--panel-bg);
-            border: 1px solid var(--border-glow);
-            border-radius: 12px;
-            padding: 18px;
-            height: 100%;
-            backdrop-filter: blur(12px);
-            box-shadow: 0 0 25px rgba(0, 243, 255, 0.08);
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
+        .hud-box {
+            background: var(--hud-panel); border: 1px solid var(--border-glow);
+            border-radius: 8px; padding: 18px; backdrop-filter: blur(15px);
+            box-shadow: inset 0 0 20px rgba(0, 243, 255, 0.05), 0 0 25px rgba(0, 243, 255, 0.08);
+            display: flex; flex-direction: column; gap: 12px; position: relative;
+        }
+        .hud-box h3 {
+            font-size: 11px; color: var(--neon-orange); margin: 0 0 5px 0;
+            letter-spacing: 2px; border-bottom: 1px dashed rgba(255,153,0,0.4); padding-bottom: 6px;
+            text-transform: uppercase;
         }
 
-        .hud-panel h2 {
-            font-size: 11.5px; color: var(--neon-orange);
-            border-bottom: 1px solid rgba(255,153,0,0.3);
-            padding-bottom: 5px; letter-spacing: 1px;
-        }
-
-        /* Desktop Center HUD Constellation */
-        .desktop-center {
+        /* Desktop Central Hologram Constellation */
+        .hud-center-stage {
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            position: relative; height: 100%;
+            position: relative; background: radial-gradient(circle, rgba(0,243,255,0.06) 0%, transparent 70%);
+            border: 1px solid rgba(0, 243, 255, 0.2); border-radius: 8px; padding: 20px;
         }
-
-        .pc-core {
-            width: 160px; height: 160px;
-            background: radial-gradient(circle, var(--neon-cyan) 0%, rgba(176,0,255,0.35) 65%, transparent 100%);
-            border-radius: 50%;
-            box-shadow: 0 0 50px var(--neon-cyan);
+        .hud-core-ring {
+            width: 180px; height: 180px;
+            background: radial-gradient(circle, var(--neon-cyan) 0%, rgba(176,0,255,0.3) 65%, transparent 100%);
+            border-radius: 50%; box-shadow: 0 0 60px var(--neon-cyan);
             display: flex; align-items: center; justify-content: center;
-            animation: pulseCore 4s infinite alternate;
-            cursor: pointer; z-index: 2;
-            border: 3px solid var(--neon-cyan);
+            animation: pulseCore 4s infinite alternate; cursor: pointer; z-index: 3;
+            border: 3px solid var(--neon-cyan); position: relative;
         }
-        .pc-core span { font-weight: bold; color: #000; font-size: 13px; letter-spacing: 1px; }
+        .hud-core-ring span { font-weight: bold; color: #030508; font-size: 14px; letter-spacing: 2px; }
 
-        .desktop-nodes-row {
-            display: flex; gap: 12px; margin-top: 25px; z-index: 2; flex-wrap: wrap; justify-content: center;
+        .hologram-orbit {
+            display: flex; gap: 10px; margin-top: 25px; z-index: 3; flex-wrap: wrap; justify-content: center;
         }
-
-        .d-node {
-            background: rgba(0, 243, 255, 0.08);
-            border: 1px solid var(--neon-cyan);
-            padding: 8px 16px; border-radius: 20px; font-size: 11px;
-            color: var(--neon-cyan); cursor: pointer; transition: 0.3s;
-            backdrop-filter: blur(6px);
+        .orbit-node {
+            background: rgba(0, 243, 255, 0.08); border: 1px solid var(--neon-cyan);
+            padding: 8px 15px; border-radius: 4px; font-size: 10.5px; color: var(--neon-cyan);
+            cursor: pointer; transition: 0.3s; backdrop-filter: blur(8px);
+            letter-spacing: 1px;
         }
-        .d-node:hover {
-            background: var(--neon-cyan); color: #000;
-            box-shadow: 0 0 20px var(--neon-cyan);
+        .orbit-node:hover {
+            background: var(--neon-cyan); color: #030508; box-shadow: 0 0 20px var(--neon-cyan);
         }
 
         .hud-footer {
-            background: var(--panel-bg); border: 1px solid var(--border-glow);
-            padding: 10px 25px; border-radius: 10px;
-            display: flex; justify-content: space-between; align-items: center;
-            font-size: 11px; color: var(--text-dim); backdrop-filter: blur(10px);
+            background: var(--hud-panel); border: 1px solid var(--border-glow);
+            padding: 10px 25px; border-radius: 6px; display: flex; justify-content: space-between;
+            align-items: center; font-size: 10.5px; color: var(--text-dim); backdrop-filter: blur(10px);
         }
 
         /* MODAL */
         .modal {
-            display: none; position: fixed; inset: 0; background: rgba(5,8,17,0.85);
-            backdrop-filter: blur(8px); z-index: 100; align-items: center; justify-content: center; padding: 15px;
+            display: none; position: fixed; inset: 0; background: rgba(3,5,8,0.88);
+            backdrop-filter: blur(10px); z-index: 100; align-items: center; justify-content: center; padding: 15px;
         }
         .modal-content {
-            background: var(--panel-bg); border: 1px solid var(--neon-cyan);
-            padding: 20px; border-radius: 12px; width: 100%; max-width: 420px;
-            box-shadow: 0 0 40px rgba(0,243,255,0.3);
+            background: var(--hud-panel); border: 1px solid var(--neon-cyan);
+            padding: 22px; border-radius: 10px; width: 100%; max-width: 440px;
+            box-shadow: 0 0 50px rgba(0,243,255,0.35);
         }
         .close-modal { float: right; color: var(--neon-orange); cursor: pointer; font-weight: bold; font-size: 16px; }
     </style>
@@ -308,47 +250,55 @@ HTML_PAGE = """<!DOCTYPE html>
     </div>
 
 
-    <!-- ================= DESKTOP VIEW (SCI-FI HUD COMMAND CENTER) ================= -->
+    <!-- ================= DESKTOP VIEW (HOLOGRAPHIC SCI-FI HUD COMMAND CENTER) ================= -->
     <div class="desktop-view">
-        <header class="hud-topbar">
+        <header class="hud-header">
             <h1>NEO // ENTERPRISE OS - COMMAND CENTER</h1>
-            <div style="font-size: 12px; color: var(--text-dim);">
+            <div style="font-size: 11.5px; color: var(--text-dim); font-family: 'Courier New', monospace;">
                 OPERATOR: <span style="color: var(--neon-cyan);">MARGIL MOLLAJ (WISAG HAMBURG)</span> | DATE: <span id="pc-date">--.--.----</span> | WEATHER: <span style="color: var(--neon-cyan);" id="pc-weather">Hamburg 14°C</span>
             </div>
         </header>
 
-        <div class="hud-grid">
-            <div class="hud-panel">
-                <h2>OPERATIONS & BRIEFING</h2>
-                <p style="font-size: 11.5px; color: var(--text-dim);">Aktive Routen & Inspektionen:</p>
-                <div style="background: rgba(0,0,0,0.4); padding: 10px; border-radius: 6px; border-left: 2px solid var(--neon-cyan);">
-                    <strong style="font-size: 11.5px; color: var(--neon-cyan);">Hamburg-Nord / HafenCity</strong>
-                    <p style="font-size: 10.5px; color: var(--text-dim); margin-top: 4px;">5 Objekte zugewiesen. Sicherheitsprotokolle aktiv.</p>
+        <div class="hud-main-grid">
+            <!-- Left HUD Panel -->
+            <div class="hud-box">
+                <h3>Operations & Field Data</h3>
+                <p style="font-size: 11px; color: var(--text-dim); line-height: 1.4;">Aktive Routen & Inspektionen im Sektor Hamburg-Nord / Altona.</p>
+                <div style="background: rgba(0,0,0,0.5); padding: 12px; border-radius: 4px; border-left: 2px solid var(--neon-cyan); margin-top: 5px;">
+                    <strong style="font-size: 11.5px; color: var(--neon-cyan);">HafenCity & Weser-Ems</strong>
+                    <p style="font-size: 10.5px; color: var(--text-dim); margin-top: 5px;">5 Objekte zugewiesen. Sicherheitsprotokolle und Schließanlagen im Normalbetrieb.</p>
                 </div>
-                <h2 style="margin-top: 10px;">OBJEKT-SICHERHEIT</h2>
-                <p style="font-size: 10.5px; color: var(--text-dim);">Schnellzugriff auf Torcodes & Schließanlagen.</p>
+                <h3 style="margin-top: 15px;">Secure Vault</h3>
+                <p style="font-size: 10.5px; color: var(--text-dim);">Schnellzugriff auf Torcodes, Schließzylinder und Kundenkontakt.</p>
             </div>
 
-            <div class="desktop-center">
-                <div class="pc-core" onclick="toggleListening()">
+            <!-- Central Holographic Stage -->
+            <div class="hud-center-stage">
+                <div style="position: absolute; top: 10px; font-size: 10px; color: var(--text-dim); letter-spacing: 2px;">NEURAL CORE // SYSTEM ACTIVE</div>
+                <div class="hud-core-ring" onclick="toggleListening()">
                     <span>NEO CORE</span>
                 </div>
-                <div class="desktop-nodes-row">
-                    <div class="d-node" onclick="openModal('Angebots-Rechner', 'Tarif: 31.50 €/h aktiv. Berechnungen in Echtzeit.')">Angebots-Rechner</div>
-                    <div class="d-node" onclick="openModal('WhatsApp Direct', 'Direktverbindung zu Hausverwaltung & Kunden aktiv.')">WhatsApp Direct</div>
-                    <div class="d-node" onclick="openModal('Field Inspector', 'Mängelberichte & Sonderreinigung Dokumentation.')">Field Inspector</div>
-                    <div class="d-node" onclick="openModal('Outlook Sync', 'Verbindung mit margil.mollaj@wisag.de gesichert.')">Outlook Sync</div>
+                <div class="hologram-orbit">
+                    <div class="orbit-node" onclick="openModal('Angebots-Rechner', 'Tarif: 31.50 €/h aktiv. Berechnungen in Echtzeit für Hamburg.')">Angebots-Rechner</div>
+                    <div class="orbit-node" onclick="openModal('WhatsApp Direct', 'Direktverbindung zu Hausverwaltung & Kunden aktiv.')">WhatsApp Direct</div>
+                    <div class="orbit-node" onclick="openModal('Field Inspector', 'Mängelberichte & Sonderreinigung Dokumentation.')">Field Inspector</div>
+                    <div class="orbit-node" onclick="openModal('Outlook Sync', 'Verbindung mit margil.mollaj@wisag.de gesichert.')">Outlook Sync</div>
                 </div>
             </div>
 
-            <div class="hud-panel">
-                <h2>SALES & BIDDING</h2>
-                <p style="font-size: 11px; color: var(--text-dim);">Standard Tarif WISAG:</p>
-                <div style="font-size: 17px; color: var(--neon-orange); font-weight: bold;">31.50 € / Stunde</div>
-                <p style="font-size: 10.5px; color: var(--text-dim);">Optimiert für schnelle Hausverwaltung-Angebote in Hamburg.</p>
+            <!-- Right HUD Panel -->
+            <div class="hud-box">
+                <h3>Sales & Bidding Engine</h3>
+                <p style="font-size: 11px; color: var(--text-dim);">Standard Tarif WISAG Gebäudereinigung:</p>
+                <div style="font-size: 18px; color: var(--neon-orange); font-weight: bold; margin: 5px 0;">31.50 € / Stunde</div>
+                <p style="font-size: 10.5px; color: var(--text-dim);">Optimiert für schnelle Hausverwaltung-Angebote und Sofortkalkulation.</p>
                 
-                <h2 style="margin-top: 15px;">SYSTEM TELEMETRY</h2>
-                <p style="font-size: 10.5px; color: var(--text-dim);">Uptime: 99.9%<br>Latency: 0.04ms<br>Security: Encrypted Enterprise Link</p>
+                <h3 style="margin-top: 20px;">System Telemetry</h3>
+                <div style="font-size: 10.5px; color: var(--text-dim); line-height: 1.6; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 4px;">
+                    Uptime: 99.9% // Sektor Hamburg<br>
+                    Latency: 0.04ms (Render Edge)<br>
+                    Encryption: AES-256 Enterprise Link
+                </div>
             </div>
         </div>
 
@@ -538,8 +488,8 @@ def manifest():
         "short_name": "NEO",
         "start_url": "/",
         "display": "standalone",
-        "background_color": "#050811",
-        "theme_color": "#050811",
+        "background_color": "#030508",
+        "theme_color": "#030508",
         "icons": [{"src": "/icon.svg", "sizes": "any", "type": "image/svg+xml"}]
     })
 
