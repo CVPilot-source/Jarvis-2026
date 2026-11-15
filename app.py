@@ -34,7 +34,7 @@ HTML_PAGE = """<!DOCTYPE html>
 
         :root {
             --bg-deep: #030508;
-            --hud-panel: rgba(4, 14, 28, 0.9);
+            --hud-panel: rgba(4, 14, 28, 0.92);
             --neon-cyan: #00f3ff;
             --neon-purple: #b000ff;
             --neon-orange: #ff9900;
@@ -116,7 +116,7 @@ HTML_PAGE = """<!DOCTYPE html>
             margin-top: 8px; cursor: pointer; text-align: center; text-decoration: none; font-size: 11px;
         }
 
-        /* ================= DESKTOP VIEW (ADVANCED SCI-FI HUD) ================= */
+        /* ================= DESKTOP VIEW (ADVANCED HUD COMMAND CENTER) ================= */
         .hud-header {
             display: flex; justify-content: space-between; align-items: center;
             background: var(--hud-panel); border: 1px solid var(--border-glow);
@@ -149,14 +149,13 @@ HTML_PAGE = """<!DOCTYPE html>
             text-transform: uppercase;
         }
 
-        /* Central Holographic Stage with Node Network Background */
+        /* Central Holographic Stage with Node Network */
         .hud-center-stage {
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             position: relative; background: radial-gradient(circle, rgba(0,243,255,0.08) 0%, rgba(176,0,255,0.03) 60%, transparent 90%);
             border: 1px solid rgba(0, 243, 255, 0.25); border-radius: 8px; padding: 20px; overflow: hidden;
         }
 
-        /* SVG Node Network Lines */
         .node-svg-overlay {
             position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; opacity: 0.6;
         }
@@ -184,7 +183,6 @@ HTML_PAGE = """<!DOCTYPE html>
             background: var(--neon-cyan); color: #030508; box-shadow: 0 0 20px var(--neon-cyan);
         }
 
-        /* Telemetry Visualizers */
         .telemetry-bar {
             width: 100%; background: rgba(0,0,0,0.5); border: 1px solid rgba(0,243,255,0.2);
             height: 6px; border-radius: 3px; overflow: hidden; margin-top: 2px;
@@ -231,7 +229,7 @@ HTML_PAGE = """<!DOCTYPE html>
 
             <div class="mobile-core-box">
                 <div class="core-pulse" onclick="toggleListening()"></div>
-                <div class="voice-bar" id="m-status-text">🎙️ „Hey Neo“ - Bereit in Hamburg</div>
+                <div class="voice-bar" id="status-text">🎙️ „Hey Neo“ - Bereit in Hamburg</div>
             </div>
 
             <div class="mobile-cards">
@@ -243,9 +241,9 @@ HTML_PAGE = """<!DOCTYPE html>
                 <div class="m-card" onclick="event.stopPropagation();">
                     <h3><span>💰 ANGEBOTS-RECHNER</span> <span style="color:var(--neon-orange);">31.50 €/h</span></h3>
                     <p>Fläche (m²):</p>
-                    <input type="number" id="m-area" value="300" oninput="calculateMobile()">
+                    <input type="number" id="m-area" value="300" oninput="calculatePrice('m-area', 'm-total')">
                     <div class="calc-result" id="m-total">Gesamt: 9,450.00 € netto</div>
-                    <a href="#" id="m-whatsapp-btn" class="action-btn" onclick="sendWhatsAppMobile()">Angebot via WhatsApp senden</a>
+                    <a href="#" class="action-btn" onclick="sendWhatsApp('m-area', 'm-total')">Angebot via WhatsApp senden</a>
                 </div>
 
                 <div class="m-card" onclick="openModal('Objekt Codes', 'Objekt 1045 (Westhafen): Torcode 2379\\nObjekt 882 (Altona): Schlüsselkasten #4')">
@@ -281,13 +279,13 @@ HTML_PAGE = """<!DOCTYPE html>
                 <h3>Operations & Field Data</h3>
                 <p style="font-size: 10.5px; color: var(--text-dim); line-height: 1.4;">Aktive Routen & Inspektionen im Sektor Hamburg-Nord / Altona.</p>
                 
-                <div style="background: rgba(0,0,0,0.5); padding: 10px; border-radius: 4px; border-left: 2px solid var(--neon-cyan); margin-top: 2px;">
-                    <strong style="font-size: 11px; color: var(--neon-cyan);">HafenCity & Weser-Ems</strong>
+                <div style="background: rgba(0,0,0,0.5); padding: 10px; border-radius: 4px; border-left: 2px solid var(--neon-cyan); margin-top: 2px; cursor: pointer;" onclick="openModal('Morning Briefing', 'Objekte in Hamburg-Nord & Altona. Fokus auf Tiefenreinigung HafenCity. Alle Termine synchronisiert.')">
+                    <strong style="font-size: 11px; color: var(--neon-cyan);">HafenCity & Weser-Ems (Details)</strong>
                     <p style="font-size: 10px; color: var(--text-dim); margin-top: 3px;">5 Objekte zugewiesen. Sicherheitsprotokolle aktiv.</p>
                 </div>
 
                 <h3 style="margin-top: 10px;">Secure Vault</h3>
-                <p style="font-size: 10px; color: var(--text-dim);">Torcodes & Schließzylinder Schnellzugriff.</p>
+                <p style="font-size: 10px; color: var(--text-dim); cursor: pointer; color: var(--neon-cyan);" onclick="openModal('Objekt Codes', 'Objekt 1045 (Westhafen): Torcode 2379\\nObjekt 882 (Altona): Schlüsselkasten #4')">▶ Torcodes & Schließzylinder öffnen</p>
                 
                 <div style="margin-top: auto;">
                     <span style="font-size: 10px; color: var(--text-dim);">SYSTEM EFFICIENCY</span>
@@ -297,7 +295,6 @@ HTML_PAGE = """<!DOCTYPE html>
 
             <!-- Central Holographic Stage with Node Network -->
             <div class="hud-center-stage">
-                <!-- SVG Network Connecting Lines -->
                 <svg class="node-svg-overlay" viewBox="0 0 600 400" preserveAspectRatio="none">
                     <line x1="300" y1="200" x2="100" y2="100" stroke="#00f3ff" stroke-width="1" stroke-dasharray="4 4" opacity="0.5"/>
                     <line x1="300" y1="200" x2="500" y2="100" stroke="#00f3ff" stroke-width="1" stroke-dasharray="4 4" opacity="0.5"/>
@@ -307,7 +304,7 @@ HTML_PAGE = """<!DOCTYPE html>
                     <circle cx="120" cy="320" r="4" fill="#ff9900"/><circle cx="480" cy="320" r="4" fill="#ff9900"/>
                 </svg>
 
-                <div style="position: absolute; top: 10px; font-size: 10px; color: var(--text-dim); letter-spacing: 2px;">NEURAL NODE CONSTELLATION // ACTIVE</div>
+                <div style="position: absolute; top: 10px; font-size: 10px; color: var(--text-dim); letter-spacing: 2px;" id="pc-status-text">NEURAL NODE CONSTELLATION // ACTIVE</div>
                 
                 <div class="hud-core-ring" onclick="toggleListening()">
                     <span>NEO CORE</span>
@@ -321,18 +318,22 @@ HTML_PAGE = """<!DOCTYPE html>
                 </div>
             </div>
 
-            <!-- Right Panel -->
+            <!-- Right Panel (Interactive Calculator for PC) -->
             <div class="hud-box">
                 <h3>Sales & Bidding Engine</h3>
-                <p style="font-size: 10.5px; color: var(--text-dim);">Standard Tarif WISAG Gebäudereinigung:</p>
-                <div style="font-size: 17px; color: var(--neon-orange); font-weight: bold; margin: 4px 0;">31.50 € / Stunde</div>
-                <p style="font-size: 10px; color: var(--text-dim);">Sofortkalkulation für Hausverwaltung in Hamburg.</p>
+                <p style="font-size: 10.5px; color: var(--text-dim);">Standard Tarif: <strong style="color:var(--neon-orange);">31.50 €/h</strong></p>
                 
-                <h3 style="margin-top: 15px;">System Telemetry</h3>
-                <div style="font-size: 10px; color: var(--text-dim); line-height: 1.5; background: rgba(0,0,0,0.4); padding: 8px; border-radius: 4px;">
+                <div style="background: rgba(0,0,0,0.4); padding: 8px; border-radius: 6px; border: 1px solid var(--border-glow);">
+                    <label style="font-size: 10px; color: var(--text-dim);">Fläche in m²:</label>
+                    <input type="number" id="pc-area" value="300" oninput="calculatePrice('pc-area', 'pc-total')" style="width:100%; background:#030508; border:1px solid var(--neon-cyan); color:#fff; padding:4px; border-radius:4px; font-size:11px; margin-top:2px;">
+                    <div id="pc-total" style="font-size:11px; color:var(--neon-orange); font-weight:bold; margin-top:4px;">Gesamt: 9,450.00 € netto</div>
+                    <button class="action-btn" style="margin-top:6px; padding:6px;" onclick="sendWhatsApp('pc-area', 'pc-total')">WhatsApp Angebot</button>
+                </div>
+
+                <h3 style="margin-top: 10px;">System Telemetry</h3>
+                <div style="font-size: 10px; color: var(--text-dim); line-height: 1.4; background: rgba(0,0,0,0.4); padding: 6px; border-radius: 4px;">
                     Uptime: 99.9% // Sektor Hamburg<br>
-                    Latency: 0.04ms (Render Edge)<br>
-                    Encryption: AES-256 Link
+                    Latency: 0.04ms (Render Edge)
                 </div>
 
                 <div style="margin-top: auto;">
@@ -375,15 +376,15 @@ HTML_PAGE = """<!DOCTYPE html>
                 }
             }).catch(() => {});
 
-        function calculateMobile() {
-            const area = document.getElementById('m-area').value;
+        function calculatePrice(inputId, outputId) {
+            const area = document.getElementById(inputId).value;
             const total = area * 31.50;
-            document.getElementById('m-total').innerText = `Gesamt: ${total.toLocaleString('de-DE', {minimumFractionDigits: 2})} € netto`;
+            document.getElementById(outputId).innerText = `Gesamt: ${total.toLocaleString('de-DE', {minimumFractionDigits: 2})} € netto`;
         }
 
-        function sendWhatsAppMobile() {
-            const area = document.getElementById('m-area').value;
-            const total = document.getElementById('m-total').innerText;
+        function sendWhatsApp(inputId, outputId) {
+            const area = document.getElementById(inputId).value;
+            const total = document.getElementById(outputId).innerText;
             const text = encodeURIComponent(`Guten Tag, hier ist das Angebot der WISAG für Ihre Fläche (${area} m²): ${total} (Basis 31.50 €/h). Mit freundlichen Grüßen, Margil Mollaj`);
             window.open(`https://wa.me/?text=${text}`, '_blank');
         }
@@ -403,11 +404,16 @@ HTML_PAGE = """<!DOCTYPE html>
 
         function toggleListening() {
             isListening = !isListening;
+            const statusEl = document.getElementById('status-text');
+            const pcStatusEl = document.getElementById('pc-status-text');
+            
             if (isListening) {
-                document.getElementById('m-status-text').innerText = "🎙️ HÖRE ZU...";
+                if(statusEl) statusEl.innerText = "🎙️ HÖRE ZU...";
+                if(pcStatusEl) pcStatusEl.innerText = "🎙️ HÖRE ZU...";
                 startVoiceRecording();
             } else {
-                document.getElementById('m-status-text').innerText = "🎙️ „Hey Neo“ - Bereit";
+                if(statusEl) statusEl.innerText = "🎙️ „Hey Neo“ - Bereit";
+                if(pcStatusEl) pcStatusEl.innerText = "NEURAL NODE CONSTELLATION // ACTIVE";
             }
         }
 
@@ -424,7 +430,6 @@ HTML_PAGE = """<!DOCTYPE html>
                     reader.readAsDataURL(blob);
                     reader.onloadend = async () => {
                         const base64Audio = reader.result.split(',')[1];
-                        document.getElementById('m-status-text').innerText = "🧠 ANALYSIERE...";
                         try {
                             const res = await fetch('/chat', {
                                 method: 'POST',
@@ -432,22 +437,20 @@ HTML_PAGE = """<!DOCTYPE html>
                                 body: JSON.stringify({ audio: base64Audio, mode: "ARBEIT" })
                             });
                             const data = await res.json();
-                            document.getElementById('m-status-text').innerText = "🎙️ " + (data.reply || "Fertig.");
                             if (data.audio) {
                                 audioPlayer.src = "data:audio/mp3;base64," + data.audio;
                                 audioPlayer.play();
                             }
-                        } catch(err) {
-                            document.getElementById('m-status-text').innerText = "❌ Verbindungsfehler";
-                        }
+                        } catch(err) {}
                         isListening = false;
+                        toggleListening();
                     };
                 };
                 mediaRecorder.start();
                 setTimeout(() => { if (mediaRecorder.state === 'recording') mediaRecorder.stop(); }, 5000);
             } catch(e) {
                 isListening = false;
-                document.getElementById('m-status-text').innerText = "❌ Mikrofon-Zugriff verweigert";
+                toggleListening();
             }
         }
     </script>
