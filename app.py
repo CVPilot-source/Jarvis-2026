@@ -418,7 +418,7 @@ def parse_upcoming_events():
 
 SYSTEM_PROMPT = """Du bist NEO, der hochintelligente KI-Assistent von Margil (Kundenbetreuer Gebäudereinigung Hamburg) und Social-Media-Direktor. Antworte IMMER strikt auf Deutsch.
 Modus: {mode} | Zeit: {local_time}. Antworte souverän, ruhig, präzise und kurz auf Deutsch. Keine Sternchen oder Markdown.
-Antworte NUR als JSON:
+Antworte NUR as JSON:
 {{"reply":"","voice_lang":"de","copy_text":"","new_memory":"","action_url":"","action_label":"","end_conversation":false}}"""
 
 async def make_voice(text, lang="de"):
@@ -463,6 +463,52 @@ def manifest():
 @app.route("/icon.svg")
 def icon():
     return Response(ICON_SVG, mimetype="image/svg+xml")
+
+# --- TELEGRAM WEBHOOK PËR TË KAPUR KLIKIMET E BUTONAVE ---
+@app.route("/telegram_webhook", methods=["POST"])
+def telegram_webhook():
+    try:
+        data = request.json or {}
+        if "callback_query" in data:
+            cq = data["callback_query"]
+            callback_data = cq.get("data")
+            callback_id = cq["id"]
+            chat_id = cq["message"]["chat"]["id"]
+            token = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
+
+            # Përgjigju Telegramit që butoni u procesua (që të hiqet animacioni i ngarkimit tek butoni)
+            ans_text = "✅ Autorizimi u pranua!" if callback_data == "ok" else "❌ Autorizimi u refuzua!"
+            if token:
+                ans_payload = json.dumps({"callback_query_id": callback_id, "text": ans_text, "show_alert": True}).encode("utf-8")
+                urllib.request.urlopen(urllib.request.Request(f"https://api.telegram.org/bot{token}/answerCallbackQuery", data=ans_payload, headers={"Content-Type": "application/json"}))
+        return jsonify({"ok": True})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)})
+
+@app.route("/telegram_notify", methods=["POST"])
+def tg_notify():
+    token = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
+    chat_id = os.environ.get("TELEGRAM_CHAT_ID", "").strip()
+    if not token:
+        return jsonify({"ok": False, "error": "TELEGRAM_BOT_TOKEN fehlt in Render"})
+    if not chat_id:
+        try:
+            u = json.loads(urllib.request.urlopen(f"https://api.telegram.org/bot{token}/getUpdates", timeout=5).read().decode())
+            if u.get("result"):
+                chat_id = str(u["result"][-1]["message"]["chat"]["id"])
+        except Exception:
+            pass
+    if not chat_id:
+        return jsonify({"ok": False, "error": "Bitte sende zuerst 'Hallo' an deinen Bot in Telegram"})
+    
+    payload = json.dumps({
+        "chat_id": chat_id,
+        "text": (request.json or {}).get("text", "🔔 NEO Autorisierung anfrage"),
+        "reply_markup": {"inline_keyboard": [[{"text": "✅ Autorisieren", "callback_data": "ok"}, {"text": "❌ Ablehnen", "callback_data": "no"}]]}
+    }).encode("utf-8")
+    req = urllib.request.Request(f"https://api.telegram.org/bot{token}/sendMessage", data=payload, headers={"Content-Type": "application/json"})
+    urllib.request.urlopen(req, timeout=5)
+    return jsonify({"ok": True})
 
 @app.route("/chat", methods=["POST"])
 def chat():
