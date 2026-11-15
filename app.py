@@ -28,7 +28,7 @@ HTML_PAGE = """<!DOCTYPE html>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#030712">
     <link rel="manifest" href="/manifest.json">
-    <title>N.E.O. // HOLOGRAPHIC VOICE CORE</title>
+    <title>N.E.O. // COMMAND OS</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
 
@@ -36,7 +36,7 @@ HTML_PAGE = """<!DOCTYPE html>
             --cyan: #00E5FF;
             --orange: #FF9900;
             --bg: #030712;
-            --panel: rgba(8, 15, 30, 0.85);
+            --panel: rgba(8, 15, 30, 0.9);
             --border: rgba(0, 229, 255, 0.25);
             --text: #F8FAFC;
             --muted: #64748B;
@@ -52,9 +52,9 @@ HTML_PAGE = """<!DOCTYPE html>
             margin: 0; padding: 0; width: 100vw; height: 100vh; overflow: hidden;
             background-color: var(--bg);
             background-image:
-                radial-gradient(circle at 50% 45%, rgba(0, 229, 255, 0.08) 0%, transparent 70%),
-                linear-gradient(rgba(0, 229, 255, 0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0, 229, 255, 0.03) 1px, transparent 1px);
+                radial-gradient(circle at 50% 42%, rgba(0, 229, 255, 0.08) 0%, transparent 65%),
+                linear-gradient(rgba(0, 229, 255, 0.025) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 229, 255, 0.025) 1px, transparent 1px);
             background-size: 100% 100%, 32px 32px, 32px 32px;
             color: var(--text);
             font-family: 'Rajdhani', sans-serif;
@@ -62,7 +62,7 @@ HTML_PAGE = """<!DOCTYPE html>
             flex-direction: column;
             justify-content: space-between;
             align-items: center;
-            padding: 24px 16px;
+            padding: 16px;
         }
 
         /* TOP HEADER */
@@ -70,13 +70,13 @@ HTML_PAGE = """<!DOCTYPE html>
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 4px;
+            gap: 2px;
             z-index: 10;
         }
         .title {
-            font-size: 32px;
+            font-size: 28px;
             font-weight: 700;
-            letter-spacing: 10px;
+            letter-spacing: 8px;
             color: var(--text);
             text-shadow: 0 0 20px rgba(0, 229, 255, 0.5);
             margin: 0;
@@ -87,16 +87,16 @@ HTML_PAGE = """<!DOCTYPE html>
             gap: 6px;
             background: var(--panel);
             border: 1px solid var(--border);
-            padding: 4px 14px;
+            padding: 3px 12px;
             border-radius: 999px;
             font-family: 'JetBrains Mono', monospace;
-            font-size: 11px;
-            letter-spacing: 2px;
+            font-size: 10.5px;
+            letter-spacing: 1.5px;
             color: var(--cyan);
             text-transform: uppercase;
         }
         .status-dot {
-            width: 6px; height: 6px;
+            width: 5px; height: 5px;
             border-radius: 50%;
             background: var(--cyan);
             box-shadow: 0 0 8px var(--cyan);
@@ -111,13 +111,14 @@ HTML_PAGE = """<!DOCTYPE html>
         /* CENTER HOLOGRAPHIC STAGE */
         .hologram-stage {
             position: relative;
-            width: 300px;
-            height: 300px;
+            width: 260px;
+            height: 260px;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
             z-index: 5;
+            margin: auto 0;
         }
         .holo-glow {
             position: absolute;
@@ -138,54 +139,105 @@ HTML_PAGE = """<!DOCTYPE html>
         }
         @keyframes floatHolo {
             0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-8px); }
+            50% { transform: translateY(-6px); }
         }
 
-        /* PROMPT & SUBTEXT */
-        .prompt-container {
-            text-align: center;
+        /* COMMAND DOCK (ELEGANT BUTTONS) */
+        .command-dock {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+            max-width: 600px;
             z-index: 10;
+            margin-bottom: 8px;
         }
-        .wake-text {
-            font-size: 20px;
-            font-weight: 600;
-            letter-spacing: 2px;
+        .cmd-btn {
+            background: var(--panel);
+            border: 1px solid var(--border);
             color: var(--text);
-            margin: 0 0 4px 0;
-            text-shadow: 0 0 12px rgba(0,229,255,0.4);
+            padding: 7px 14px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
-        .listening-subtext {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 13px;
-            letter-spacing: 1.5px;
-            color: var(--muted);
-            text-transform: uppercase;
+        .cmd-btn:hover {
+            border-color: var(--cyan);
+            color: var(--cyan);
+            box-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
+            transform: translateY(-2px);
         }
 
-        /* BOTTOM DOCK */
-        .mic-dock {
+        /* BOTTOM MIC & STATUS */
+        .bottom-bar {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 10px;
+            gap: 6px;
             z-index: 10;
-            margin-bottom: 10px;
+        }
+        .wake-text {
+            font-size: 16px;
+            font-weight: 600;
+            letter-spacing: 1.5px;
+            color: var(--text);
+            margin: 0;
+            text-shadow: 0 0 10px rgba(0,229,255,0.4);
         }
         .mic-btn {
-            width: 64px; height: 64px;
+            width: 54px; height: 54px;
             border-radius: 50%;
             background: linear-gradient(135deg, rgba(0,229,255,0.2), rgba(255,153,0,0.2));
             border: 1.5px solid var(--cyan);
             color: var(--text);
-            font-size: 24px;
+            font-size: 20px;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            box-shadow: 0 0 25px rgba(0, 229, 255, 0.3);
-            transition: transform 0.2s, border-color 0.2s;
+            box-shadow: 0 0 20px rgba(0, 229, 255, 0.3);
+            transition: transform 0.2s;
         }
         .mic-btn:active { transform: scale(0.92); }
+
+        /* HOLOGRAPHIC MODAL */
+        .holo-modal {
+            position: fixed; inset: 0; background: rgba(3, 7, 18, 0.85);
+            backdrop-filter: blur(8px); z-index: 50; display: none;
+            align-items: center; justify-content: center; padding: 16px;
+        }
+        .holo-modal.open { display: flex; }
+        .holo-box {
+            background: var(--panel); border: 1px solid var(--cyan);
+            box-shadow: 0 0 35px rgba(0, 229, 255, 0.25);
+            border-radius: 14px; width: 100%; max-width: 440px;
+            padding: 20px; display: flex; flex-direction: column; gap: 14px;
+        }
+        .holo-head {
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid var(--border); padding-bottom: 8px;
+            font-size: 14px; font-weight: 700; color: var(--cyan); letter-spacing: 1px;
+        }
+        .holo-content { max-height: 260px; overflow-y: auto; font-size: 13.5px; display: flex; flex-direction: column; gap: 8px; }
+        .holo-row {
+            padding: 8px 12px; background: rgba(0, 229, 255, 0.05);
+            border-left: 3px solid var(--orange); border-radius: 6px;
+        }
+        .gold-pill {
+            background: var(--orange); color: #030712; border: none; border-radius: 999px;
+            padding: 8px 16px; font-size: 12px; font-weight: 700; cursor: pointer; text-align: center;
+        }
+        input, select {
+            background: #030712; border: 1px solid var(--border); color: #fff;
+            padding: 9px 12px; border-radius: 6px; font-family: 'Rajdhani', sans-serif; font-size: 14px;
+        }
     </style>
 </head>
 <body>
@@ -194,27 +246,27 @@ HTML_PAGE = """<!DOCTYPE html>
         <h1 class="title">N E O</h1>
         <div class="status-badge">
             <span class="status-dot"></span>
-            <span id="statusText">AKTIV 24/7</span>
+            <span id="statusText">HAMBURG • AKTIV</span>
         </div>
     </div>
 
-    <!-- CENTER HOLOGRAPHIC BUST -->
+    <!-- CENTER HOLOGRAPHIC CORE -->
     <div class="hologram-stage" onclick="toggleListening()" title="Tippen zum Sprechen">
         <div class="holo-glow"></div>
         <svg class="holo-svg" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="150" cy="150" r="130" fill="none" stroke="rgba(0,229,255,0.1)" stroke-width="1" stroke-dasharray="8 8"/>
-            <circle cx="150" cy="150" r="105" fill="none" stroke="rgba(255,153,0,0.15)" stroke-width="1"/>
-            <circle cx="150" cy="135" r="35" fill="url(#orangeGlow)" opacity="0.8"/>
+            <circle cx="150" cy="150" r="125" fill="none" stroke="rgba(0,229,255,0.12)" stroke-width="1" stroke-dasharray="8 8"/>
+            <circle cx="150" cy="150" r="100" fill="none" stroke="rgba(255,153,0,0.15)" stroke-width="1"/>
+            <circle cx="150" cy="135" r="35" fill="url(#orangeGlow)" opacity="0.85"/>
             <defs>
                 <radialGradient id="orangeGlow" cx="50%" cy="50%" r="50%">
-                    <stop offset="0%" stop-color="#FF9900" stop-opacity="0.9"/>
+                    <stop offset="0%" stop-color="#FF9900" stop-opacity="0.95"/>
                     <stop offset="60%" stop-color="#FF5500" stop-opacity="0.4"/>
                     <stop offset="100%" stop-color="#030712" stop-opacity="0"/>
                 </radialGradient>
             </defs>
-            <g stroke="rgba(0,229,255,0.7)" stroke-width="1.5" fill="none" stroke-linecap="round">
+            <g stroke="rgba(0,229,255,0.75)" stroke-width="1.5" fill="none" stroke-linecap="round">
                 <path d="M60,250 Q100,210 150,210 Q200,210 240,250" opacity="0.9"/>
-                <path d="M80,265 Q150,230 220,265" stroke="rgba(255,153,0,0.8)" stroke-width="1"/>
+                <path d="M80,265 Q150,230 220,265" stroke="rgba(255,153,0,0.85)" stroke-width="1"/>
                 <path d="M130,210 L130,165" />
                 <path d="M170,210 L170,165" />
                 <path d="M120,165 Q110,120 125,85 Q135,60 150,55 Q165,60 175,85 Q190,120 180,165" />
@@ -233,41 +285,101 @@ HTML_PAGE = """<!DOCTYPE html>
         </svg>
     </div>
 
-    <!-- PROMPT TEXT -->
-    <div class="prompt-container">
-        <p class="wake-text" id="wakePrompt">Sage: „Hey Neo“</p>
-        <span class="listening-subtext" id="subStatus">Lauscht im Hintergrund…</span>
+    <!-- COMMAND DOCK (ELEGANT BUTTONS) -->
+    <div class="command-dock">
+        <button class="cmd-btn" onclick="quickCmd('Gib mir mein Morning Briefing mit Terminen heute.')">☀️ Morning Brief</button>
+        <button class="cmd-btn" onclick="openHolo('calendar')">📅 Kalender</button>
+        <button class="cmd-btn" onclick="openHolo('calc')">📐 Rechner</button>
+        <button class="cmd-btn" onclick="openHolo('codes')">🔐 Objekt-Codes</button>
+        <button class="cmd-btn" onclick="document.getElementById('cam').click()">📸 Mängel-Foto</button>
+        <button class="cmd-btn" onclick="sendTg()">✈️ Telegram Auth</button>
     </div>
 
-    <!-- BOTTOM MIC ICON -->
-    <div class="mic-dock">
+    <!-- BOTTOM WAKE & MIC -->
+    <div class="bottom-bar">
+        <p class="wake-text" id="wakePrompt">Sage: „Hey Neo“</p>
         <div class="mic-btn" onclick="toggleListening()">🎙️</div>
     </div>
 
+    <!-- HOLOGRAPHIC MODAL -->
+    <div class="holo-modal" id="holoModal">
+        <div class="holo-box">
+            <div class="holo-head">
+                <span id="holoTitle">DATEN</span>
+                <button class="cmd-btn" style="padding: 2px 8px;" onclick="closeHolo()">✕</button>
+            </div>
+            <div class="holo-content" id="holoBody"></div>
+        </div>
+    </div>
+
+    <input type="file" id="cam" accept="image/*" style="display:none" onchange="handleImg(event)">
     <audio id="player" playsinline></audio>
 
     <script>
         let isRec = false, isSpk = false, inConv = false;
         let rec = null, stream = null, wakeRec = null;
+        let cachedEvents = [];
         const player = document.getElementById('player');
-        const subStatus = document.getElementById('subStatus');
         const wakePrompt = document.getElementById('wakePrompt');
+
+        fetch('/calendar_preview').then(r => r.json()).then(d => { cachedEvents = d.events || []; }).catch(()=>{});
+        let mem = JSON.parse(localStorage.getItem('neo_memory') || '[]');
 
         function setVisualState(state) {
             document.body.className = state || '';
-            if (state === 'listening') {
-                subStatus.innerText = "Ich höre zu...";
-                wakePrompt.innerText = "Sprich jetzt...";
-            } else if (state === 'thinking') {
-                subStatus.innerText = "Analysiere...";
-                wakePrompt.innerText = "Denkt nach...";
-            } else if (state === 'speaking') {
-                subStatus.innerText = "NEO spricht...";
-                wakePrompt.innerText = "Antwortet...";
-            } else {
-                subStatus.innerText = "Lauscht im Hintergrund…";
-                wakePrompt.innerText = "Sage: „Hey Neo“";
+            if (state === 'listening') wakePrompt.innerText = "Ich höre zu...";
+            else if (state === 'thinking') wakePrompt.innerText = "Analysiere...";
+            else if (state === 'speaking') wakePrompt.innerText = "NEO spricht...";
+            else wakePrompt.innerText = "Sage: „Hey Neo“";
+        }
+
+        function openHolo(type) {
+            const modal = document.getElementById('holoModal');
+            const title = document.getElementById('holoTitle');
+            const body = document.getElementById('holoBody');
+            modal.classList.add('open');
+
+            if (type === 'calendar') {
+                title.innerText = 'KALENDER TERMINE';
+                body.innerHTML = cachedEvents.length
+                    ? cachedEvents.map(e => `<div class="holo-row"><div style="color:var(--orange);font-size:11px;">${e.time}</div><div style="font-weight:700;">${e.title}</div><div style="color:var(--muted);font-size:11px;">${e.loc||''}</div></div>`).join('')
+                    : '<div style="color:var(--muted);">Keine Termine gefunden.</div>';
+            } else if (type === 'codes') {
+                title.innerText = `OBJEKT-CODES & NOTIZEN (${mem.length})`;
+                let list = mem.length ? mem.map((x, i) => `<div class="holo-row" style="display:flex;justify-content:space-between;align-items:center;"><span>${x}</span><button class="gold-pill" style="padding:2px 8px;" onclick="mem.splice(${i},1);localStorage.setItem('neo_memory',JSON.stringify(mem));openHolo('codes');">✕</button></div>`).join('') : '<div style="color:var(--muted);">Keine Codes gespeichert.</div>';
+                body.innerHTML = `<div style="display:flex;gap:6px;margin-bottom:8px;"><input id="newCode" type="text" placeholder="Neuer Code..." style="flex:1;"><button class="gold-pill" onclick="if(document.getElementById('newCode').value.trim()){mem.push(document.getElementById('newCode').value.trim());localStorage.setItem('neo_memory',JSON.stringify(mem));openHolo('codes');}">Speichern</button></div>` + list;
+            } else if (type === 'calc') {
+                title.innerText = 'ANGEBOTS-KALKULATOR (31,50 €/Std)';
+                body.innerHTML = `<div style="display:flex;flex-direction:column;gap:10px;">
+                    <input id="cQm" type="number" placeholder="Fläche in m² (z.B. 600)" value="600">
+                    <select id="cFreq">
+                        <option value="1x pro Woche">1x pro Woche</option>
+                        <option value="2x pro Woche" selected>2x pro Woche</option>
+                        <option value="3x pro Woche">3x pro Woche</option>
+                        <option value="5x pro Woche">5x pro Woche</option>
+                    </select>
+                    <button class="gold-pill" onclick="closeHolo();quickCmd('Kalkuliere ein Reinigungsangebot für '+document.getElementById('cQm').value+' m², '+document.getElementById('cFreq').value+', und erstelle den Angebotstext.');">ANGEBOT ERSTELLEN</button>
+                </div>`;
             }
+        }
+        function closeHolo() { document.getElementById('holoModal').classList.remove('open'); }
+
+        async function sendTg() {
+            wakePrompt.innerText = "Sende Telegram...";
+            try {
+                const r = await fetch('/telegram_notify', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({text:"📞 NEO Autorisierung angefordert!"}) });
+                const d = await r.json();
+                wakePrompt.innerText = d.ok ? "Telegram gesendet!" : "Telegram Fehler";
+                setTimeout(() => wakePrompt.innerText = "Sage: „Hey Neo“", 3000);
+            } catch(e) { wakePrompt.innerText = "Verbindungsfehler"; }
+        }
+
+        function handleImg(ev) {
+            const f = ev.target.files[0]; if(!f) return;
+            setVisualState('thinking');
+            const r = new FileReader();
+            r.onload = e => sendToNeoBackend({ image: e.target.result.split(',')[1], message: "Erstelle einen professionellen Objekt-Mängelbericht." });
+            r.readAsDataURL(f);
         }
 
         function startWakeWord() {
@@ -275,26 +387,17 @@ HTML_PAGE = """<!DOCTYPE html>
             if (!SpeechRecognition) return;
             try {
                 wakeRec = new SpeechRecognition();
-                wakeRec.lang = 'de-DE';
-                wakeRec.continuous = true;
-                wakeRec.interimResults = true;
-
+                wakeRec.lang = 'de-DE'; wakeRec.continuous = true; wakeRec.interimResults = true;
                 wakeRec.onresult = (e) => {
                     for (let i = e.resultIndex; i < e.results.length; i++) {
                         const t = e.results[i][0].transcript.toLowerCase();
                         if (t.includes('hey neo') || t.includes('hallo neo') || t.includes('neo')) {
                             if (wakeRec) { try { wakeRec.abort(); } catch(err){} }
-                            inConv = true;
-                            startRecordingAudio();
-                            return;
+                            inConv = true; startRecordingAudio(); return;
                         }
                     }
                 };
-                wakeRec.onend = () => {
-                    if (!isRec && !isSpk && !inConv) {
-                        setTimeout(startWakeWord, 800);
-                    }
-                };
+                wakeRec.onend = () => { if (!isRec && !isSpk && !inConv) setTimeout(startWakeWord, 800); };
                 wakeRec.start();
             } catch(e) {}
         }
@@ -302,8 +405,7 @@ HTML_PAGE = """<!DOCTYPE html>
         function toggleListening() {
             if (isSpk) { player.pause(); isSpk = false; setVisualState(null); return; }
             if (isRec) { isRec = false; if (rec && rec.state !== 'inactive') rec.stop(); return; }
-            inConv = true;
-            startRecordingAudio();
+            inConv = true; startRecordingAudio();
         }
 
         async function startRecordingAudio() {
@@ -325,55 +427,29 @@ HTML_PAGE = """<!DOCTYPE html>
                         sendToNeoBackend({ audio: reader.result.split(',')[1], mime_type: (rec.mimeType || 'audio/webm').split(';')[0] });
                     };
                 };
-                rec.start();
-                isRec = true;
-                setVisualState('listening');
+                rec.start(); isRec = true; setVisualState('listening');
                 setTimeout(() => { if (isRec) { isRec = false; rec.stop(); } }, 6000);
-            } catch(e) {
-                inConv = false;
-                setVisualState(null);
-                startWakeWord();
-            }
+            } catch(e) { inConv = false; setVisualState(null); startWakeWord(); }
         }
 
         player.onplay = () => { isSpk = true; setVisualState('speaking'); };
-        player.onended = () => {
-            isSpk = false;
-            setVisualState(null);
-            if (inConv) setTimeout(startRecordingAudio, 400);
-            else startWakeWord();
-        };
+        player.onended = () => { isSpk = false; setVisualState(null); if (inConv) setTimeout(startRecordingAudio, 400); else startWakeWord(); };
+
+        function quickCmd(t) { inConv = true; setVisualState('thinking'); sendToNeoBackend({ message: t }); }
 
         async function sendToNeoBackend(payload) {
-            payload.mode = "ARBEIT";
-            payload.memory = JSON.parse(localStorage.getItem('neo_memory') || '[]');
-            payload.local_time_str = new Date().toLocaleString('de-DE');
+            payload.mode = "ARBEIT"; payload.memory = mem; payload.local_time_str = new Date().toLocaleString('de-DE');
             try {
-                const res = await fetch('/chat', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify(payload)
-                });
+                const res = await fetch('/chat', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
                 const d = await res.json();
                 if (d.error) { inConv = false; setVisualState(null); startWakeWord(); return; }
                 if (d.end_conversation) inConv = false;
-                if (d.new_memory) {
-                    let mem = JSON.parse(localStorage.getItem('neo_memory') || '[]');
-                    mem.push(d.new_memory);
-                    localStorage.setItem('neo_memory', JSON.stringify(mem));
-                }
+                if (d.new_memory) { mem.push(d.new_memory); localStorage.setItem('neo_memory', JSON.stringify(mem)); }
                 if (d.audio) {
                     player.src = "data:audio/mp3;base64," + d.audio;
                     player.play().catch(() => { isSpk = false; setVisualState(null); startWakeWord(); });
-                } else {
-                    setVisualState(null);
-                    startWakeWord();
-                }
-            } catch(e) {
-                inConv = false;
-                setVisualState(null);
-                startWakeWord();
-            }
+                } else { setVisualState(null); startWakeWord(); }
+            } catch(e) { inConv = false; setVisualState(null); startWakeWord(); }
         }
 
         window.onload = startWakeWord;
@@ -418,7 +494,7 @@ def parse_upcoming_events():
 
 SYSTEM_PROMPT = """Du bist NEO, der hochintelligente KI-Assistent von Margil (Kundenbetreuer Gebäudereinigung Hamburg) und Social-Media-Direktor. Antworte IMMER strikt auf Deutsch.
 Modus: {mode} | Zeit: {local_time}. Antworte souverän, ruhig, präzise und kurz auf Deutsch. Keine Sternchen oder Markdown.
-Antworte NUR as JSON:
+Antworte NUR als JSON:
 {{"reply":"","voice_lang":"de","copy_text":"","new_memory":"","action_url":"","action_label":"","end_conversation":false}}"""
 
 async def make_voice(text, lang="de"):
@@ -464,7 +540,6 @@ def manifest():
 def icon():
     return Response(ICON_SVG, mimetype="image/svg+xml")
 
-# --- TELEGRAM WEBHOOK PËR TË KAPUR KLIKIMET E BUTONAVE ---
 @app.route("/telegram_webhook", methods=["POST"])
 def telegram_webhook():
     try:
@@ -473,10 +548,7 @@ def telegram_webhook():
             cq = data["callback_query"]
             callback_data = cq.get("data")
             callback_id = cq["id"]
-            chat_id = cq["message"]["chat"]["id"]
             token = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
-
-            # Përgjigju Telegramit që butoni u procesua (që të hiqet animacioni i ngarkimit tek butoni)
             ans_text = "✅ Autorizimi u pranua!" if callback_data == "ok" else "❌ Autorizimi u refuzua!"
             if token:
                 ans_payload = json.dumps({"callback_query_id": callback_id, "text": ans_text, "show_alert": True}).encode("utf-8")
