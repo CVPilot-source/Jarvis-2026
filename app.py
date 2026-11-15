@@ -28,7 +28,7 @@ HTML_PAGE = """<!DOCTYPE html>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#030712">
     <link rel="manifest" href="/manifest.json">
-    <title>N.E.O. // MULTI-CORE OS</title>
+    <title>N.E.O. // LIQUID QUANTUM ORB</title>
     <style>
         :root {
             --cyan: #00E5FF;
@@ -177,7 +177,7 @@ HTML_PAGE = """<!DOCTYPE html>
         <div class="sys-sub" id="sysMeta">HAMBURG • 24/7 ACTIVE</div>
         <div class="hud-controls">
             <button type="button" class="hud-btn" id="wBtn" onclick="toggleWake()" style="border-color:#10B981; color:#10B981;">● HEY NEO: 24/7</button>
-            <button type="button" class="hud-btn" onclick="nextTheme()" id="themeBtn" style="border-color:var(--orange); color:var(--orange);">FIGURA: REACTOR</button>
+            <button type="button" class="hud-btn" id="mBtn" onclick="toggleMode()">MODUS: ARBEIT</button>
             <button type="button" class="hud-btn" onclick="openHolo('calendar')">KALENDER</button>
             <button type="button" class="hud-btn" onclick="openHolo('codes')">CODES (<span id="nCount">0</span>)</button>
         </div>
@@ -229,17 +229,6 @@ HTML_PAGE = """<!DOCTYPE html>
             } catch(e){}
         }
 
-        // --- THEME / FIGURE SELECTOR ---
-        let currentTheme = parseInt(localStorage.getItem('neo_theme') || '0');
-        const themes = ['REACTOR', 'NEURAL BRAIN', 'QUANTUM RING', 'PARTICLE BUST'];
-        
-        function nextTheme() {
-            currentTheme = (currentTheme + 1) % themes.length;
-            localStorage.setItem('neo_theme', currentTheme);
-            document.getElementById('themeBtn').innerText = 'FIGURA: ' + themes[currentTheme];
-        }
-        document.getElementById('themeBtn').innerText = 'FIGURA: ' + themes[currentTheme];
-
         // --- 1. NODES ---
         const NODES = [
             { id: 'brief',    label: '☀️ Morning Brief',   rx: 0.21, ry: 0.24, action: () => quickCmd('Gib mir mein komplettes Morning Briefing mit Terminen heute und wichtigen Objekt-Codes.') },
@@ -267,7 +256,7 @@ HTML_PAGE = """<!DOCTYPE html>
             nodesLayer.appendChild(el);
         });
 
-        // --- 2. MULTI-FIGURE CANVAS ENGINE ---
+        // --- 2. LIQUID QUANTUM ORB CANVAS ENGINE ---
         const canvas = document.getElementById('neuralCanvas');
         const ctx = canvas.getContext('2d');
         let W = window.innerWidth, H = window.innerHeight;
@@ -278,124 +267,59 @@ HTML_PAGE = """<!DOCTYPE html>
         let coreStateMode = 'idle', timeStep = 0;
         const packets = NODES.map((_, idx) => ({ progress: (idx * 0.15) % 1, speed: 0.004 + (idx % 3) * 0.0012 }));
 
-        // Particle datasets for different figures
-        const matrixParticles = [];
-        for (let i = 0; i < 50; i++) {
-            const p = i / 49;
-            for (let c = 0; c < 30; c++) {
-                matrixParticles.push({ p: p, cNorm: (c / 29) - 0.5, yOff: -120 + p * 240, angle: Math.random() * Math.PI * 2, spd: Math.random() * 0.04 + 0.02 });
+        function drawLiquidQuantumOrb(cx, cy, pulseBoost) {
+            timeStep += 0.035 * pulseBoost;
+
+            // Fluid pulsing radius
+            const baseRadius = 85 + Math.sin(timeStep * 1.5) * 8 * pulseBoost;
+
+            // Outer Quantum Glow Aura
+            const aura = ctx.createRadialGradient(cx, cy, 10, cx, cy, baseRadius * 1.8);
+            aura.addColorStop(0, 'rgba(255, 140, 0, 0.55)');
+            aura.addColorStop(0.5, 'rgba(0, 229, 255, 0.25)');
+            aura.addColorStop(1, 'transparent');
+            ctx.fillStyle = aura;
+            ctx.beginPath(); ctx.arc(cx, cy, baseRadius * 1.8, 0, Math.PI * 2); ctx.fill();
+
+            // Liquid Organic Blob layers
+            ctx.save();
+            ctx.translate(cx, cy);
+            
+            // Rotating outer fluid ring
+            ctx.strokeStyle = 'rgba(0, 229, 255, 0.75)';
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            const points = 60;
+            for (let i = 0; i <= points; i++) {
+                const angle = (i / points) * Math.PI * 2;
+                const wave = Math.sin(angle * 5 + timeStep * 2) * 6 * pulseBoost;
+                const r = baseRadius + wave;
+                const x = Math.cos(angle) * r;
+                const y = Math.sin(angle) * r;
+                if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
             }
-        }
+            ctx.closePath();
+            ctx.stroke();
 
-        const brainNodes = Array.from({length: 45}, () => ({
-            x: (Math.random() - 0.5) * 180,
-            y: (Math.random() - 0.5) * 140 - 20,
-            z: (Math.random() - 0.5) * 140,
-            vx: (Math.random() - 0.5) * 1.2,
-            vy: (Math.random() - 0.5) * 1.2
-        }));
-
-        function drawActiveFigure(cx, cy, pulseBoost) {
-            timeStep += 0.03 * pulseBoost;
-
-            if (currentTheme === 0) {
-                // FIGURA 1: ARC REACTOR CORE (Iron Man style)
-                const r = 85 + Math.sin(timeStep * 2) * 6;
-                const glow = ctx.createRadialGradient(cx, cy, 10, cx, cy, r + 50);
-                glow.addColorStop(0, 'rgba(255,140,0,0.8)');
-                glow.addColorStop(0.5, 'rgba(0,229,255,0.3)');
-                glow.addColorStop(1, 'transparent');
-                ctx.fillStyle = glow;
-                ctx.beginPath(); ctx.arc(cx, cy, r + 50, 0, Math.PI * 2); ctx.fill();
-
-                ctx.strokeStyle = 'rgba(0,229,255,0.85)'; ctx.lineWidth = 3;
-                ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke();
-
-                ctx.strokeStyle = 'rgba(255,140,0,0.9)'; ctx.lineWidth = 2;
-                ctx.setLineDash([12, 8]);
-                ctx.beginPath(); ctx.arc(cx, cy, r - 22, timeStep, timeStep + Math.PI * 1.5); ctx.stroke();
-                ctx.setLineDash([]);
-
-                ctx.fillStyle = '#FFF';
-                ctx.shadowColor = '#FF9900'; ctx.shadowBlur = 20;
-                ctx.beginPath(); ctx.arc(cx, cy, 16, 0, Math.PI * 2); ctx.fill();
-                ctx.shadowBlur = 0;
-
-            } else if (currentTheme === 1) {
-                // FIGURA 2: NEURAL BRAIN MATRIX
-                const bgGlow = ctx.createRadialGradient(cx, cy - 20, 10, cx, cy - 20, 120);
-                bgGlow.addColorStop(0, 'rgba(0,229,255,0.35)');
-                bgGlow.addColorStop(1, 'transparent');
-                ctx.fillStyle = bgGlow;
-                ctx.beginPath(); ctx.arc(cx, cy - 20, 120, 0, Math.PI * 2); ctx.fill();
-
-                brainNodes.forEach((n, idx) => {
-                    n.x += n.vx * pulseBoost; n.y += n.vy * pulseBoost;
-                    if (Math.abs(n.x) > 90) n.vx *= -1;
-                    if (Math.abs(n.y) > 70) n.vy *= -1;
-
-                    ctx.fillStyle = idx % 3 === 0 ? '#FF9900' : '#00E5FF';
-                    ctx.beginPath(); ctx.arc(cx + n.x, cy + n.y, 2.2, 0, Math.PI * 2); ctx.fill();
-
-                    for (let j = idx + 1; j < brainNodes.length; j++) {
-                        const n2 = brainNodes[j];
-                        const dist = Math.hypot(n.x - n2.x, n.y - n2.y);
-                        if (dist < 45) {
-                            ctx.strokeStyle = `rgba(0,229,255,${1 - dist/45})`;
-                            ctx.lineWidth = 0.8;
-                            ctx.beginPath(); ctx.moveTo(cx + n.x, cy + n.y); ctx.lineTo(cx + n2.x, cy + n2.y); ctx.stroke();
-                        }
-                    }
-                });
-
-            } else if (currentTheme === 2) {
-                // FIGURA 3: QUANTUM RING
-                const qGlow = ctx.createRadialGradient(cx, cy, 5, cx, cy, 130);
-                qGlow.addColorStop(0, 'rgba(255,140,0,0.6)');
-                qGlow.addColorStop(1, 'transparent');
-                ctx.fillStyle = qGlow;
-                ctx.beginPath(); ctx.arc(cx, cy, 130, 0, Math.PI * 2); ctx.fill();
-
-                for (let i = 0; i < 4; i++) {
-                    ctx.save();
-                    ctx.translate(cx, cy);
-                    ctx.rotate(timeStep * (i % 2 === 0 ? 0.8 : -0.8) + i * 0.7);
-                    ctx.strokeStyle = i % 2 === 0 ? '#00E5FF' : '#FF9900';
-                    ctx.lineWidth = 2;
-                    ctx.setLineDash([15, 10, 5, 10]);
-                    ctx.beginPath(); ctx.ellipse(0, 0, 110 - i * 18, 45 + i * 12, i * 0.5, 0, Math.PI * 2); ctx.stroke();
-                    ctx.restore();
-                }
-
-            } else {
-                // FIGURA 4: PARTICLE BUST (Reznikov Style)
-                const faceGlow = ctx.createRadialGradient(cx, cy - 25, 5, cx, cy - 25, 100);
-                faceGlow.addColorStop(0, 'rgba(255, 140, 0, 0.85)');
-                faceGlow.addColorStop(0.5, 'rgba(0, 229, 255, 0.3)');
-                faceGlow.addColorStop(1, 'transparent');
-                ctx.fillStyle = faceGlow;
-                ctx.beginPath(); ctx.arc(cx, cy - 25, 100, 0, Math.PI * 2); ctx.fill();
-
-                ctx.shadowBlur = 8;
-                matrixParticles.forEach(pt => {
-                    pt.angle += pt.spd * pulseBoost;
-                    let w = (pt.p < 0.35) ? Math.sin(pt.p * 3 * Math.PI) * 58 : 30 + Math.pow((pt.p - 0.35)/0.65, 1.7) * 130;
-                    const wave = Math.sin(timeStep + pt.yOff * 0.1 + pt.angle) * 3;
-                    const x = cx + pt.cNorm * w * 2 + wave;
-                    const y = cy + pt.yOff;
-
-                    let col = 'rgba(0,229,255,0.75)';
-                    let sz = 1.5;
-                    if (Math.hypot(x - cx, y - (cy - 25)) < 50 && pt.p > 0.15 && pt.p < 0.4) {
-                        col = 'rgba(255,140,0,0.95)'; sz = 2.4;
-                    }
-
-                    ctx.shadowColor = col.includes('255') ? '#FF9900' : '#00E5FF';
-                    ctx.fillStyle = col;
-                    ctx.beginPath(); ctx.arc(x, y, sz, 0, Math.PI * 2); ctx.fill();
-                });
-                ctx.shadowBlur = 0;
+            // Inner Molten Orange Core
+            const coreGrad = ctx.createRadialGradient(0, 0, 5, 0, 0, baseRadius * 0.75);
+            coreGrad.addColorStop(0, '#FFFFFF');
+            coreGrad.addColorStop(0.35, '#FF9900');
+            coreGrad.addColorStop(0.85, 'rgba(0, 229, 255, 0.65)');
+            coreGrad.addColorStop(1, 'transparent');
+            ctx.fillStyle = coreGrad;
+            ctx.beginPath();
+            for (let i = 0; i <= points; i++) {
+                const angle = (i / points) * Math.PI * 2;
+                const wave = Math.cos(angle * 4 - timeStep * 1.8) * 8;
+                const r = (baseRadius * 0.7) + wave;
+                const x = Math.cos(angle) * r;
+                const y = Math.sin(angle) * r;
+                if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
             }
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
         }
 
         function drawNeuralNetwork() {
@@ -407,7 +331,7 @@ HTML_PAGE = """<!DOCTYPE html>
             else if (coreStateMode === 'thinking') { mainColor = '0, 229, 255'; pulseBoost = 2.4; }
             else if (coreStateMode === 'speaking') { mainColor = '168, 85, 247'; pulseBoost = 1.8; }
 
-            drawActiveFigure(cx, cy, pulseBoost);
+            drawLiquidQuantumOrb(cx, cy, pulseBoost);
 
             NODES.forEach((n, idx) => {
                 const nx = W * n.rx, ny = H * n.ry;
@@ -852,7 +776,10 @@ def chat():
         )
         resp = generate_with_fallback(client, parts, cfg)
 
-        m = re.search(r'\{.*\}', resp.text.strip(), re.DOTALL)
+        m = re.search(r'\{.*}‛', resp.text.strip(), re.DOTALL)
+        # Fallback regex for json if unicode quotes got in
+        if not m:
+            m = re.search(r'\{.*\}', resp.text.strip(), re.DOTALL)
         res = json.loads(m.group(0)) if m else {"reply": resp.text.strip()}
         reply = res.get("reply", "Zu Befehl, Margil.")
         audio = asyncio.run(make_voice(reply, res.get("voice_lang", "de")))
