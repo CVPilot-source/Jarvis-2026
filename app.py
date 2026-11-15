@@ -15,10 +15,10 @@ app = Flask(__name__)
 ICAL_CACHE = {"ts": 0, "events": []}
 
 ICON_SVG = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="115" fill="#030712"/>
-  <circle cx="256" cy="256" r="155" fill="none" stroke="#00E5FF" stroke-width="8" stroke-dasharray="16 10"/>
-  <circle cx="256" cy="256" r="110" fill="none" stroke="#FF9900" stroke-width="5"/>
-  <circle cx="256" cy="256" r="24" fill="#FF9900"/>
+  <rect width="512" height="512" rx="115" fill="#090A0F"/>
+  <circle cx="256" cy="256" r="155" fill="none" stroke="#38BDF8" stroke-width="8" stroke-dasharray="16 10"/>
+  <circle cx="256" cy="256" r="110" fill="none" stroke="#F59E0B" stroke-width="5"/>
+  <circle cx="256" cy="256" r="24" fill="#F59E0B"/>
 </svg>"""
 
 HTML_PAGE = """<!DOCTYPE html>
@@ -26,423 +26,422 @@ HTML_PAGE = """<!DOCTYPE html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#030712">
+    <meta name="theme-color" content="#090A0F">
     <link rel="manifest" href="/manifest.json">
-    <title>N.E.O. // CYBERNETIC OS</title>
+    <title>NEO // Enterprise Intelligence OS</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
         :root {
-            --cyan: #00E5FF;
-            --orange: #FF9900;
-            --bg: #030712;
-            --panel: rgba(6, 12, 24, 0.9);
-            --panel-hover: rgba(10, 20, 38, 0.98);
-            --border: rgba(0, 229, 255, 0.3);
-            --border-glow: rgba(0, 229, 255, 0.7);
+            --accent: #38BDF8;
+            --accent-glow: rgba(56, 189, 248, 0.15);
+            --orange: #F59E0B;
+            --bg: #090A0F;
+            --card-bg: #12141C;
+            --card-border: rgba(255, 255, 255, 0.08);
+            --card-hover: #181B26;
             --text: #F8FAFC;
-            --muted: #64748B;
-            --green: #10B981;
+            --muted: #94A3B8;
+            --success: #10B981;
         }
 
-        body.listening { --cyan: #10B981; --border-glow: rgba(16, 185, 129, 0.8); }
-        body.thinking  { --cyan: #00E5FF; --border-glow: rgba(0, 229, 255, 0.8); }
-        body.speaking  { --cyan: #A855F7; --border-glow: rgba(168, 85, 247, 0.8); }
+        body.listening { --accent: #10B981; --accent-glow: rgba(16, 185, 129, 0.2); }
+        body.thinking  { --accent: #38BDF8; --accent-glow: rgba(56, 189, 248, 0.2); }
+        body.speaking  { --accent: #8B5CF6; --accent-glow: rgba(139, 92, 246, 0.2); }
 
         * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
 
         html, body {
-            margin: 0; padding: 0; width: 100vw; height: 100vh; overflow-x: hidden;
+            margin: 0; padding: 0; width: 100vw; height: 100vh; overflow: hidden;
             background-color: var(--bg);
-            background-image: 
-                radial-gradient(circle at 50% 50%, rgba(0, 229, 255, 0.07) 0%, transparent 80%),
-                linear-gradient(rgba(0, 229, 255, 0.02) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0, 229, 255, 0.02) 1px, transparent 1px);
-            background-size: 100% 100%, 40px 40px, 40px 40px;
             color: var(--text);
-            font-family: 'Rajdhani', sans-serif;
+            font-family: 'Inter', sans-serif;
         }
 
-        /* TOP CYBER BAR */
-        .top-bar {
+        /* HEADER */
+        .app-header {
             display: flex; justify-content: space-between; align-items: center;
-            padding: 14px 24px; background: var(--panel); backdrop-filter: blur(15px);
-            border-bottom: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; font-size: 12px;
+            height: 64px; padding: 0 24px; background: var(--card-bg);
+            border-bottom: 1px solid var(--card-border);
         }
-        .top-title { color: var(--cyan); font-weight: 700; letter-spacing: 4px; font-size: 16px; text-shadow: 0 0 12px rgba(0,229,255,0.5); }
-        .metrics { display: flex; gap: 20px; color: var(--muted); }
-        .metrics span b { color: var(--text); }
+        .brand { display: flex; align-items: center; gap: 12px; }
+        .brand-logo { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 12px var(--accent); }
+        .brand-name { font-weight: 700; font-size: 15px; letter-spacing: 1px; color: #fff; }
+        .status-pill {
+            display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.03);
+            border: 1px solid var(--card-border); padding: 6px 14px; border-radius: 20px;
+            font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--muted);
+        }
+        .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--success); }
 
-        /* DASHBOARD GRID */
-        .dashboard-grid {
+        /* MAIN LAYOUT */
+        .app-container {
             display: grid;
-            grid-template-columns: 310px 1fr 320px;
-            gap: 18px;
-            padding: 20px;
-            max-width: 1500px;
+            grid-template-columns: 320px 1fr 320px;
+            gap: 20px;
+            padding: 24px;
+            height: calc(100vh - 64px);
+            max-width: 1600px;
             margin: 0 auto;
         }
 
-        @media(max-width: 1024px) {
-            .dashboard-grid { grid-template-columns: 1fr; }
+        @media(max-width: 1100px) {
+            .app-container { grid-template-columns: 1fr; height: auto; overflow-y: auto; }
         }
 
-        /* MODERN GLASS CARDS */
-        .card {
-            background: var(--panel);
-            backdrop-filter: blur(12px);
-            border: 1px solid var(--border);
+        /* CARDS / MODULES */
+        .panel {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
             border-radius: 14px;
-            padding: 18px;
+            padding: 20px;
             display: flex;
             flex-direction: column;
-            gap: 10px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+            gap: 16px;
+        }
+        .section-title {
+            font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 500;
+            text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted);
+            border-bottom: 1px solid var(--card-border); padding-bottom: 8px;
+        }
+        .nav-card {
+            background: rgba(255,255,255,0.015);
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            padding: 14px 16px;
             cursor: pointer;
-            transition: all 0.25s ease;
-            position: relative;
-            overflow: hidden;
+            transition: all 0.2s ease;
+            display: flex; flex-direction: column; gap: 4px;
         }
-        .card::before {
-            content: ''; position: absolute; top: 0; left: 0; width: 3.5px; height: 100%;
-            background: var(--orange); opacity: 0.8;
+        .nav-card:hover {
+            background: var(--card-hover);
+            border-color: rgba(255,255,255,0.15);
+            transform: translateY(-1px);
         }
-        .card:hover {
-            background: var(--panel-hover);
-            border-color: var(--border-glow);
-            box-shadow: 0 0 30px rgba(0, 229, 255, 0.25);
-            transform: translateY(-3px);
-        }
-        .card-header {
-            display: flex; justify-content: space-between; align-items: center;
-            font-family: 'JetBrains Mono', monospace; font-size: 11.5px; font-weight: 700;
-            color: var(--orange); border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 6px;
-        }
-        .card-title { font-size: 17px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 8px; }
-        .card-desc { font-size: 13.5px; color: var(--muted); line-height: 1.45; }
-        
-        .badge-enabled {
-            background: rgba(16, 185, 129, 0.15); color: var(--green);
-            padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700;
-            border: 1px solid rgba(16, 185, 129, 0.3);
-        }
+        .nav-card-title { font-weight: 600; font-size: 14px; color: #fff; display: flex; justify-content: space-between; align-items: center; }
+        .nav-card-desc { font-size: 12.5px; color: var(--muted); line-height: 1.4; }
 
-        /* CENTER CORE PANEL */
-        .center-core-panel {
-            background: rgba(4, 9, 18, 0.92);
-            backdrop-filter: blur(20px);
-            border: 1.5px solid var(--border-glow);
-            border-radius: 18px;
-            padding: 28px;
+        /* CENTER CORE ORB */
+        .core-display {
+            background: linear-gradient(180deg, #12141C 0%, #0D0F17 100%);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
+            padding: 30px;
             text-align: center;
             position: relative;
-            box-shadow: 0 0 50px rgba(0,229,255,0.2);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
-        .hologram-stage {
-            width: 260px; height: 260px;
+
+        /* MINIMALIST PULSING ORB */
+        .neural-orb-container {
+            width: 180px; height: 180px;
             display: flex; align-items: center; justify-content: center;
-            cursor: pointer; position: relative; margin: 12px 0;
+            cursor: pointer; position: relative; margin: 20px 0;
         }
-        .holo-svg { width: 100%; height: 100%; filter: drop-shadow(0 0 25px rgba(0,229,255,0.7)); }
-
-        .action-btn {
-            background: linear-gradient(135deg, rgba(0,229,255,0.25), rgba(255,153,0,0.25));
-            border: 1px solid var(--cyan); color: var(--text);
-            padding: 11px 24px; border-radius: 99px; font-weight: 700; font-size: 13.5px;
-            cursor: pointer; transition: 0.25s; font-family: 'JetBrains Mono', monospace;
-            box-shadow: 0 0 20px rgba(0,229,255,0.25);
+        .orb-ring {
+            position: absolute; inset: 0; border-radius: 50%;
+            border: 1px solid var(--accent); opacity: 0.3;
+            animation: pulseOrb 3s infinite ease-in-out;
         }
-        .action-btn:hover { background: var(--cyan); color: #030712; box-shadow: 0 0 30px var(--cyan); transform: scale(1.06); }
+        .orb-ring:nth-child(2) { inset: -15px; opacity: 0.15; animation-delay: 1s; }
+        .orb-core {
+            width: 90px; height: 90px; border-radius: 50%;
+            background: radial-gradient(circle, var(--accent) 0%, rgba(56,189,248,0.2) 60%, transparent 100%);
+            box-shadow: 0 0 40px var(--accent-glow);
+            transition: all 0.3s ease;
+        }
+        @keyframes pulseOrb {
+            0% { transform: scale(0.95); opacity: 0.2; }
+            50% { transform: scale(1.08); opacity: 0.5; }
+            100% { transform: scale(0.95); opacity: 0.2; }
+        }
 
-        /* LIVE TERMINAL FEED */
-        .terminal-box {
-            width: 100%; background: rgba(2, 5, 10, 0.95);
-            border: 1px solid rgba(0,229,255,0.2); border-radius: 10px;
-            padding: 12px 16px; font-family: 'JetBrains Mono', monospace;
-            font-size: 11.5px; color: var(--cyan); text-align: left;
-            margin-top: 16px; min-height: 50px; max-height: 70px; overflow: hidden;
+        .core-prompt { font-size: 18px; font-weight: 600; color: #fff; margin-bottom: 8px; }
+        .core-sub { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--muted); margin-bottom: 24px; }
+        
+        .primary-btn {
+            background: #fff; color: #090A0F; border: none;
+            padding: 10px 24px; border-radius: 8px; font-weight: 600; font-size: 13px;
+            cursor: pointer; transition: all 0.2s; font-family: 'Inter', sans-serif;
+        }
+        .primary-btn:hover { background: #E2E8F0; transform: translateY(-1px); }
+
+        /* ACTIVITY LOG */
+        .activity-log {
+            width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--card-border);
+            border-radius: 8px; padding: 12px 16px; font-family: 'JetBrains Mono', monospace;
+            font-size: 11.5px; color: var(--accent); text-align: left; margin-top: 24px;
         }
 
         /* MODAL */
-        .holo-modal {
-            position: fixed; inset: 0; background: rgba(3, 7, 18, 0.9);
-            backdrop-filter: blur(15px); z-index: 50; display: none;
-            align-items: center; justify-content: center; padding: 16px;
+        .modal-backdrop {
+            position: fixed; inset: 0; background: rgba(9, 10, 15, 0.8);
+            backdrop-filter: blur(8px); z-index: 100; display: none;
+            align-items: center; justify-content: center; padding: 20px;
         }
-        .holo-modal.open { display: flex; }
-        .holo-box {
-            background: var(--panel); border: 1px solid var(--cyan);
-            border-radius: 16px; width: 100%; max-width: 480px;
-            padding: 26px; display: flex; flex-direction: column; gap: 16px;
-            box-shadow: 0 0 60px rgba(0,229,255,0.35);
+        .modal-backdrop.open { display: flex; }
+        .modal-box {
+            background: var(--card-bg); border: 1px solid var(--card-border);
+            border-radius: 14px; width: 100%; max-width: 440px; padding: 24px;
+            display: flex; flex-direction: column; gap: 16px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
         }
-        .holo-head {
+        .modal-header {
             display: flex; justify-content: space-between; align-items: center;
-            border-bottom: 1px solid var(--border); padding-bottom: 10px;
-            font-size: 15px; font-weight: 700; color: var(--cyan);
+            font-weight: 600; font-size: 14px; color: #fff;
+            border-bottom: 1px solid var(--card-border); padding-bottom: 10px;
         }
-        .holo-content { max-height: 300px; overflow-y: auto; font-size: 14px; display: flex; flex-direction: column; gap: 8px; }
-        .holo-row { padding: 10px; background: rgba(0,229,255,0.06); border-left: 3px solid var(--orange); border-radius: 6px; }
-        input, select { background: #030712; border: 1px solid var(--border); color: #fff; padding: 11px; border-radius: 8px; font-family: 'Rajdhani'; font-size: 14.5px; }
+        .modal-content { max-height: 280px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; font-size: 13.5px; }
+        .modal-row { background: rgba(255,255,255,0.02); border: 1px solid var(--card-border); padding: 10px 12px; border-radius: 8px; }
+        
+        input, select {
+            background: #090A0F; border: 1px solid var(--card-border); color: #fff;
+            padding: 10px 12px; border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 13.5px; outline: none;
+        }
+        input:focus, select:focus { border-color: var(--accent); }
     </style>
 </head>
 <body>
-    <!-- TOP STATS BAR -->
-    <div class="top-bar">
-        <div class="top-title">N.E.O. // CYBERNETIC OS</div>
-        <div class="metrics">
-            <span>MODUS: <b>ARBEIT</b></span>
-            <span>STATUS: <b style="color:var(--green);">SECURE STREAM</b></span>
+    <header class="app-header">
+        <div class="brand">
+            <div class="brand-logo"></div>
+            <span class="brand-name">NEO // ENTERPRISE OS</span>
         </div>
-    </div>
-
-    <!-- DASHBOARD GRID -->
-    <div class="dashboard-grid">
-        <!-- LEFT COLUMN -->
-        <div style="display:flex; flex-direction:column; gap:18px;">
-            <div class="card" onclick="quickCmd('Gib mir mein Morning Briefing mit Terminen heute.')">
-                <div class="card-header"><span>$/brief-mode</span><span class="badge-enabled">ACTIVE</span></div>
-                <div class="card-title">☀️ Morning Brief</div>
-                <div class="card-desc">Liest heutige Termine & Objekt-Codes in Hamburg aus.</div>
-            </div>
-
-            <div class="card" onclick="openHolo('calendar')">
-                <div class="card-header"><span>📅 /calendar</span><span class="badge-enabled">SYNCED</span></div>
-                <div class="card-title">Kalender Termine</div>
-                <div class="card-desc">Einsätze und Objektstandorte live synchronisiert.</div>
-            </div>
-
-            <div class="card" onclick="openHolo('codes')">
-                <div class="card-header"><span>🔐 /memory</span><span class="badge-enabled">SECURE</span></div>
-                <div class="card-title">Objekt-Codes</div>
-                <div class="card-desc">Sichere Notizen und Zugangscodes verwalten.</div>
-            </div>
+        <div class="status-pill">
+            <div class="status-dot"></div>
+            <span>HAMBURG • READY</span>
         </div>
+    </header>
 
-        <!-- CENTER COLUMN -->
-        <div class="center-core-panel">
-            <div class="card-header" style="width:100%; justify-content:center; border:none; color:var(--cyan); letter-spacing: 2.5px;">NEURAL CORE // ACTIVE VOICE INTERFACE</div>
+    <div class="app-container">
+        <!-- LEFT PANEL -->
+        <div class="panel">
+            <div class="section-title">Workspace Operations</div>
             
-            <div class="hologram-stage" onclick="toggleListening()">
-                <svg class="holo-svg" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="150" cy="150" r="125" fill="none" stroke="rgba(0,229,255,0.18)" stroke-width="1.5" stroke-dasharray="10 6"/>
-                    <circle cx="150" cy="150" r="100" fill="none" stroke="rgba(255,153,0,0.22)" stroke-width="1"/>
-                    <circle cx="150" cy="135" r="38" fill="url(#orangeGlow)" opacity="0.95"/>
-                    <defs>
-                        <radialGradient id="orangeGlow" cx="50%" cy="50%" r="50%">
-                            <stop offset="0%" stop-color="#FF9900" stop-opacity="1"/>
-                            <stop offset="60%" stop-color="#FF5500" stop-opacity="0.5"/>
-                            <stop offset="100%" stop-color="#030712" stop-opacity="0"/>
-                        </radialGradient>
-                    </defs>
-                    <g stroke="rgba(0,229,255,0.9)" stroke-width="1.8" fill="none" stroke-linecap="round">
-                        <path d="M60,250 Q100,210 150,210 Q200,210 240,250" opacity="0.95"/>
-                        <path d="M80,265 Q150,230 220,265" stroke="rgba(255,153,0,0.95)" stroke-width="1.2"/>
-                        <path d="M130,210 L130,165" />
-                        <path d="M170,210 L170,165" />
-                        <path d="M120,165 Q110,120 125,85 Q135,60 150,55 Q165,60 175,85 Q190,120 180,165" />
-                        <path d="M125,125 Q150,135 175,125" stroke="rgba(255,153,0,0.85)" />
-                        <path d="M130,145 Q150,155 170,145" stroke="rgba(0,229,255,1)" />
-                    </g>
-                    <g fill="#00E5FF">
-                        <circle cx="150" cy="55" r="3.5" fill="#FF9900"/>
-                        <circle cx="125" cy="90" r="2.2" />
-                        <circle cx="175" cy="90" r="2.2" />
-                        <circle cx="150" cy="135" r="4" fill="#FF9900" />
-                        <circle cx="110" cy="180" r="2.2" />
-                        <circle cx="190" cy="180" r="2.2" />
-                        <circle cx="150" cy="210" r="3.5" fill="#FF9900" />
-                    </g>
-                </svg>
+            <div class="nav-card" onclick="quickCmd('Gib mir mein Morning Briefing mit Terminen heute.')">
+                <div class="nav-card-title"><span>☀️ Morning Brief</span> <span style="font-size:10px; color:var(--accent);">API</span></div>
+                <div class="nav-card-desc">Tagesübersicht und Termine in Hamburg.</div>
             </div>
 
-            <div id="wakePrompt" style="font-size:19px; font-weight:700; margin-bottom: 12px; color:var(--text); letter-spacing: 1px;">Sage: „Hey Neo“</div>
-            <button class="action-btn" onclick="toggleListening()">🎙️ Sprachbefehl starten</button>
+            <div class="nav-card" onclick="openModal('calendar')">
+                <div class="nav-card-title"><span>📅 Kalender Sync</span> <span style="font-size:10px; color:var(--success);">LIVE</span></div>
+                <div class="nav-card-desc">Einsätze und Objektstandorte verwalten.</div>
+            </div>
+
+            <div class="nav-card" onclick="openModal('codes')">
+                <div class="nav-card-title"><span>🔐 Objekt-Codes</span> <span style="font-size:10px; color:var(--orange);">SECURE</span></div>
+                <div class="nav-card-desc">Sichere Notizen und Zugangscodes.</div>
+            </div>
+        </div>
+
+        <!-- CENTER CORE -->
+        <div class="core-display">
+            <div style="font-family:'JetBrains Mono'; font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:1.5px;">Neural Voice Interface</div>
             
-            <div class="terminal-box" id="terminalLog">
-                > NEO Core v3.8 online. Lauscht im Hintergrund...
+            <div class="neural-orb-container" onclick="toggleListening()">
+                <div class="orb-ring"></div>
+                <div class="orb-ring"></div>
+                <div class="orb-core"></div>
+            </div>
+
+            <div class="core-prompt" id="corePrompt">Sage: „Hey Neo“</div>
+            <div class="core-sub" id="coreSub">Lauscht im Hintergrund</div>
+            
+            <button class="primary-btn" onclick="toggleListening()">Sprachbefehl starten</button>
+
+            <div class="activity-log" id="activityLog">
+                > System initialisiert. Bereit für Befehle...
             </div>
         </div>
 
-        <!-- RIGHT COLUMN -->
-        <div style="display:flex; flex-direction:column; gap:18px;">
-            <div class="card" onclick="openHolo('calc')">
-                <div class="card-header"><span>📐 /calculator</span><span class="badge-enabled">READY</span></div>
-                <div class="card-title">Angebots-Rechner</div>
-                <div class="card-desc">Kalkuliert Reinigungen exakt mit 31,50 €/Std.</div>
+        <!-- RIGHT PANEL -->
+        <div class="panel">
+            <div class="section-title">Business & Tools</div>
+
+            <div class="nav-card" onclick="openModal('calc')">
+                <div class="nav-card-title"><span>📐 Angebots-Rechner</span> <span style="font-size:10px; color:var(--accent);">PRO</span></div>
+                <div class="nav-card-desc">Kalkulation (31,50 €/Std) für Kunden.</div>
             </div>
 
-            <div class="card" onclick="document.getElementById('cam').click()">
-                <div class="card-header"><span>📸 /vision</span><span class="badge-enabled">ONLINE</span></div>
-                <div class="card-title">Mängel-Foto</div>
-                <div class="card-desc">Objekt-Mängel fotografieren und per KI analysieren.</div>
+            <div class="nav-card" onclick="document.getElementById('cam').click()">
+                <div class="nav-card-title"><span>📸 Mängel-Foto</span> <span style="font-size:10px; color:var(--success);">VISION</span></div>
+                <div class="nav-card-desc">Objekt-Schäden fotografieren & analysieren.</div>
             </div>
 
-            <div class="card" onclick="sendTg()">
-                <div class="card-header"><span>✈️ /auth</span><span class="badge-enabled">SECURE</span></div>
-                <div class="card-title">Telegram Auth</div>
-                <div class="card-desc">Sichert Freigaben direkt in Echtzeit ab.</div>
+            <div class="nav-card" onclick="sendTelegramAuth()">
+                <div class="nav-card-title"><span>✈️ Telegram Auth</span> <span style="font-size:10px; color:var(--orange);">SECURE</span></div>
+                <div class="nav-card-desc">Echtzeit-Freigabe über Telegram Bot.</div>
             </div>
         </div>
     </div>
 
-    <!-- HOLOGRAPHIC MODAL -->
-    <div class="holo-modal" id="holoModal">
-        <div class="holo-box">
-            <div class="holo-head">
-                <span id="holoTitle">DATEN</span>
-                <button class="action-btn" style="padding:4px 10px;" onclick="closeHolo()">✕</button>
+    <!-- MODAL -->
+    <div class="modal-backdrop" id="appModal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <span id="modalTitle">DATEN</span>
+                <button onclick="closeModal()" style="background:none; border:none; color:var(--muted); cursor:pointer; font-size:16px;">✕</button>
             </div>
-            <div class="holo-content" id="holoBody"></div>
+            <div class="modal-content" id="modalBody"></div>
         </div>
     </div>
 
-    <input type="file" id="cam" accept="image/*" style="display:none" onchange="handleImg(event)">
-    <audio id="player" playsinline></audio>
+    <input type="file" id="cam" accept="image/*" style="display:none" onchange="handleImage(event)">
+    <audio id="audioPlayer" playsinline></audio>
 
     <script>
-        let isRec = false, isSpk = false, inConv = false;
-        let rec = null, stream = null, wakeRec = null;
-        let cachedEvents = [];
-        const player = document.getElementById('player');
-        const wakePrompt = document.getElementById('wakePrompt');
-        const terminalLog = document.getElementById('terminalLog');
+        let isRecording = false, isSpeaking = false, inConversation = false;
+        let mediaRecorder = null, audioStream = null, wakeRecognition = null;
+        let eventsCache = [];
+        const audioPlayer = document.getElementById('audioPlayer');
+        const corePrompt = document.getElementById('corePrompt');
+        const coreSub = document.getElementById('coreSub');
+        const activityLog = document.getElementById('activityLog');
 
-        function logTerm(txt) { terminalLog.innerText = "> " + txt; }
+        fetch('/calendar_preview').then(r => r.json()).then(d => { eventsCache = d.events || []; }).catch(()=>{});
+        let localMemory = JSON.parse(localStorage.getItem('neo_memory') || '[]');
 
-        fetch('/calendar_preview').then(r => r.json()).then(d => { cachedEvents = d.events || []; }).catch(()=>{});
-        let mem = JSON.parse(localStorage.getItem('neo_memory') || '[]');
-
-        function setVisualState(state) {
-            document.body.className = state || '';
-            if (state === 'listening') { wakePrompt.innerText = "Ich höre zu..."; logTerm("Sprachstrom aktiv. Empfange Audio..."); }
-            else if (state === 'thinking') { wakePrompt.innerText = "Analysiere..."; logTerm("Verarbeite Anfrage über Gemini AI..."); }
-            else if (state === 'speaking') { wakePrompt.innerText = "NEO spricht..."; logTerm("Generiere Edge-TTS Audioausgabe..."); }
-            else { wakePrompt.innerText = "Sage: „Hey Neo“"; logTerm("NEO Core online. Lauscht im Hintergrund..."); }
+        function logActivity(text) {
+            activityLog.innerText = "> " + text;
         }
 
-        function openHolo(type) {
-            const modal = document.getElementById('holoModal');
-            const title = document.getElementById('holoTitle');
-            const body = document.getElementById('holoBody');
+        function openModal(type) {
+            const modal = document.getElementById('appModal');
+            const title = document.getElementById('modalTitle');
+            const body = document.getElementById('modalBody');
             modal.classList.add('open');
 
             if (type === 'calendar') {
                 title.innerText = 'KALENDER TERMINE';
-                body.innerHTML = cachedEvents.length
-                    ? cachedEvents.map(e => `<div class="holo-row"><div style="color:var(--orange);font-size:11px;">${e.time}</div><div style="font-weight:700;">${e.title}</div><div style="color:var(--muted);font-size:11px;">${e.loc||''}</div></div>`).join('')
+                body.innerHTML = eventsCache.length
+                    ? eventsCache.map(e => `<div class="modal-row"><div style="color:var(--orange); font-size:11px; font-family:'JetBrains Mono';">${e.time}</div><div style="font-weight:600; margin-top:2px;">${e.title}</div><div style="color:var(--muted); font-size:11px; margin-top:2px;">${e.loc||''}</div></div>`).join('')
                     : '<div style="color:var(--muted);">Keine Termine gefunden.</div>';
             } else if (type === 'codes') {
-                title.innerText = `OBJEKT-CODES & NOTIZEN (${mem.length})`;
-                let list = mem.length ? mem.map((x, i) => `<div class="holo-row" style="display:flex;justify-content:space-between;align-items:center;"><span>${x}</span><button class="action-btn" style="padding:2px 8px;" onclick="mem.splice(${i},1);localStorage.setItem('neo_memory',JSON.stringify(mem));openHolo('codes');">✕</button></div>`).join('') : '<div style="color:var(--muted);">Keine Codes gespeichert.</div>';
-                body.innerHTML = `<div style="display:flex;gap:8px;margin-bottom:8px;"><input id="newCode" type="text" placeholder="Neuer Code..." style="flex:1;"><button class="action-btn" onclick="if(document.getElementById('newCode').value.trim()){mem.push(document.getElementById('newCode').value.trim());localStorage.setItem('neo_memory',JSON.stringify(mem));openHolo('codes');}">Speichern</button></div>` + list;
+                title.innerText = `OBJEKT-CODES (${localMemory.length})`;
+                let list = localMemory.length ? localMemory.map((x, i) => `<div class="modal-row" style="display:flex; justify-content:space-between; align-items:center;"><span>${x}</span><button onclick="localMemory.splice(${i},1);localStorage.setItem('neo_memory',JSON.stringify(localMemory));openModal('codes');" style="background:none;border:none;color:var(--muted);cursor:pointer;">✕</button></div>`).join('') : '<div style="color:var(--muted);">Keine Codes gespeichert.</div>';
+                body.innerHTML = `<div style="display:flex; gap:8px; margin-bottom:4px;"><input id="inputCode" type="text" placeholder="Neuer Code..." style="flex:1;"><button class="primary-btn" onclick="if(document.getElementById('inputCode').value.trim()){localMemory.push(document.getElementById('inputCode').value.trim());localStorage.setItem('neo_memory',JSON.stringify(localMemory));openModal('codes');}">Speichern</button></div>` + list;
             } else if (type === 'calc') {
                 title.innerText = 'ANGEBOTS-KALKULATOR (31,50 €/Std)';
-                body.innerHTML = `<div style="display:flex;flex-direction:column;gap:12px;">
-                    <input id="cQm" type="number" placeholder="Fläche in m² (z.B. 600)" value="600">
-                    <select id="cFreq">
+                body.innerHTML = `<div style="display:flex; flex-direction:column; gap:12px;">
+                    <input id="calcQm" type="number" placeholder="Fläche in m² (z.B. 600)" value="600">
+                    <select id="calcFreq">
                         <option value="1x pro Woche">1x pro Woche</option>
                         <option value="2x pro Woche" selected>2x pro Woche</option>
                         <option value="3x pro Woche">3x pro Woche</option>
                         <option value="5x pro Woche">5x pro Woche</option>
                     </select>
-                    <button class="action-btn" onclick="closeHolo();quickCmd('Kalkuliere ein Reinigungsangebot für '+document.getElementById('cQm').value+' m², '+document.getElementById('cFreq').value+', und erstelle den Angebotstext.');">ANGEBOT ERSTELLEN</button>
+                    <button class="primary-btn" onclick="closeModal(); quickCmd('Kalkuliere ein Reinigungsangebot für '+document.getElementById('calcQm').value+' m², '+document.getElementById('calcFreq').value+', und erstelle den Angebotstext.');">Angebot erstellen</button>
                 </div>`;
             }
         }
-        function closeHolo() { document.getElementById('holoModal').classList.remove('open'); }
+        function closeModal() { document.getElementById('appModal').classList.remove('open'); }
 
-        async function sendTg() {
-            logTerm("Sende Telegram Autorisierungsanfrage...");
+        async function sendTelegramAuth() {
+            logActivity("Sende Telegram Authentifizierung...");
             try {
-                const r = await fetch('/telegram_notify', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({text:"📞 NEO Autorisierung angefordert!"}) });
-                const d = await r.json();
-                logTerm(d.ok ? "Telegram Anfrage erfolgreich gesendet." : "Telegram Fehler: " + (d.error || "Unbekannt"));
-            } catch(e) { logTerm("Telegram Verbindungsfehler."); }
+                const res = await fetch('/telegram_notify', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({text:"📞 NEO Autorisierung angefordert!"}) });
+                const data = await res.json();
+                logActivity(data.ok ? "Telegram Freigabe gesendet." : "Fehler: " + (data.error || "Unbekannt"));
+            } catch(e) { logActivity("Verbindungsfehler zu Telegram."); }
         }
 
-        function handleImg(ev) {
-            const f = ev.target.files[0]; if(!f) return;
-            setVisualState('thinking');
-            logTerm("Lade Mängel-Foto für KI-Analyse hoch...");
-            const r = new FileReader();
-            r.onload = e => sendToNeoBackend({ image: e.target.result.split(',')[1], message: "Erstelle einen professionellen Objekt-Mängelbericht." });
-            r.readAsDataURL(f);
+        function handleImage(e) {
+            const file = e.target.files[0]; if(!file) return;
+            logActivity("Lade Mängel-Foto hoch...");
+            const reader = new FileReader();
+            reader.onload = evt => sendBackend({ image: evt.target.result.split(',')[1], message: "Erstelle einen professionellen Mängelbericht." });
+            reader.readAsDataURL(file);
         }
 
         function startWakeWord() {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (!SpeechRecognition) return;
             try {
-                wakeRec = new SpeechRecognition();
-                wakeRec.lang = 'de-DE'; wakeRec.continuous = true; wakeRec.interimResults = true;
-                wakeRec.onresult = (e) => {
+                wakeRecognition = new SpeechRecognition();
+                wakeRecognition.lang = 'de-DE'; wakeRecognition.continuous = true; wakeRecognition.interimResults = true;
+                wakeRecognition.onresult = (e) => {
                     for (let i = e.resultIndex; i < e.results.length; i++) {
-                        const t = e.results[i][0].transcript.toLowerCase();
-                        if (t.includes('hey neo') || t.includes('hallo neo') || t.includes('neo')) {
-                            if (wakeRec) { try { wakeRec.abort(); } catch(err){} }
-                            inConv = true; startRecordingAudio(); return;
+                        const transcript = e.results[i][0].transcript.toLowerCase();
+                        if (transcript.includes('hey neo') || transcript.includes('hallo neo') || transcript.includes('neo')) {
+                            if (wakeRecognition) { try { wakeRecognition.abort(); } catch(err){} }
+                            inConversation = true; startAudioRecording(); return;
                         }
                     }
                 };
-                wakeRec.onend = () => { if (!isRec && !isSpk && !inConv) setTimeout(startWakeWord, 800); };
-                wakeRec.start();
+                wakeRecognition.onend = () => { if (!isRecording && !isSpeaking && !inConversation) setTimeout(startWakeWord, 800); };
+                wakeRecognition.start();
             } catch(e) {}
         }
 
         function toggleListening() {
-            if (isSpk) { player.pause(); isSpk = false; setVisualState(null); return; }
-            if (isRec) { isRec = false; if (rec && rec.state !== 'inactive') rec.stop(); return; }
-            inConv = true; startRecordingAudio();
+            if (isSpeaking) { audioPlayer.pause(); isSpeaking = false; resetState(); return; }
+            if (isRecording) { isRecording = false; if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop(); return; }
+            inConversation = true; startAudioRecording();
         }
 
-        async function startRecordingAudio() {
-            if (isRec || isSpk) return;
-            if (wakeRec) { try { wakeRec.abort(); } catch(e){} }
+        function resetState() {
+            document.body.className = '';
+            corePrompt.innerText = "Sage: „Hey Neo“";
+            coreSub.innerText = "Lauscht im Hintergrund";
+        }
+
+        async function startAudioRecording() {
+            if (isRecording || isSpeaking) return;
+            if (wakeRecognition) { try { wakeRecognition.abort(); } catch(e){} }
             try {
-                stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
+                audioStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
                 let chunks = [];
-                rec = new MediaRecorder(stream, { audioBitsPerSecond: 16000 });
-                rec.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
-                rec.onstop = () => {
-                    stream.getTracks().forEach(t => t.stop());
-                    const blob = new Blob(chunks, { type: rec.mimeType || 'audio/webm' });
-                    if (blob.size < 600) { inConv = false; setVisualState(null); startWakeWord(); return; }
-                    setVisualState('thinking');
+                mediaRecorder = new MediaRecorder(audioStream, { audioBitsPerSecond: 16000 });
+                mediaRecorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+                mediaRecorder.onstop = () => {
+                    audioStream.getTracks().forEach(t => t.stop());
+                    const blob = new Blob(chunks, { type: mediaRecorder.mimeType || 'audio/webm' });
+                    if (blob.size < 600) { inConversation = false; resetState(); startWakeWord(); return; }
+                    document.body.className = 'thinking';
+                    corePrompt.innerText = "Analysiere...";
+                    coreSub.innerText = "Verarbeite Anfrage...";
+                    logActivity("Verarbeite Audio über Gemini AI...");
                     const reader = new FileReader();
                     reader.readAsDataURL(blob);
                     reader.onloadend = () => {
-                        sendToNeoBackend({ audio: reader.result.split(',')[1], mime_type: (rec.mimeType || 'audio/webm').split(';')[0] });
+                        sendBackend({ audio: reader.result.split(',')[1], mime_type: (mediaRecorder.mimeType || 'audio/webm').split(';')[0] });
                     };
                 };
-                rec.start(); isRec = true; setVisualState('listening');
-                setTimeout(() => { if (isRec) { isRec = false; rec.stop(); } }, 6000);
-            } catch(e) { inConv = false; setVisualState(null); startWakeWord(); }
+                mediaRecorder.start();
+                isRecording = true;
+                document.body.className = 'listening';
+                corePrompt.innerText = "Ich höre zu...";
+                coreSub.innerText = "Sprich jetzt...";
+                logActivity("Sprachstrom aktiv...");
+                setTimeout(() => { if (isRecording) { isRecording = false; mediaRecorder.stop(); } }, 6000);
+            } catch(e) { inConversation = false; resetState(); startWakeWord(); }
         }
 
-        player.onplay = () => { isSpk = true; setVisualState('speaking'); };
-        player.onended = () => { isSpk = false; setVisualState(null); if (inConv) setTimeout(startRecordingAudio, 400); else startWakeWord(); };
+        audioPlayer.onplay = () => { isSpeaking = true; document.body.className = 'speaking'; corePrompt.innerText = "NEO spricht..."; coreSub.innerText = "Audioausgabe aktiv"; };
+        audioPlayer.onended = () => { isSpeaking = false; resetState(); if (inConversation) setTimeout(startAudioRecording, 400); else startWakeWord(); };
 
-        function quickCmd(t) { inConv = true; setVisualState('thinking'); logTerm("Führe Schnellbefehl aus..."); sendToNeoBackend({ message: t }); }
+        function quickCmd(text) {
+            inConversation = true; document.body.className = 'thinking'; corePrompt.innerText = "Analysiere..."; logActivity("Führe Schnellbefehl aus..."); sendBackend({ message: text });
+        }
 
-        async function sendToNeoBackend(payload) {
-            payload.mode = "ARBEIT"; payload.memory = mem; payload.local_time_str = new Date().toLocaleString('de-DE');
+        async function sendBackend(payload) {
+            payload.mode = "ARBEIT"; payload.memory = localMemory; payload.local_time_str = new Date().toLocaleString('de-DE');
             try {
                 const res = await fetch('/chat', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
-                const d = await res.json();
-                if (d.error) { inConv = false; setVisualState(null); logTerm("Fehler: " + d.error); startWakeWord(); return; }
-                if (d.end_conversation) inConv = false;
-                if (d.new_memory) { mem.push(d.new_memory); localStorage.setItem('neo_memory', JSON.stringify(mem)); }
-                logTerm(d.reply || "Aktion abgeschlossen.");
-                if (d.audio) {
-                    player.src = "data:audio/mp3;base64," + d.audio;
-                    player.play().catch(() => { isSpk = false; setVisualState(null); startWakeWord(); });
-                } else { setVisualState(null); startWakeWord(); }
-            } catch(e) { inConv = false; setVisualState(null); logTerm("Server-Verbindungsfehler."); startWakeWord(); }
+                const data = await res.json();
+                if (data.error) { inConversation = false; resetState(); logActivity("Fehler: " + data.error); startWakeWord(); return; }
+                if (data.end_conversation) inConversation = false;
+                if (data.new_memory) { localMemory.push(data.new_memory); localStorage.setItem('neo_memory', JSON.stringify(localMemory)); }
+                logActivity(data.reply || "Aktion erfolgreich abgeschlossen.");
+                if (data.audio) {
+                    audioPlayer.src = "data:audio/mp3;base64," + data.audio;
+                    audioPlayer.play().catch(() => { isSpeaking = false; resetState(); startWakeWord(); });
+                } else { resetState(); startWakeWord(); }
+            } catch(e) { inConversation = false; resetState(); logActivity("Server-Verbindungsfehler."); startWakeWord(); }
         }
 
         window.onload = startWakeWord;
@@ -524,8 +523,8 @@ def manifest():
         "short_name": "NEO",
         "start_url": "/",
         "display": "standalone",
-        "background_color": "#030712",
-        "theme_color": "#030712",
+        "background_color": "#090A0F",
+        "theme_color": "#090A0F",
         "icons": [{"src": "/icon.svg", "sizes": "any", "type": "image/svg+xml"}]
     })
 
