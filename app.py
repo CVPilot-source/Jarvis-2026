@@ -28,7 +28,7 @@ HTML_PAGE = """<!DOCTYPE html>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#030712">
     <link rel="manifest" href="/manifest.json">
-    <title>N.E.O. // LIQUID QUANTUM ORB</title>
+    <title>N.E.O. // QUANTUM CORE OS</title>
     <style>
         :root {
             --cyan: #00E5FF;
@@ -256,7 +256,7 @@ HTML_PAGE = """<!DOCTYPE html>
             nodesLayer.appendChild(el);
         });
 
-        // --- 2. LIQUID QUANTUM ORB CANVAS ENGINE ---
+        // --- 2. PERFECT QUANTUM CIRCLE & CORE ENGINE ---
         const canvas = document.getElementById('neuralCanvas');
         const ctx = canvas.getContext('2d');
         let W = window.innerWidth, H = window.innerHeight;
@@ -267,59 +267,55 @@ HTML_PAGE = """<!DOCTYPE html>
         let coreStateMode = 'idle', timeStep = 0;
         const packets = NODES.map((_, idx) => ({ progress: (idx * 0.15) % 1, speed: 0.004 + (idx % 3) * 0.0012 }));
 
-        function drawLiquidQuantumOrb(cx, cy, pulseBoost) {
-            timeStep += 0.035 * pulseBoost;
+        function drawPerfectQuantumCore(cx, cy, pulseBoost) {
+            timeStep += 0.03 * pulseBoost;
 
-            // Fluid pulsing radius
-            const baseRadius = 85 + Math.sin(timeStep * 1.5) * 8 * pulseBoost;
+            const radius = 90;
 
-            // Outer Quantum Glow Aura
-            const aura = ctx.createRadialGradient(cx, cy, 10, cx, cy, baseRadius * 1.8);
+            // Outer Neon Aura
+            const aura = ctx.createRadialGradient(cx, cy, 10, cx, cy, radius * 2);
             aura.addColorStop(0, 'rgba(255, 140, 0, 0.55)');
             aura.addColorStop(0.5, 'rgba(0, 229, 255, 0.25)');
             aura.addColorStop(1, 'transparent');
             ctx.fillStyle = aura;
-            ctx.beginPath(); ctx.arc(cx, cy, baseRadius * 1.8, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(cx, cy, radius * 2, 0, Math.PI * 2); ctx.fill();
 
-            // Liquid Organic Blob layers
+            // Outer Rotating Ring (Cyan)
             ctx.save();
             ctx.translate(cx, cy);
-            
-            // Rotating outer fluid ring
-            ctx.strokeStyle = 'rgba(0, 229, 255, 0.75)';
-            ctx.lineWidth = 2.5;
-            ctx.beginPath();
-            const points = 60;
-            for (let i = 0; i <= points; i++) {
-                const angle = (i / points) * Math.PI * 2;
-                const wave = Math.sin(angle * 5 + timeStep * 2) * 6 * pulseBoost;
-                const r = baseRadius + wave;
-                const x = Math.cos(angle) * r;
-                const y = Math.sin(angle) * r;
-                if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-            }
-            ctx.closePath();
-            ctx.stroke();
+            ctx.rotate(timeStep * 0.8);
+            ctx.strokeStyle = 'rgba(0, 229, 255, 0.85)';
+            ctx.lineWidth = 3;
+            ctx.setLineDash([16, 12, 6, 12]);
+            ctx.beginPath(); ctx.arc(0, 0, radius + 15, 0, Math.PI * 2); ctx.stroke();
+            ctx.restore();
 
-            // Inner Molten Orange Core
-            const coreGrad = ctx.createRadialGradient(0, 0, 5, 0, 0, baseRadius * 0.75);
+            // Inner Rotating Ring (Orange)
+            ctx.save();
+            ctx.translate(cx, cy);
+            ctx.rotate(-timeStep * 1.2);
+            ctx.strokeStyle = 'rgba(255, 140, 0, 0.9)';
+            ctx.lineWidth = 2.5;
+            ctx.setLineDash([10, 8]);
+            ctx.beginPath(); ctx.arc(0, 0, radius, 0, Math.PI * 2); ctx.stroke();
+            ctx.restore();
+
+            // Solid Perfect Neon Circle Boundary
+            ctx.strokeStyle = '#00E5FF';
+            ctx.lineWidth = 2;
+            ctx.shadowColor = '#00E5FF'; ctx.shadowBlur = 15;
+            ctx.beginPath(); ctx.arc(cx, cy, radius - 10, 0, Math.PI * 2); ctx.stroke();
+            ctx.shadowBlur = 0;
+
+            // Glowing Molten Core in Center
+            const pulseSize = 35 + Math.sin(timeStep * 3) * 8 * pulseBoost;
+            const coreGrad = ctx.createRadialGradient(cx, cy, 2, cx, cy, pulseSize);
             coreGrad.addColorStop(0, '#FFFFFF');
-            coreGrad.addColorStop(0.35, '#FF9900');
-            coreGrad.addColorStop(0.85, 'rgba(0, 229, 255, 0.65)');
+            coreGrad.addColorStop(0.4, '#FF9900');
+            coreGrad.addColorStop(0.85, 'rgba(0, 229, 255, 0.7)');
             coreGrad.addColorStop(1, 'transparent');
             ctx.fillStyle = coreGrad;
-            ctx.beginPath();
-            for (let i = 0; i <= points; i++) {
-                const angle = (i / points) * Math.PI * 2;
-                const wave = Math.cos(angle * 4 - timeStep * 1.8) * 8;
-                const r = (baseRadius * 0.7) + wave;
-                const x = Math.cos(angle) * r;
-                const y = Math.sin(angle) * r;
-                if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-            }
-            ctx.closePath();
-            ctx.fill();
-            ctx.restore();
+            ctx.beginPath(); ctx.arc(cx, cy, pulseSize, 0, Math.PI * 2); ctx.fill();
         }
 
         function drawNeuralNetwork() {
@@ -331,7 +327,7 @@ HTML_PAGE = """<!DOCTYPE html>
             else if (coreStateMode === 'thinking') { mainColor = '0, 229, 255'; pulseBoost = 2.4; }
             else if (coreStateMode === 'speaking') { mainColor = '168, 85, 247'; pulseBoost = 1.8; }
 
-            drawLiquidQuantumOrb(cx, cy, pulseBoost);
+            drawPerfectQuantumCore(cx, cy, pulseBoost);
 
             NODES.forEach((n, idx) => {
                 const nx = W * n.rx, ny = H * n.ry;
@@ -776,10 +772,7 @@ def chat():
         )
         resp = generate_with_fallback(client, parts, cfg)
 
-        m = re.search(r'\{.*}‛', resp.text.strip(), re.DOTALL)
-        # Fallback regex for json if unicode quotes got in
-        if not m:
-            m = re.search(r'\{.*\}', resp.text.strip(), re.DOTALL)
+        m = re.search(r'\{.*\}', resp.text.strip(), re.DOTALL)
         res = json.loads(m.group(0)) if m else {"reply": resp.text.strip()}
         reply = res.get("reply", "Zu Befehl, Margil.")
         audio = asyncio.run(make_voice(reply, res.get("voice_lang", "de")))
