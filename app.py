@@ -25,20 +25,23 @@ HTML_PAGE = """<!DOCTYPE html>
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#030712">
     <link rel="manifest" href="/manifest.json">
-    <title>N.E.O. // LIGHTNING FAST CORE</title>
+    <title>N.E.O. // HOLOGRAPHIC VOICE CORE</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+
         :root {
             --cyan: #00E5FF;
             --orange: #FF9900;
             --bg: #030712;
-            --panel: rgba(8, 15, 30, 0.9);
+            --panel: rgba(8, 15, 30, 0.85);
             --border: rgba(0, 229, 255, 0.25);
             --text: #F8FAFC;
-            --muted: #94A3B8;
+            --muted: #64748B;
         }
+
         body.listening { --cyan: #10B981; }
         body.thinking  { --cyan: #00E5FF; }
         body.speaking  { --cyan: #A855F7; }
@@ -48,349 +51,345 @@ HTML_PAGE = """<!DOCTYPE html>
         html, body {
             margin: 0; padding: 0; width: 100vw; height: 100vh; overflow: hidden;
             background-color: var(--bg);
+            background-image:
+                radial-gradient(circle at 50% 45%, rgba(0, 229, 255, 0.08) 0%, transparent 70%),
+                linear-gradient(rgba(0, 229, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 229, 255, 0.03) 1px, transparent 1px);
+            background-size: 100% 100%, 32px 32px, 32px 32px;
             color: var(--text);
-            font-family: 'Segoe UI', -apple-system, sans-serif;
+            font-family: 'Rajdhani', sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding: 24px 16px;
         }
 
-        #neuralCanvas {
-            position: fixed; inset: 0; width: 100vw; height: 100vh;
-            z-index: 1; pointer-events: none;
+        /* TOP HEADER */
+        .header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            z-index: 10;
         }
-
-        /* TOP LEFT HUD */
-        .hud-tl {
-            position: fixed; top: 16px; left: 20px; z-index: 10;
-            display: flex; flex-direction: column; gap: 4px;
+        .title {
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: 10px;
+            color: var(--text);
+            text-shadow: 0 0 20px rgba(0, 229, 255, 0.5);
+            margin: 0;
         }
-        .sys-title {
-            font-size: 24px; font-weight: 900; letter-spacing: 6px; color: var(--cyan);
-            text-shadow: 0 0 10px rgba(0,229,255,0.4);
-        }
-        .sys-sub { font-size: 11px; font-weight: 700; letter-spacing: 1px; color: var(--muted); }
-        .hud-controls { display: flex; gap: 6px; margin-top: 4px; flex-wrap: wrap; }
-        .hud-btn {
-            background: var(--panel); border: 1px solid var(--border); color: var(--text);
-            padding: 5px 10px; border-radius: 6px; font-size: 11px; font-weight: 700;
-            cursor: pointer; transition: 0.1s;
-        }
-        .hud-btn:hover { border-color: var(--cyan); color: var(--cyan); }
-
-        /* TOP RIGHT STREAM PANEL */
-        .hud-tr {
-            position: fixed; top: 16px; right: 20px; width: 360px; max-width: 42vw;
-            background: var(--panel); border: 1px solid var(--border); border-top: 2px solid var(--orange);
-            border-radius: 10px; padding: 10px 14px; z-index: 10;
-        }
-        .tr-head {
-            display: flex; justify-content: space-between; font-size: 10px;
-            font-weight: 800; letter-spacing: 1px; color: var(--orange); margin-bottom: 4px;
-        }
-        .tr-body {
-            font-size: 13px; line-height: 1.4; color: #F1F5F9;
-            max-height: 120px; overflow-y: auto; user-select: text;
-        }
-
-        /* CENTER STAGE */
-        .core-trigger {
-            position: fixed; top: 48%; left: 50%; transform: translate(-50%, -50%);
-            width: 300px; height: 320px; border-radius: 50%; z-index: 8;
-            cursor: pointer; display: flex; flex-direction: column;
-            align-items: center; justify-content: flex-end; text-align: center;
-            padding-bottom: 5px;
-        }
-        .core-sub {
-            font-size: 11px; font-weight: 800; letter-spacing: 2px;
-            color: #FFF; background: rgba(3, 7, 18, 0.9); padding: 4px 14px; border-radius: 99px;
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--panel);
             border: 1px solid var(--border);
+            padding: 4px 14px;
+            border-radius: 999px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            letter-spacing: 2px;
+            color: var(--cyan);
+            text-transform: uppercase;
+        }
+        .status-dot {
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: var(--cyan);
+            box-shadow: 0 0 8px var(--cyan);
+            animation: pulseDot 2s infinite;
+        }
+        @keyframes pulseDot {
+            0% { opacity: 0.4; }
+            50% { opacity: 1; transform: scale(1.2); }
+            100% { opacity: 0.4; }
         }
 
-        /* NODES */
-        .node-item {
-            position: fixed; transform: translate(-50%, -50%); z-index: 7;
-            display: flex; align-items: center; gap: 8px;
-            background: var(--panel); border: 1px solid var(--border);
-            padding: 6px 12px; border-radius: 999px; cursor: pointer;
-            white-space: nowrap; transition: transform 0.1s;
+        /* CENTER HOLOGRAPHIC STAGE */
+        .hologram-stage {
+            position: relative;
+            width: 300px;
+            height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 5;
         }
-        .node-item:hover { border-color: var(--cyan); transform: translate(-50%, -50%) scale(1.05); }
-        .node-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--orange); }
-        .node-title { font-size: 12px; font-weight: 700; color: #F8FAFC; }
-
-        /* POPUP WINDOW */
-        .holo-modal {
-            position: fixed; top: 48%; left: 50%; transform: translate(-50%, -50%);
-            width: 460px; max-width: 90vw; background: rgba(7, 13, 27, 0.98);
-            border: 1px solid var(--cyan); border-radius: 12px; padding: 16px; z-index: 30;
-            display: none; flex-direction: column; gap: 10px;
+        .holo-glow {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255,153,0,0.2) 0%, rgba(0,229,255,0.1) 50%, transparent 75%);
+            animation: pulseGlow 4s ease-in-out infinite alternate;
         }
-        .holo-modal.open { display: flex; }
-        .holo-head {
-            display: flex; justify-content: space-between; align-items: center;
-            border-bottom: 1px solid var(--border); padding-bottom: 6px;
-            font-size: 12px; font-weight: 800; color: var(--cyan);
+        @keyframes pulseGlow {
+            0% { transform: scale(0.9); opacity: 0.6; }
+            100% { transform: scale(1.15); opacity: 1; }
         }
-        .holo-content { max-height: 260px; overflow-y: auto; font-size: 13px; }
-        .holo-row {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 6px 10px; background: rgba(0, 229, 255, 0.05);
-            border-left: 3px solid var(--orange); border-radius: 6px; margin-bottom: 6px;
+        .holo-svg {
+            width: 100%;
+            height: 100%;
+            filter: drop-shadow(0 0 15px rgba(0, 229, 255, 0.5));
+            animation: floatHolo 5s ease-in-out infinite;
         }
-
-        .gold-pill {
-            background: var(--orange); color: #030712; border: none; border-radius: 999px;
-            padding: 6px 16px; font-size: 11px; font-weight: 800; cursor: pointer;
+        @keyframes floatHolo {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
         }
 
-        @media (max-width: 768px) {
-            .hud-tr { top: auto; bottom: 16px; right: 10px; left: 10px; width: auto; max-width: none; }
-            .node-item { padding: 5px 9px; }
-            .node-title { font-size: 10.5px; }
+        /* PROMPT & SUBTEXT */
+        .prompt-container {
+            text-align: center;
+            z-index: 10;
         }
+        .wake-text {
+            font-size: 20px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            color: var(--text);
+            margin: 0 0 4px 0;
+            text-shadow: 0 0 12px rgba(0,229,255,0.4);
+        }
+        .listening-subtext {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            letter-spacing: 1.5px;
+            color: var(--muted);
+            text-transform: uppercase;
+        }
+
+        /* BOTTOM DOCK */
+        .mic-dock {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            z-index: 10;
+            margin-bottom: 10px;
+        }
+        .mic-btn {
+            width: 64px; height: 64px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(0,229,255,0.2), rgba(255,153,0,0.2));
+            border: 1.5px solid var(--cyan);
+            color: var(--text);
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 0 25px rgba(0, 229, 255, 0.3);
+            transition: transform 0.2s, border-color 0.2s;
+        }
+        .mic-btn:active { transform: scale(0.92); }
     </style>
 </head>
 <body>
-    <canvas id="neuralCanvas"></canvas>
-
-    <!-- TOP LEFT -->
-    <div class="hud-tl">
-        <div class="sys-title">N E O</div>
-        <div class="sys-sub" id="sysMeta">HAMBURG • FAST OS</div>
-        <div class="hud-controls">
-            <button type="button" class="hud-btn" id="wBtn" onclick="toggleWake()" style="border-color:#10B981; color:#10B981;">● HEY NEO</button>
-            <button type="button" class="hud-btn" id="mBtn" onclick="toggleMode()">ARBEIT</button>
-            <button type="button" class="hud-btn" onclick="openHolo('calendar')">KALENDER</button>
-            <button type="button" class="hud-btn" onclick="openHolo('codes')">CODES (<span id="nCount">0</span>)</button>
+    <!-- TOP HEADER -->
+    <div class="header">
+        <h1 class="title">N E O</h1>
+        <div class="status-badge">
+            <span class="status-dot"></span>
+            <span id="statusText">AKTIV 24/7</span>
         </div>
     </div>
 
-    <!-- TOP RIGHT OUTPUT -->
-    <div class="hud-tr">
-        <div class="tr-head">
-            <span>VOICE STREAM</span>
-            <span id="streamStatus">BEREIT</span>
-        </div>
-        <div class="tr-body" id="replyBox">Sage „Hey Neo“ oder tippe auf das Core in der Mitte.</div>
+    <!-- CENTER HOLOGRAPHIC BUST (REZNIKOV STYLE) -->
+    <div class="hologram-stage" onclick="toggleListening()" title="Kliko për të folur">
+        <div class="holo-glow"></div>
+        <svg class="holo-svg" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
+            <!-- Unaza rrethore sfondi -->
+            <circle cx="150" cy="150" r="130" fill="none" stroke="rgba(0,229,255,0.1)" stroke-width="1" stroke-dasharray="8 8"/>
+            <circle cx="150" cy="150" r="105" fill="none" stroke="rgba(255,153,0,0.15)" stroke-width="1"/>
+
+            <!-- Bërthama e zjarrtë portokalli (Në qendër të fytyrës) -->
+            <circle cx="150" cy="135" r="35" fill="url(#orangeGlow)" opacity="0.8"/>
+            <defs>
+                <radialGradient id="orangeGlow" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stop-color="#FF9900" stop-opacity="0.9"/>
+                    <stop offset="60%" stop-color="#FF5500" stop-opacity="0.4"/>
+                    <stop offset="100%" stop-color="#030712" stop-opacity="0"/>
+                </radialGradient>
+            </defs>
+
+            <!-- Konturet e bustit dhe supeve me linja drite cyan -->
+            <g stroke="rgba(0,229,255,0.7)" stroke-width="1.5" fill="none" stroke-linecap="round">
+                <!-- Supekonturi i gjerë -->
+                <path d="M60,250 Q100,210 150,210 Q200,210 240,250" opacity="0.9"/>
+                <path d="M80,265 Q150,230 220,265" stroke="rgba(255,153,0,0.8)" stroke-width="1"/>
+                
+                <!-- Qafa -->
+                <path d="M130,210 L130,165" />
+                <path d="M170,210 L170,165" />
+                
+                <!-- Koka / Fytyra (Wireframe organic) -->
+                <path d="M120,165 Q110,120 125,85 Q135,60 150,55 Q165,60 175,85 Q190,120 180,165" />
+                <path d="M125,125 Q150,135 175,125" stroke="rgba(255,153,0,0.7)" />
+                <path d="M130,145 Q150,155 170,145" stroke="rgba(0,229,255,0.9)" />
+            </g>
+
+            <!-- Pikat e dritës neural (Matrix particles) -->
+            <g fill="#00E5FF">
+                <circle cx="150" cy="55" r="3" fill="#FF9900"/>
+                <circle cx="125" cy="90" r="2" />
+                <circle cx="175" cy="90" r="2" />
+                <circle cx="150" cy="135" r="3.5" fill="#FF9900" />
+                <circle cx="110" cy="180" r="2" />
+                <circle cx="190" cy="180" r="2" />
+                <circle cx="150" cy="210" r="3" fill="#FF9900" />
+            </g>
+        </svg>
     </div>
 
-    <!-- CENTER STAGE -->
-    <div class="core-trigger" onclick="manualListenTrigger()">
-        <div class="core-sub" id="coreState">SAY "HEY NEO"</div>
+    <!-- PROMPT TEXT -->
+    <div class="prompt-container">
+        <p class="wake-text" id="wakePrompt">Thuaj: „Hej Neo“</p>
+        <span class="listening-subtext" id="subStatus">Po të dëgjoj…</span>
     </div>
 
-    <!-- NODES -->
-    <div id="nodesLayer"></div>
-
-    <!-- HOLOGRAPHIC MODAL -->
-    <div class="holo-modal" id="holoModal">
-        <div class="holo-head">
-            <span id="holoTitle">DATEN</span>
-            <button type="button" class="hud-btn" onclick="closeHolo()">✕</button>
-        </div>
-        <div class="holo-content" id="holoBody"></div>
+    <!-- BOTTOM MIC ICON -->
+    <div class="mic-dock">
+        <div class="mic-btn" onclick="toggleListening()">🎙️</div>
     </div>
 
-    <input type="file" id="cam" accept="image/*" style="display:none" onchange="handleImg(event)">
     <audio id="player" playsinline></audio>
 
     <script>
-        const isMobile = /Android|iPhone|iPad/i.test(navigator.userAgent);
-
-        function beep(f1, f2) {
-            try {
-                const ac = new (window.AudioContext || window.webkitAudioContext)();
-                const osc = ac.createOscillator();
-                const g = ac.createGain();
-                osc.connect(g); g.connect(ac.destination);
-                osc.frequency.setValueAtTime(f1, ac.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(f2, ac.currentTime + 0.1);
-                g.gain.setValueAtTime(0.1, ac.currentTime);
-                g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.1);
-                osc.start(); osc.stop(ac.currentTime + 0.1);
-            } catch(e){}
-        }
-
-        // --- 1. NODES ---
-        const NODES = [
-            { id: 'brief',    label: '☀️ Morning Brief',   rx: 0.21, ry: 0.24, action: () => quickCmd('Gib mir mein komplettes Morning Briefing mit Terminen heute und wichtigen Objekt-Codes.') },
-            { id: 'calendar', label: '📅 Kalender Sync',   rx: 0.14, ry: 0.43, action: () => openHolo('calendar') },
-            { id: 'navi',     label: '🧭 Auto-Briefing',   rx: 0.20, ry: 0.63, action: () => quickCmd('Ich fahre los zum nächsten Termin. Gib mir das Briefing mit Codes und starte Navigation.') },
-            { id: 'codes',    label: '🔐 Objekt-Codes',    rx: 0.31, ry: 0.75, action: () => openHolo('codes') },
-            { id: 'offer',    label: '📐 Angebot Rechner', rx: 0.79, ry: 0.24, action: () => openHolo('calc') },
-            { id: 'camera',   label: '📸 Mängel-Foto',     rx: 0.86, ry: 0.43, action: () => document.getElementById('cam').click() },
-            { id: 'telegram', label: '✈️ Autorisierung',   rx: 0.69, ry: 0.75, action: () => sendTg() }
-        ];
-
-        const nodesLayer = document.getElementById('nodesLayer');
-        NODES.forEach(n => {
-            const el = document.createElement('div');
-            el.className = 'node-item';
-            el.style.left = (n.rx * 100) + '%';
-            el.style.top = (n.ry * 100) + '%';
-            el.innerHTML = `<span class="node-dot"></span><span class="node-title">${n.label}</span>`;
-            el.onclick = () => n.action();
-            nodesLayer.appendChild(el);
-        });
-
-        // --- 2. OPTIMIZED ULTRA-FAST CANVAS ENGINE ---
-        const canvas = document.getElementById('neuralCanvas');
-        const ctx = canvas.getContext('2d', { alpha: false });
-        let W = window.innerWidth, H = window.innerHeight;
-        function resizeCanvas() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
-
-        let coreStateMode = 'idle', angle = 0;
-
-        function drawFastCore() {
-            ctx.fillStyle = '#030712';
-            ctx.fillRect(0, 0, W, H);
-
-            const cx = W * 0.5, cy = H * 0.48;
-            angle += 0.04;
-
-            // Simple, lightning-fast vector rings
-            ctx.strokeStyle = 'rgba(0, 229, 255, 0.7)';
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.arc(cx, cy, 80, 0, Math.PI * 2);
-            ctx.stroke();
-
-            ctx.strokeStyle = 'rgba(255, 153, 0, 0.8)';
-            ctx.lineWidth = 2;
-            ctx.save();
-            ctx.translate(cx, cy);
-            ctx.rotate(angle);
-            ctx.beginPath();
-            ctx.arc(0, 0, 65, 0, Math.PI * 1.5);
-            ctx.stroke();
-            ctx.restore();
-
-            // Center core
-            ctx.fillStyle = coreStateMode === 'listening' ? '#10B981' : (coreStateMode === 'speaking' ? '#A855F7' : '#FF9900');
-            ctx.beginPath();
-            ctx.arc(cx, cy, 22, 0, Math.PI * 2);
-            ctx.fill();
-
-            requestAnimationFrame(drawFastCore);
-        }
-        drawFastCore();
-
-        // --- 3. STATE & POPUPS ---
-        let cachedEvents = [];
-        fetch('/calendar_preview').then(r => r.json()).then(d => { cachedEvents = d.events || []; }).catch(()=>{});
-
-        let mem = JSON.parse(localStorage.getItem('neo_memory') || '[]');
-        let mode = localStorage.getItem('neo_mode') || 'ARBEIT';
+        let isRec = false, isSpk = false, inConv = false;
+        let rec = null, stream = null, chunks = [], wakeRec = null;
         const player = document.getElementById('player');
+        const subStatus = document.getElementById('subStatus');
+        const wakePrompt = document.getElementById('wakePrompt');
 
-        function saveState() {
-            localStorage.setItem('neo_memory', JSON.stringify(mem));
-            localStorage.setItem('neo_mode', mode);
-            document.getElementById('mBtn').innerText = mode;
-            document.getElementById('nCount').innerText = mem.length;
-        }
-        saveState();
-
-        function toggleMode() { mode = mode === 'ARBEIT' ? 'PRIVAT' : 'ARBEIT'; saveState(); }
-
-        function openHolo(type) {
-            const modal = document.getElementById('holoModal');
-            const title = document.getElementById('holoTitle');
-            const body = document.getElementById('holoBody');
-            modal.classList.add('open');
-
-            if (type === 'calendar') {
-                title.innerText = 'KALENDER';
-                body.innerHTML = cachedEvents.length
-                    ? cachedEvents.map(e => `<div class="holo-row"><div><div style="color:var(--orange);font-size:11px;">${e.time}</div><div style="font-weight:700;">${e.title}</div></div></div>`).join('')
-                    : '<div style="color:var(--muted);">Keine Termine.</div>';
-            } else if (type === 'codes') {
-                title.innerText = `CODES (${mem.length})`;
-                body.innerHTML = `<div style="display:flex;gap:6px;margin-bottom:10px;"><input id="cInp" type="text" placeholder="Neuer Code..." style="flex:1;background:#030712;border:1px solid var(--border);color:#fff;padding:6px;border-radius:4px;"><button class="gold-pill" onclick="mem.push(document.getElementById('cInp').value);saveState();openHolo('codes');">+</button></div>` +
-                    (mem.length ? mem.map((x, i) => `<div class="holo-row"><span>${x}</span><button class="gold-pill" onclick="mem.splice(${i},1);saveState();openHolo('codes');">✕</button></div>`).join('') : '');
+        function setVisualState(state) {
+            document.body.className = state || '';
+            if (state === 'listening') {
+                subStatus.innerText = "Dëgjoj komandën tuaj...";
+                wakePrompt.innerText = "Dëgjoj...";
+            } else if (state === 'thinking') {
+                subStatus.innerText = "Duke analizuar...";
+                wakePrompt.innerText = "Mendon...";
+            } else if (state === 'speaking') {
+                subStatus.innerText = "NEO po flet...";
+                wakePrompt.innerText = "Duke folur...";
+            } else {
+                subStatus.innerText = "Po të dëgjoj…";
+                wakePrompt.innerText = "Thuaj: „Hej Neo“";
             }
         }
-        function closeHolo() { document.getElementById('holoModal').classList.remove('open'); }
 
-        function setSt(s) {
-            coreStateMode = s || 'idle';
-            document.getElementById('coreState').innerText = s === 'listening' ? 'HÖRE ZU...' : (s === 'thinking' ? 'DENKT NACH...' : (s === 'speaking' ? 'SPRICHT' : 'SAY "HEY NEO"'));
-        }
+        // --- CONTINUOUS SPEECH ENGINE ---
+        function startWakeWord() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) return;
+            try {
+                wakeRec = new SpeechRecognition();
+                wakeRec.lang = 'de-DE'; // Ose 'sq-AL' sipas dëshirës
+                wakeRec.continuous = true;
+                wakeRec.interimResults = true;
 
-        // --- 4. FAST SPEECH ENGINE ---
-        let wakeOn = true, activeSession = false, isBusy = false, srInstance = null;
-
-        function toggleWake() {
-            wakeOn = !wakeOn;
-            document.getElementById('wBtn').innerText = wakeOn ? '● HEY NEO' : '○ PAUSIERT';
-            if (!wakeOn && srInstance) srInstance.abort();
-            else startAlwaysListening();
-        }
-
-        function manualListenTrigger() {
-            if (isBusy) { player.pause(); isBusy = false; }
-            activeSession = true;
-            beep(520, 920);
-            setSt('listening');
-        }
-
-        function startAlwaysListening() {
-            if (!wakeOn || isBusy) return;
-            const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if (!SR) return;
-            if (srInstance) { try { srInstance.abort(); } catch(e){} }
-
-            srInstance = new SR();
-            srInstance.lang = 'de-DE';
-            srInstance.continuous = true;
-            srInstance.interimResults = true;
-
-            srInstance.onresult = (e) => {
-                if (isBusy) return;
-                for (let i = e.resultIndex; i < e.results.length; i++) {
-                    const raw = e.results[i][0].transcript.trim();
-                    const low = raw.toLowerCase();
-                    if (low.includes('neo') || activeSession) {
-                        if (e.results[i].isFinal) {
-                            beep(640, 880);
-                            processVoiceText(raw);
+                wakeRec.onresult = (e) => {
+                    for (let i = e.resultIndex; i < e.results.length; i++) {
+                        const t = e.results[i][0].transcript.toLowerCase();
+                        if (t.includes('hej neo') || t.includes('hey neo') || t.includes('neo')) {
+                            if (wakeRec) { try { wakeRec.abort(); } catch(err){} }
+                            inConv = true;
+                            startRecordingAudio();
                             return;
                         }
                     }
-                }
-            };
-            srInstance.onend = () => { if (wakeOn && !isBusy) setTimeout(startAlwaysListening, 300); };
-            try { srInstance.start(); } catch(e) {}
+                };
+                wakeRec.onend = () => {
+                    if (!isRec && !isSpk && !inConv) {
+                        setTimeout(startWakeWord, 800);
+                    }
+                };
+                wakeRec.start();
+            } catch(e) {}
         }
 
-        function processVoiceText(txt) {
-            isBusy = true;
-            if (srInstance) { try { srInstance.abort(); } catch(e){} }
-            setSt('thinking');
-            sendNeo({ message: txt });
+        function toggleListening() {
+            if (isSpk) { player.pause(); isSpk = false; setVisualState(null); return; }
+            if (isRec) { isRec = false; if (rec && rec.state !== 'inactive') rec.stop(); return; }
+            inConv = true;
+            startRecordingAudio();
         }
 
-        player.onplay = () => { isBusy = true; setSt('speaking'); };
-        player.onended = () => { isBusy = false; setSt(null); if (wakeOn) startAlwaysListening(); };
-
-        function quickCmd(t) { isBusy = true; setSt('thinking'); sendNeo({ message: t }); }
-        function sendTg() { quickCmd('Sende Telegram Autorisierung.'); }
-        function handleImg(ev) { if(ev.target.files[0]) quickCmd('Analysiere Mängel-Foto.'); }
-
-        async function sendNeo(payload) {
-            payload.mode = mode; payload.memory = mem; payload.local_time_str = new Date().toLocaleString('de-DE');
+        async function startRecordingAudio() {
+            if (isRec || isSpk) return;
+            if (wakeRec) { try { wakeRec.abort(); } catch(e){} }
             try {
-                const res = await fetch('/chat', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+                stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
+                chunks = [];
+                rec = new MediaRecorder(stream, { audioBitsPerSecond: 16000 });
+                rec.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+                rec.onstop = () => {
+                    stream.getTracks().forEach(t => t.stop());
+                    const blob = new Blob(chunks, { type: rec.mimeType || 'audio/webm' });
+                    if (blob.size < 600) { inConv = false; setVisualState(null); startWakeWord(); return; }
+                    setVisualState('thinking');
+                    const reader = new FileReader();
+                    reader.readAsDataURL(blob);
+                    reader.onloadend = () => {
+                        sendToNeoBackend({ audio: reader.result.split(',')[1], mime_type: (rec.mimeType || 'audio/webm').split(';')[0] });
+                    };
+                };
+                rec.start();
+                isRec = true;
+                setVisualState('listening');
+                setTimeout(() => { if (isRec) { isRec = false; rec.stop(); } }, 6000);
+            } catch(e) {
+                inConv = false;
+                setVisualState(null);
+                startWakeWord();
+            }
+        }
+
+        player.onplay = () => { isSpk = true; setVisualState('speaking'); };
+        player.onended = () => {
+            isSpk = false;
+            setVisualState(null);
+            if (inConv) setTimeout(startRecordingAudio, 400);
+            else startWakeWord();
+        };
+
+        async function sendToNeoBackend(payload) {
+            payload.mode = "ARBEIT";
+            payload.memory = JSON.parse(localStorage.getItem('neo_memory') || '[]');
+            payload.local_time_str = new Date().toLocaleString('de-DE');
+            try {
+                const res = await fetch('/chat', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(payload)
+                });
                 const d = await res.json();
-                document.getElementById('replyBox').innerText = d.reply || "Erledigt.";
+                if (d.error) { inConv = false; setVisualState(null); startWakeWord(); return; }
+                if (d.end_conversation) inConv = false;
+                if (d.new_memory) {
+                    let mem = JSON.parse(localStorage.getItem('neo_memory') || '[]');
+                    mem.push(d.new_memory);
+                    localStorage.setItem('neo_memory', JSON.stringify(mem));
+                }
                 if (d.audio) {
                     player.src = "data:audio/mp3;base64," + d.audio;
-                    player.play().catch(() => { isBusy = false; setSt(null); if (wakeOn) startAlwaysListening(); });
-                } else { isBusy = false; setSt(null); if (wakeOn) startAlwaysListening(); }
-            } catch(e) { isBusy = false; setSt(null); if (wakeOn) startAlwaysListening(); }
+                    player.play().catch(() => { isSpk = false; setVisualState(null); startWakeWord(); });
+                } else {
+                    setVisualState(null);
+                    startWakeWord();
+                }
+            } catch(e) {
+                inConv = false;
+                setVisualState(null);
+                startWakeWord();
+            }
         }
 
-        window.onload = startAlwaysListening;
+        window.onload = startWakeWord;
     </script>
 </body>
 </html>
@@ -464,7 +463,19 @@ def cal_prev():
 
 @app.route("/manifest.json")
 def manifest():
-    return jsonify({"name": "NEO", "short_name": "NEO", "start_url": "/", "display": "standalone", "background_color": "#030712", "theme_color": "#030712"})
+    return jsonify({
+        "name": "NEO",
+        "short_name": "NEO",
+        "start_url": "/",
+        "display": "standalone",
+        "background_color": "#030712",
+        "theme_color": "#030712",
+        "icons": [{"src": "/icon.svg", "sizes": "any", "type": "image/svg+xml"}]
+    })
+
+@app.route("/icon.svg")
+def icon():
+    return Response(ICON_SVG, mimetype="image/svg+xml")
 
 @app.route("/chat", methods=["POST"])
 def chat():
