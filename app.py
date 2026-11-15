@@ -28,7 +28,7 @@ HTML_PAGE = """<!DOCTYPE html>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#030712">
     <link rel="manifest" href="/manifest.json">
-    <title>N.E.O. // SECOND BRAIN OS</title>
+    <title>N.E.O. // CYBERNETIC OS</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
 
@@ -36,43 +36,50 @@ HTML_PAGE = """<!DOCTYPE html>
             --cyan: #00E5FF;
             --orange: #FF9900;
             --bg: #030712;
-            --panel: rgba(10, 18, 35, 0.92);
-            --border: rgba(0, 229, 255, 0.22);
+            --panel: rgba(6, 12, 24, 0.85);
+            --panel-hover: rgba(10, 20, 38, 0.95);
+            --border: rgba(0, 229, 255, 0.25);
+            --border-glow: rgba(0, 229, 255, 0.6);
             --text: #F8FAFC;
             --muted: #64748B;
             --green: #10B981;
         }
 
-        body.listening { --cyan: #10B981; }
-        body.thinking  { --cyan: #00E5FF; }
-        body.speaking  { --cyan: #A855F7; }
+        body.listening { --cyan: #10B981; --border-glow: rgba(16, 185, 129, 0.8); }
+        body.thinking  { --cyan: #00E5FF; --border-glow: rgba(0, 229, 255, 0.8); }
+        body.speaking  { --cyan: #A855F7; --border-glow: rgba(168, 85, 247, 0.8); }
 
         * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
 
         html, body {
             margin: 0; padding: 0; width: 100vw; height: 100vh; overflow-x: hidden;
             background-color: var(--bg);
+            background-image: 
+                radial-gradient(circle at 50% 50%, rgba(0, 229, 255, 0.05) 0%, transparent 80%),
+                linear-gradient(rgba(0, 229, 255, 0.015) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 229, 255, 0.015) 1px, transparent 1px);
+            background-size: 100% 100%, 40px 40px, 40px 40px;
             color: var(--text);
             font-family: 'Rajdhani', sans-serif;
         }
 
-        /* TOP DASHBOARD HEADER */
+        /* TOP CYBER BAR */
         .top-bar {
             display: flex; justify-content: space-between; align-items: center;
-            padding: 12px 20px; background: var(--panel); border-bottom: 1px solid var(--border);
-            font-family: 'JetBrains Mono', monospace; font-size: 11px;
+            padding: 14px 24px; background: var(--panel); backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; font-size: 11.5px;
         }
-        .top-title { color: var(--cyan); font-weight: 700; letter-spacing: 2px; font-size: 14px; }
-        .metrics { display: flex; gap: 15px; color: var(--muted); }
+        .top-title { color: var(--cyan); font-weight: 700; letter-spacing: 3px; font-size: 16px; text-shadow: 0 0 10px rgba(0,229,255,0.4); }
+        .metrics { display: flex; gap: 20px; color: var(--muted); }
         .metrics span b { color: var(--text); }
 
-        /* MAIN GRID CONTAINER */
+        /* DASHBOARD GRID */
         .dashboard-grid {
             display: grid;
-            grid-template-columns: 280px 1fr 300px;
-            gap: 14px;
-            padding: 16px;
-            max-width: 1400px;
+            grid-template-columns: 300px 1fr 310px;
+            gap: 16px;
+            padding: 20px;
+            max-width: 1450px;
             margin: 0 auto;
         }
 
@@ -80,111 +87,137 @@ HTML_PAGE = """<!DOCTYPE html>
             .dashboard-grid { grid-template-columns: 1fr; }
         }
 
-        /* MODULE CARDS */
+        /* MODERN GLASS CARDS */
         .card {
             background: var(--panel);
+            backdrop-filter: blur(10px);
             border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 14px;
+            border-radius: 12px;
+            padding: 16px;
             display: flex;
             flex-direction: column;
-            gap: 8px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-            transition: border-color 0.2s;
+            gap: 10px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+            cursor: pointer;
+            transition: all 0.25s ease;
+            position: relative;
+            overflow: hidden;
         }
-        .card:hover { border-color: var(--cyan); }
+        .card::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 3px; height: 100%;
+            background: var(--orange); opacity: 0.7;
+        }
+        .card:hover {
+            background: var(--panel-hover);
+            border-color: var(--border-glow);
+            box-shadow: 0 0 25px rgba(0, 229, 255, 0.2);
+            transform: translateY(-2px);
+        }
         .card-header {
             display: flex; justify-content: space-between; align-items: center;
             font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700;
-            color: var(--orange); border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px;
+            color: var(--orange); border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 6px;
         }
-        .card-title { font-size: 15px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 6px; }
-        .card-desc { font-size: 12.5px; color: var(--muted); line-height: 1.35; }
+        .card-title { font-size: 16px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 8px; }
+        .card-desc { font-size: 13px; color: var(--muted); line-height: 1.4; }
         
         .badge-enabled {
             background: rgba(16, 185, 129, 0.15); color: var(--green);
-            padding: 2px 6px; border-radius: 4px; font-size: 9.5px; font-weight: 700;
+            padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700;
+            border: 1px solid rgba(16, 185, 129, 0.3);
         }
 
         /* CENTER CORE PANEL */
         .center-core-panel {
-            background: rgba(6, 11, 22, 0.95);
-            border: 1px solid var(--cyan);
-            border-radius: 14px;
-            padding: 20px;
+            background: rgba(4, 9, 18, 0.9);
+            backdrop-filter: blur(15px);
+            border: 1px solid var(--border-glow);
+            border-radius: 16px;
+            padding: 24px;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             text-align: center;
             position: relative;
-            box-shadow: 0 0 30px rgba(0,229,255,0.15);
+            box-shadow: 0 0 40px rgba(0,229,255,0.15);
         }
         .hologram-stage {
-            width: 220px; height: 220px;
+            width: 240px; height: 240px;
             display: flex; align-items: center; justify-content: center;
             cursor: pointer; position: relative; margin: 10px 0;
         }
-        .holo-svg { width: 100%; height: 100%; filter: drop-shadow(0 0 12px rgba(0,229,255,0.5)); }
+        .holo-svg { width: 100%; height: 100%; filter: drop-shadow(0 0 20px rgba(0,229,255,0.6)); }
 
         .action-btn {
-            background: linear-gradient(135deg, rgba(0,229,255,0.2), rgba(255,153,0,0.2));
+            background: linear-gradient(135deg, rgba(0,229,255,0.25), rgba(255,153,0,0.25));
             border: 1px solid var(--cyan); color: var(--text);
-            padding: 8px 16px; border-radius: 99px; font-weight: 700; font-size: 12px;
-            cursor: pointer; transition: 0.2s; font-family: 'JetBrains Mono', monospace;
+            padding: 10px 22px; border-radius: 99px; font-weight: 700; font-size: 13px;
+            cursor: pointer; transition: 0.25s; font-family: 'JetBrains Mono', monospace;
+            box-shadow: 0 0 15px rgba(0,229,255,0.2);
         }
-        .action-btn:hover { background: var(--cyan); color: #030712; box-shadow: 0 0 15px var(--cyan); }
+        .action-btn:hover { background: var(--cyan); color: #030712; box-shadow: 0 0 25px var(--cyan); transform: scale(1.05); }
+
+        /* LIVE TERMINAL FEED */
+        .terminal-box {
+            width: 100%; background: rgba(2, 5, 10, 0.9);
+            border: 1px solid rgba(0,229,255,0.15); border-radius: 8px;
+            padding: 10px 14px; font-family: 'JetBrains Mono', monospace;
+            font-size: 11px; color: var(--cyan); text-align: left;
+            margin-top: 14px; min-height: 45px; max-height: 60px; overflow: hidden;
+        }
 
         /* MODAL */
         .holo-modal {
             position: fixed; inset: 0; background: rgba(3, 7, 18, 0.88);
-            backdrop-filter: blur(8px); z-index: 50; display: none;
+            backdrop-filter: blur(12px); z-index: 50; display: none;
             align-items: center; justify-content: center; padding: 16px;
         }
         .holo-modal.open { display: flex; }
         .holo-box {
             background: var(--panel); border: 1px solid var(--cyan);
-            border-radius: 12px; width: 100%; max-width: 440px;
-            padding: 20px; display: flex; flex-direction: column; gap: 12px;
+            border-radius: 14px; width: 100%; max-width: 460px;
+            padding: 24px; display: flex; flex-direction: column; gap: 14px;
+            box-shadow: 0 0 50px rgba(0,229,255,0.3);
         }
         .holo-head {
             display: flex; justify-content: space-between; align-items: center;
-            border-bottom: 1px solid var(--border); padding-bottom: 8px;
-            font-size: 13px; font-weight: 700; color: var(--cyan);
+            border-bottom: 1px solid var(--border); padding-bottom: 10px;
+            font-size: 14px; font-weight: 700; color: var(--cyan);
         }
-        .holo-content { max-height: 260px; overflow-y: auto; font-size: 13px; display: flex; flex-direction: column; gap: 6px; }
-        .holo-row { padding: 8px; background: rgba(0,229,255,0.05); border-left: 3px solid var(--orange); border-radius: 4px; }
-        input, select { background: #030712; border: 1px solid var(--border); color: #fff; padding: 8px; border-radius: 6px; font-family: 'Rajdhani'; }
+        .holo-content { max-height: 280px; overflow-y: auto; font-size: 13.5px; display: flex; flex-direction: column; gap: 8px; }
+        .holo-row { padding: 10px; background: rgba(0,229,255,0.06); border-left: 3px solid var(--orange); border-radius: 6px; }
+        input, select { background: #030712; border: 1px solid var(--border); color: #fff; padding: 10px; border-radius: 8px; font-family: 'Rajdhani'; font-size: 14px; }
     </style>
 </head>
 <body>
     <!-- TOP STATS BAR -->
     <div class="top-bar">
-        <div class="top-title">N.E.O. // SECOND BRAIN OS</div>
+        <div class="top-title">N.E.O. // CYBERNETIC OS</div>
         <div class="metrics">
             <span>MODUS: <b>ARBEIT</b></span>
-            <span>STATUS: <b style="color:var(--green);">LIVE 24/7</b></span>
+            <span>STATUS: <b style="color:var(--green);">SECURE STREAM</b></span>
         </div>
     </div>
 
     <!-- DASHBOARD GRID -->
     <div class="dashboard-grid">
         <!-- LEFT COLUMN -->
-        <div style="display:flex; flex-direction:column; gap:14px;">
-            <div class="card" onclick="quickCmd('Gib mir mein Morning Briefing mit Terminen heute.')" style="cursor:pointer;">
-                <div class="card-header"><span>$/brief-mode</span><span class="badge-enabled">ENABLED</span></div>
+        <div style="display:flex; flex-direction:column; gap:16px;">
+            <div class="card" onclick="quickCmd('Gib mir mein Morning Briefing mit Terminen heute.')">
+                <div class="card-header"><span>$/brief-mode</span><span class="badge-enabled">ACTIVE</span></div>
                 <div class="card-title">☀️ Morning Brief</div>
-                <div class="card-desc">Liest heutige Termine & Objekt-Codes aus.</div>
+                <div class="card-desc">Liest heutige Termine & Objekt-Codes in Hamburg aus.</div>
             </div>
 
-            <div class="card" onclick="openHolo('calendar')" style="cursor:pointer;">
+            <div class="card" onclick="openHolo('calendar')">
                 <div class="card-header"><span>📅 /calendar</span><span class="badge-enabled">SYNCED</span></div>
                 <div class="card-title">Kalender Termine</div>
-                <div class="card-desc">Aktuelle Einsätze und Objektstandorte in Hamburg.</div>
+                <div class="card-desc">Einsätze und Objektstandorte live synchronisiert.</div>
             </div>
 
-            <div class="card" onclick="openHolo('codes')" style="cursor:pointer;">
-                <div class="card-header"><span>🔐 /memory</span><span class="badge-enabled">ACTIVE</span></div>
+            <div class="card" onclick="openHolo('codes')">
+                <div class="card-header"><span>🔐 /memory</span><span class="badge-enabled">SECURE</span></div>
                 <div class="card-title">Objekt-Codes</div>
                 <div class="card-desc">Sichere Notizen und Zugangscodes verwalten.</div>
             </div>
@@ -192,63 +225,67 @@ HTML_PAGE = """<!DOCTYPE html>
 
         <!-- CENTER COLUMN -->
         <div class="center-core-panel">
-            <div class="card-header" style="width:100%; justify-content:center; border:none; color:var(--cyan);">BRAIN MODE // ACTIVE VOICE STREAM</div>
+            <div class="card-header" style="width:100%; justify-content:center; border:none; color:var(--cyan); letter-spacing: 2px;">NEURAL CORE // ACTIVE VOICE INTERFACE</div>
             
             <div class="hologram-stage" onclick="toggleListening()">
                 <svg class="holo-svg" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="150" cy="150" r="125" fill="none" stroke="rgba(0,229,255,0.12)" stroke-width="1" stroke-dasharray="8 8"/>
-                    <circle cx="150" cy="150" r="100" fill="none" stroke="rgba(255,153,0,0.15)" stroke-width="1"/>
-                    <circle cx="150" cy="135" r="35" fill="url(#orangeGlow)" opacity="0.85"/>
+                    <circle cx="150" cy="150" r="125" fill="none" stroke="rgba(0,229,255,0.15)" stroke-width="1.5" stroke-dasharray="10 6"/>
+                    <circle cx="150" cy="150" r="100" fill="none" stroke="rgba(255,153,0,0.2)" stroke-width="1"/>
+                    <circle cx="150" cy="135" r="38" fill="url(#orangeGlow)" opacity="0.9"/>
                     <defs>
                         <radialGradient id="orangeGlow" cx="50%" cy="50%" r="50%">
-                            <stop offset="0%" stop-color="#FF9900" stop-opacity="0.95"/>
-                            <stop offset="60%" stop-color="#FF5500" stop-opacity="0.4"/>
+                            <stop offset="0%" stop-color="#FF9900" stop-opacity="1"/>
+                            <stop offset="60%" stop-color="#FF5500" stop-opacity="0.5"/>
                             <stop offset="100%" stop-color="#030712" stop-opacity="0"/>
                         </radialGradient>
                     </defs>
-                    <g stroke="rgba(0,229,255,0.75)" stroke-width="1.5" fill="none" stroke-linecap="round">
-                        <path d="M60,250 Q100,210 150,210 Q200,210 240,250" opacity="0.9"/>
-                        <path d="M80,265 Q150,230 220,265" stroke="rgba(255,153,0,0.85)" stroke-width="1"/>
+                    <g stroke="rgba(0,229,255,0.85)" stroke-width="1.8" fill="none" stroke-linecap="round">
+                        <path d="M60,250 Q100,210 150,210 Q200,210 240,250" opacity="0.95"/>
+                        <path d="M80,265 Q150,230 220,265" stroke="rgba(255,153,0,0.9)" stroke-width="1.2"/>
                         <path d="M130,210 L130,165" />
                         <path d="M170,210 L170,165" />
                         <path d="M120,165 Q110,120 125,85 Q135,60 150,55 Q165,60 175,85 Q190,120 180,165" />
-                        <path d="M125,125 Q150,135 175,125" stroke="rgba(255,153,0,0.7)" />
-                        <path d="M130,145 Q150,155 170,145" stroke="rgba(0,229,255,0.9)" />
+                        <path d="M125,125 Q150,135 175,125" stroke="rgba(255,153,0,0.8)" />
+                        <path d="M130,145 Q150,155 170,145" stroke="rgba(0,229,255,1)" />
                     </g>
                     <g fill="#00E5FF">
-                        <circle cx="150" cy="55" r="3" fill="#FF9900"/>
-                        <circle cx="125" cy="90" r="2" />
-                        <circle cx="175" cy="90" r="2" />
-                        <circle cx="150" cy="135" r="3.5" fill="#FF9900" />
-                        <circle cx="110" cy="180" r="2" />
-                        <circle cx="190" cy="180" r="2" />
-                        <circle cx="150" cy="210" r="3" fill="#FF9900" />
+                        <circle cx="150" cy="55" r="3.5" fill="#FF9900"/>
+                        <circle cx="125" cy="90" r="2.2" />
+                        <circle cx="175" cy="90" r="2.2" />
+                        <circle cx="150" cy="135" r="4" fill="#FF9900" />
+                        <circle cx="110" cy="180" r="2.2" />
+                        <circle cx="190" cy="180" r="2.2" />
+                        <circle cx="150" cy="210" r="3.5" fill="#FF9900" />
                     </g>
                 </svg>
             </div>
 
-            <div id="wakePrompt" style="font-size:16px; font-weight:700; margin-bottom: 10px; color:var(--text);">Sage: „Hey Neo“</div>
+            <div id="wakePrompt" style="font-size:18px; font-weight:700; margin-bottom: 10px; color:var(--text); letter-spacing: 1px;">Sage: „Hey Neo“</div>
             <button class="action-btn" onclick="toggleListening()">🎙️ Sprachbefehl starten</button>
+            
+            <div class="terminal-box" id="terminalLog">
+                > System bereit. Lauscht im Hintergrund...
+            </div>
         </div>
 
         <!-- RIGHT COLUMN -->
-        <div style="display:flex; flex-direction:column; gap:14px;">
-            <div class="card" onclick="openHolo('calc')" style="cursor:pointer;">
+        <div style="display:flex; flex-direction:column; gap:16px;">
+            <div class="card" onclick="openHolo('calc')">
                 <div class="card-header"><span>📐 /calculator</span><span class="badge-enabled">READY</span></div>
                 <div class="card-title">Angebots-Rechner</div>
-                <div class="card-desc">Berechnet Reinigungen (31,50 €/Std).</div>
+                <div class="card-desc">Kalkuliert Reinigungen exakt mit 31,50 €/Std.</div>
             </div>
 
-            <div class="card" onclick="document.getElementById('cam').click()" style="cursor:pointer;">
-                <div class="card-header"><span>📸 /vision</span><span class="badge-enabled">AI ACTIVE</span></div>
+            <div class="card" onclick="document.getElementById('cam').click()">
+                <div class="card-header"><span>📸 /vision</span><span class="badge-enabled">ONLINE</span></div>
                 <div class="card-title">Mängel-Foto</div>
-                <div class="card-desc">Objekt-Mängel fotografieren und analysieren.</div>
+                <div class="card-desc">Objekt-Mängel fotografieren und per KI analysieren.</div>
             </div>
 
-            <div class="card" onclick="sendTg()" style="cursor:pointer;">
+            <div class="card" onclick="sendTg()">
                 <div class="card-header"><span>✈️ /auth</span><span class="badge-enabled">SECURE</span></div>
                 <div class="card-title">Telegram Auth</div>
-                <div class="card-desc">Sichert Freigaben direkt über Telegram ab.</div>
+                <div class="card-desc">Sichert Freigaben direkt in Echtzeit ab.</div>
             </div>
         </div>
     </div>
@@ -258,7 +295,7 @@ HTML_PAGE = """<!DOCTYPE html>
         <div class="holo-box">
             <div class="holo-head">
                 <span id="holoTitle">DATEN</span>
-                <button class="action-btn" style="padding:2px 8px;" onclick="closeHolo()">✕</button>
+                <button class="action-btn" style="padding:4px 10px;" onclick="closeHolo()">✕</button>
             </div>
             <div class="holo-content" id="holoBody"></div>
         </div>
@@ -273,16 +310,21 @@ HTML_PAGE = """<!DOCTYPE html>
         let cachedEvents = [];
         const player = document.getElementById('player');
         const wakePrompt = document.getElementById('wakePrompt');
+        const terminalLog = document.getElementById('terminalLog');
+
+        function logTerm(txt) {
+            terminalLog.innerText = "> " + txt;
+        }
 
         fetch('/calendar_preview').then(r => r.json()).then(d => { cachedEvents = d.events || []; }).catch(()=>{});
         let mem = JSON.parse(localStorage.getItem('neo_memory') || '[]');
 
         function setVisualState(state) {
             document.body.className = state || '';
-            if (state === 'listening') wakePrompt.innerText = "Ich höre zu...";
-            else if (state === 'thinking') wakePrompt.innerText = "Analysiere...";
-            else if (state === 'speaking') wakePrompt.innerText = "NEO spricht...";
-            else wakePrompt.innerText = "Sage: „Hey Neo“";
+            if (state === 'listening') { wakePrompt.innerText = "Ich höre zu..."; logTerm("Sprachstrom aktiv. Empfange Audio..."); }
+            else if (state === 'thinking') { wakePrompt.innerText = "Analysiere..."; logTerm("Verarbeite Anfrage über Gemini AI..."); }
+            else if (state === 'speaking') { wakePrompt.innerText = "NEO spricht..."; logTerm("Generiere Edge-TTS Audioausgabe..."); }
+            else { wakePrompt.innerText = "Sage: „Hey Neo“"; logTerm("System bereit. Lauscht im Hintergrund..."); }
         }
 
         function openHolo(type) {
@@ -298,11 +340,11 @@ HTML_PAGE = """<!DOCTYPE html>
                     : '<div style="color:var(--muted);">Keine Termine gefunden.</div>';
             } else if (type === 'codes') {
                 title.innerText = `OBJEKT-CODES & NOTIZEN (${mem.length})`;
-                let list = mem.length ? mem.map((x, i) => `<div class="holo-row" style="display:flex;justify-content:space-between;align-items:center;"><span>${x}</span><button class="action-btn" style="padding:2px 6px;" onclick="mem.splice(${i},1);localStorage.setItem('neo_memory',JSON.stringify(mem));openHolo('codes');">✕</button></div>`).join('') : '<div style="color:var(--muted);">Keine Codes gespeichert.</div>';
-                body.innerHTML = `<div style="display:flex;gap:6px;margin-bottom:8px;"><input id="newCode" type="text" placeholder="Neuer Code..." style="flex:1;"><button class="action-btn" onclick="if(document.getElementById('newCode').value.trim()){mem.push(document.getElementById('newCode').value.trim());localStorage.setItem('neo_memory',JSON.stringify(mem));openHolo('codes');}">Speichern</button></div>` + list;
+                let list = mem.length ? mem.map((x, i) => `<div class="holo-row" style="display:flex;justify-content:space-between;align-items:center;"><span>${x}</span><button class="action-btn" style="padding:2px 8px;" onclick="mem.splice(${i},1);localStorage.setItem('neo_memory',JSON.stringify(mem));openHolo('codes');">✕</button></div>`).join('') : '<div style="color:var(--muted);">Keine Codes gespeichert.</div>';
+                body.innerHTML = `<div style="display:flex;gap:8px;margin-bottom:8px;"><input id="newCode" type="text" placeholder="Neuer Code..." style="flex:1;"><button class="action-btn" onclick="if(document.getElementById('newCode').value.trim()){mem.push(document.getElementById('newCode').value.trim());localStorage.setItem('neo_memory',JSON.stringify(mem));openHolo('codes');}">Speichern</button></div>` + list;
             } else if (type === 'calc') {
                 title.innerText = 'ANGEBOTS-KALKULATOR (31,50 €/Std)';
-                body.innerHTML = `<div style="display:flex;flex-direction:column;gap:10px;">
+                body.innerHTML = `<div style="display:flex;flex-direction:column;gap:12px;">
                     <input id="cQm" type="number" placeholder="Fläche in m² (z.B. 600)" value="600">
                     <select id="cFreq">
                         <option value="1x pro Woche">1x pro Woche</option>
@@ -317,18 +359,18 @@ HTML_PAGE = """<!DOCTYPE html>
         function closeHolo() { document.getElementById('holoModal').classList.remove('open'); }
 
         async function sendTg() {
-            wakePrompt.innerText = "Sende Telegram...";
+            logTerm("Sende Telegram Autorisierungsanfrage...");
             try {
                 const r = await fetch('/telegram_notify', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({text:"📞 NEO Autorisierung angefordert!"}) });
                 const d = await r.json();
-                wakePrompt.innerText = d.ok ? "Telegram gesendet!" : "Telegram Fehler";
-                setTimeout(() => wakePrompt.innerText = "Sage: „Hey Neo“", 3000);
-            } catch(e) { wakePrompt.innerText = "Verbindungsfehler"; }
+                logTerm(d.ok ? "Telegram Anfrage erfolgreich gesendet." : "Telegram Fehler: " + (d.error || "Unbekannt"));
+            } catch(e) { logTerm("Telegram Verbindungsfehler."); }
         }
 
         function handleImg(ev) {
             const f = ev.target.files[0]; if(!f) return;
             setVisualState('thinking');
+            logTerm("Lade Mängel-Foto für KI-Analyse hoch...");
             const r = new FileReader();
             r.onload = e => sendToNeoBackend({ image: e.target.result.split(',')[1], message: "Erstelle einen professionellen Objekt-Mängelbericht." });
             r.readAsDataURL(f);
@@ -387,21 +429,22 @@ HTML_PAGE = """<!DOCTYPE html>
         player.onplay = () => { isSpk = true; setVisualState('speaking'); };
         player.onended = () => { isSpk = false; setVisualState(null); if (inConv) setTimeout(startRecordingAudio, 400); else startWakeWord(); };
 
-        function quickCmd(t) { inConv = true; setVisualState('thinking'); sendToNeoBackend({ message: t }); }
+        function quickCmd(t) { inConv = true; setVisualState('thinking'); logTerm("Führe Schnellbefehl aus..."); sendToNeoBackend({ message: t }); }
 
         async function sendToNeoBackend(payload) {
             payload.mode = "ARBEIT"; payload.memory = mem; payload.local_time_str = new Date().toLocaleString('de-DE');
             try {
                 const res = await fetch('/chat', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
                 const d = await res.json();
-                if (d.error) { inConv = false; setVisualState(null); startWakeWord(); return; }
+                if (d.error) { inConv = false; setVisualState(null); logTerm("Fehler: " + d.error); startWakeWord(); return; }
                 if (d.end_conversation) inConv = false;
                 if (d.new_memory) { mem.push(d.new_memory); localStorage.setItem('neo_memory', JSON.stringify(mem)); }
+                logTerm(d.reply || "Aktion abgeschlossen.");
                 if (d.audio) {
                     player.src = "data:audio/mp3;base64," + d.audio;
                     player.play().catch(() => { isSpk = false; setVisualState(null); startWakeWord(); });
                 } else { setVisualState(null); startWakeWord(); }
-            } catch(e) { inConv = false; setVisualState(null); startWakeWord(); }
+            } catch(e) { inConv = false; setVisualState(null); logTerm("Server-Verbindungsfehler."); startWakeWord(); }
         }
 
         window.onload = startWakeWord;
