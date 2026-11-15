@@ -68,11 +68,11 @@ HTML_PAGE = """<!DOCTYPE html>
         .brand-logo { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 12px var(--accent); }
         .brand-name { font-weight: 700; font-size: 15px; letter-spacing: 1px; color: #fff; }
         
-        .header-info { display: flex; align-items: center; gap: 16px; }
-        .live-clock {
-            font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--accent);
+        .header-info { display: flex; align-items: center; gap: 12px; }
+        .weather-badge, .live-clock {
+            font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--accent);
             background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.2);
-            padding: 5px 12px; border-radius: 8px;
+            padding: 5px 12px; border-radius: 8px; display: flex; align-items: center; gap: 6px;
         }
         .status-pill {
             display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.03);
@@ -121,7 +121,7 @@ HTML_PAGE = """<!DOCTYPE html>
             transition: all 0.2s ease;
             display: flex; flex-direction: column; gap: 4px;
         }
-        .nav-card:hover {
+            .nav-card:hover {
             background: var(--card-hover);
             border-color: rgba(255,255,255,0.15);
             transform: translateY(-1px);
@@ -220,6 +220,7 @@ HTML_PAGE = """<!DOCTYPE html>
             <span class="brand-name">NEO // ENTERPRISE OS</span>
         </div>
         <div class="header-info">
+            <div class="weather-badge" id="weatherDisplay">☁️ Hamburg: Lade...</div>
             <div class="live-clock" id="liveClockDisplay">--:--:--</div>
             <div class="status-pill">
                 <div class="status-dot"></div>
@@ -265,7 +266,7 @@ HTML_PAGE = """<!DOCTYPE html>
             <button class="primary-btn" onclick="toggleListening()">Sprachbefehl starten</button>
 
             <div class="activity-log" id="activityLog">
-                > System initialisiert. Bereit për Befehle...
+                > System initialisiert. Bereit für Befehle...
             </div>
         </div>
 
@@ -305,7 +306,7 @@ HTML_PAGE = """<!DOCTYPE html>
     <audio id="audioPlayer" playsinline></audio>
 
     <script>
-        // LIVE CLOCK SCRIPT
+        // LIVE CLOCK & WEATHER SCRIPT
         function updateClock() {
             const now = new Date();
             const timeStr = now.toLocaleTimeString('de-DE');
@@ -314,6 +315,18 @@ HTML_PAGE = """<!DOCTYPE html>
         }
         setInterval(updateClock, 1000);
         updateClock();
+
+        // FETCH LIVE WEATHER FOR HAMBURG
+        fetch('https://api.open-meteo.com/v1/forecast?latitude=53.5511&longitude=9.9937&current_weather=true')
+            .then(r => r.json())
+            .then(data => {
+                if (data && data.current_weather) {
+                    const temp = data.current_weather.temperature;
+                    document.getElementById('weatherDisplay').innerText = `🌡️ Hamburg: ${temp}°C`;
+                }
+            }).catch(() => {
+                document.getElementById('weatherDisplay').innerText = `🌡️ Hamburg: Aktiv`;
+            });
 
         let isRecording = false, isSpeaking = false, inConversation = false;
         let mediaRecorder = null, audioStream = null, wakeRecognition = null;
@@ -636,7 +649,6 @@ def chat():
             "audio": audio
         })
     except Exception as e:
-        # Fallback if AI didn't return pure JSON
         try:
             fallback_reply = text_content if text_content else "Zu Befehl, Margil."
             audio = asyncio.run(make_voice(fallback_reply, "de"))
