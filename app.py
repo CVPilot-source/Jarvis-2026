@@ -198,15 +198,12 @@ HTML_PAGE = """<!DOCTYPE html>
         </div>
     </div>
 
-    <!-- CENTER HOLOGRAPHIC BUST (REZNIKOV STYLE) -->
-    <div class="hologram-stage" onclick="toggleListening()" title="Kliko për të folur">
+    <!-- CENTER HOLOGRAPHIC BUST -->
+    <div class="hologram-stage" onclick="toggleListening()" title="Tippen zum Sprechen">
         <div class="holo-glow"></div>
         <svg class="holo-svg" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
-            <!-- Unaza rrethore sfondi -->
             <circle cx="150" cy="150" r="130" fill="none" stroke="rgba(0,229,255,0.1)" stroke-width="1" stroke-dasharray="8 8"/>
             <circle cx="150" cy="150" r="105" fill="none" stroke="rgba(255,153,0,0.15)" stroke-width="1"/>
-
-            <!-- Bërthama e zjarrtë portokalli (Në qendër të fytyrës) -->
             <circle cx="150" cy="135" r="35" fill="url(#orangeGlow)" opacity="0.8"/>
             <defs>
                 <radialGradient id="orangeGlow" cx="50%" cy="50%" r="50%">
@@ -215,24 +212,15 @@ HTML_PAGE = """<!DOCTYPE html>
                     <stop offset="100%" stop-color="#030712" stop-opacity="0"/>
                 </radialGradient>
             </defs>
-
-            <!-- Konturet e bustit dhe supeve me linja drite cyan -->
             <g stroke="rgba(0,229,255,0.7)" stroke-width="1.5" fill="none" stroke-linecap="round">
-                <!-- Supekonturi i gjerë -->
                 <path d="M60,250 Q100,210 150,210 Q200,210 240,250" opacity="0.9"/>
                 <path d="M80,265 Q150,230 220,265" stroke="rgba(255,153,0,0.8)" stroke-width="1"/>
-                
-                <!-- Qafa -->
                 <path d="M130,210 L130,165" />
                 <path d="M170,210 L170,165" />
-                
-                <!-- Koka / Fytyra (Wireframe organic) -->
                 <path d="M120,165 Q110,120 125,85 Q135,60 150,55 Q165,60 175,85 Q190,120 180,165" />
                 <path d="M125,125 Q150,135 175,125" stroke="rgba(255,153,0,0.7)" />
                 <path d="M130,145 Q150,155 170,145" stroke="rgba(0,229,255,0.9)" />
             </g>
-
-            <!-- Pikat e dritës neural (Matrix particles) -->
             <g fill="#00E5FF">
                 <circle cx="150" cy="55" r="3" fill="#FF9900"/>
                 <circle cx="125" cy="90" r="2" />
@@ -247,8 +235,8 @@ HTML_PAGE = """<!DOCTYPE html>
 
     <!-- PROMPT TEXT -->
     <div class="prompt-container">
-        <p class="wake-text" id="wakePrompt">Thuaj: „Hej Neo“</p>
-        <span class="listening-subtext" id="subStatus">Po të dëgjoj…</span>
+        <p class="wake-text" id="wakePrompt">Sage: „Hey Neo“</p>
+        <span class="listening-subtext" id="subStatus">Lauscht im Hintergrund…</span>
     </div>
 
     <!-- BOTTOM MIC ICON -->
@@ -260,7 +248,7 @@ HTML_PAGE = """<!DOCTYPE html>
 
     <script>
         let isRec = false, isSpk = false, inConv = false;
-        let rec = null, stream = null, chunks = [], wakeRec = null;
+        let rec = null, stream = null, wakeRec = null;
         const player = document.getElementById('player');
         const subStatus = document.getElementById('subStatus');
         const wakePrompt = document.getElementById('wakePrompt');
@@ -268,34 +256,33 @@ HTML_PAGE = """<!DOCTYPE html>
         function setVisualState(state) {
             document.body.className = state || '';
             if (state === 'listening') {
-                subStatus.innerText = "Dëgjoj komandën tuaj...";
-                wakePrompt.innerText = "Dëgjoj...";
+                subStatus.innerText = "Ich höre zu...";
+                wakePrompt.innerText = "Sprich jetzt...";
             } else if (state === 'thinking') {
-                subStatus.innerText = "Duke analizuar...";
-                wakePrompt.innerText = "Mendon...";
+                subStatus.innerText = "Analysiere...";
+                wakePrompt.innerText = "Denkt nach...";
             } else if (state === 'speaking') {
-                subStatus.innerText = "NEO po flet...";
-                wakePrompt.innerText = "Duke folur...";
+                subStatus.innerText = "NEO spricht...";
+                wakePrompt.innerText = "Antwortet...";
             } else {
-                subStatus.innerText = "Po të dëgjoj…";
-                wakePrompt.innerText = "Thuaj: „Hej Neo“";
+                subStatus.innerText = "Lauscht im Hintergrund…";
+                wakePrompt.innerText = "Sage: „Hey Neo“";
             }
         }
 
-        // --- CONTINUOUS SPEECH ENGINE ---
         function startWakeWord() {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (!SpeechRecognition) return;
             try {
                 wakeRec = new SpeechRecognition();
-                wakeRec.lang = 'de-DE'; // Ose 'sq-AL' sipas dëshirës
+                wakeRec.lang = 'de-DE';
                 wakeRec.continuous = true;
                 wakeRec.interimResults = true;
 
                 wakeRec.onresult = (e) => {
                     for (let i = e.resultIndex; i < e.results.length; i++) {
                         const t = e.results[i][0].transcript.toLowerCase();
-                        if (t.includes('hej neo') || t.includes('hey neo') || t.includes('neo')) {
+                        if (t.includes('hey neo') || t.includes('hallo neo') || t.includes('neo')) {
                             if (wakeRec) { try { wakeRec.abort(); } catch(err){} }
                             inConv = true;
                             startRecordingAudio();
@@ -324,7 +311,7 @@ HTML_PAGE = """<!DOCTYPE html>
             if (wakeRec) { try { wakeRec.abort(); } catch(e){} }
             try {
                 stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
-                chunks = [];
+                let chunks = [];
                 rec = new MediaRecorder(stream, { audioBitsPerSecond: 16000 });
                 rec.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
                 rec.onstop = () => {
@@ -429,14 +416,14 @@ def parse_upcoming_events():
     except Exception:
         return ICAL_CACHE["events"]
 
-SYSTEM_PROMPT = """Du bist NEO, der KI-Assistent von Margil (Gebäudereinigung Hamburg).
-Modus: {mode} | Zeit: {local_time}. Antworte kurz, direkt auf Deutsch.
+SYSTEM_PROMPT = """Du bist NEO, der hochintelligente KI-Assistent von Margil (Kundenbetreuer Gebäudereinigung Hamburg) und Social-Media-Direktor. Antworte IMMER strikt auf Deutsch.
+Modus: {mode} | Zeit: {local_time}. Antworte souverän, ruhig, präzise und kurz auf Deutsch. Keine Sternchen oder Markdown.
 Antworte NUR als JSON:
 {{"reply":"","voice_lang":"de","copy_text":"","new_memory":"","action_url":"","action_label":"","end_conversation":false}}"""
 
 async def make_voice(text, lang="de"):
     clean = text.replace("*", "").replace("#", "").strip()
-    voice = "sq-AL-IlirNeural" if lang == "sq" else "de-DE-FlorianMultilingualNeural"
+    voice = "de-DE-FlorianMultilingualNeural"
     comm = edge_tts.Communicate(clean, voice, rate="+10%")
     buf = b""
     async for c in comm.stream():
@@ -495,8 +482,8 @@ def chat():
 
         m = re.search(r'\{.*\}', resp.text.strip(), re.DOTALL)
         res = json.loads(m.group(0)) if m else {"reply": resp.text.strip()}
-        reply = res.get("reply", "Zu Befehl.")
-        audio = asyncio.run(make_voice(reply, res.get("voice_lang", "de")))
+        reply = res.get("reply", "Zu Befehl, Margil.")
+        audio = asyncio.run(make_voice(reply, "de"))
         return jsonify({
             "reply": reply,
             "copy_text": res.get("copy_text", ""),
