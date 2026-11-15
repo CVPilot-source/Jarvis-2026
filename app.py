@@ -15,7 +15,7 @@ app = Flask(__name__)
 ICAL_CACHE = {"ts": 0, "events": []}
 
 ICON_SVG = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="115" fill="#020408"/>
+  <rect width="512" height="512" rx="115" fill="#010306"/>
   <circle cx="256" cy="256" r="155" fill="none" stroke="#00f3ff" stroke-width="8" stroke-dasharray="16 10"/>
   <circle cx="256" cy="256" r="110" fill="none" stroke="#ff9900" stroke-width="5"/>
   <circle cx="256" cy="256" r="24" fill="#ff9900"/>
@@ -26,21 +26,21 @@ HTML_PAGE = """<!DOCTYPE html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#020408">
+    <meta name="theme-color" content="#010306">
     <link rel="manifest" href="/manifest.json">
     <title>NEO // ENTERPRISE OS - COMMAND CENTER</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Courier+New:wght@400;700&family=Inter:wght@400;500;600;700&display=swap');
 
         :root {
-            --bg-deep: #020408;
-            --hud-panel: rgba(3, 12, 26, 0.95);
+            --bg-deep: #010306;
+            --hud-panel: rgba(2, 9, 20, 0.96);
             --neon-cyan: #00f3ff;
             --neon-purple: #b000ff;
             --neon-orange: #ff9900;
             --text-main: #e0fbfc;
-            --text-dim: #7986ab;
-            --border-glow: rgba(0, 243, 255, 0.5);
+            --text-dim: #64748b;
+            --border-glow: rgba(0, 243, 255, 0.6);
         }
 
         * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
@@ -52,23 +52,23 @@ HTML_PAGE = """<!DOCTYPE html>
             font-family: 'Courier New', Courier, monospace;
         }
 
-        /* CRT / Scanline Overlay Effect for true Sci-Fi feel */
+        /* CRT Scanline & Vignette Effect for Cinematic Sci-Fi Vibe */
+        body::before {
+            content: " "; display: block; position: fixed; inset: 0;
+            background: radial-gradient(circle at 50% 50%, transparent 60%, rgba(0,0,0,0.85) 100%);
+            z-index: 998; pointer-events: none;
+        }
         body::after {
-            content: " ";
-            display: block;
-            position: fixed;
-            top: 0; left: 0; bottom: 0; right: 0;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
-            z-index: 999;
-            background-size: 100% 3px, 3px 100%;
-            pointer-events: none;
+            content: " "; display: block; position: fixed; inset: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.3) 50%);
+            z-index: 999; background-size: 100% 4px; pointer-events: none;
         }
 
         .desktop-view { display: none; width: 100vw; height: 100vh; }
         .mobile-view { display: block; width: 100vw; height: 100vh; overflow-y: auto; }
 
         @media (min-width: 1024px) {
-            .desktop-view { display: flex; flex-direction: column; justify-content: space-between; padding: 10px; }
+            .desktop-view { display: flex; flex-direction: column; justify-content: space-between; padding: 12px; }
             .mobile-view { display: none; }
         }
 
@@ -117,35 +117,33 @@ HTML_PAGE = """<!DOCTYPE html>
             margin-top: 8px; cursor: pointer; text-align: center; text-decoration: none; font-size: 11px;
         }
 
-        /* ================= DESKTOP VIEW (TRUE SCI-FI HUD COMMAND CENTER) ================= */
+        /* ================= DESKTOP VIEW (ADVANCED CURVED 3D HUD COMMAND CENTER) ================= */
+        .curved-monitor-frame {
+            flex: 1; display: flex; flex-direction: column; justify-content: space-between;
+            border: 2px solid rgba(0, 243, 255, 0.4); border-radius: 16px; padding: 12px;
+            background: radial-gradient(circle at 50% 50%, rgba(2, 14, 30, 0.9) 0%, rgba(1, 3, 6, 0.98) 100%);
+            box-shadow: inset 0 0 60px rgba(0, 243, 255, 0.15), 0 0 40px rgba(0, 243, 255, 0.2);
+            position: relative; overflow: hidden; margin: 4px;
+        }
+
         .hud-header {
             display: flex; justify-content: space-between; align-items: center;
             background: var(--hud-panel); border: 1px solid var(--border-glow);
-            padding: 8px 20px; border-radius: 4px; backdrop-filter: blur(15px);
-            box-shadow: 0 0 25px rgba(0, 243, 255, 0.25);
-            position: relative;
-        }
-        .hud-header::before {
-            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 2px;
-            background: linear-gradient(90deg, transparent, var(--neon-cyan), transparent);
+            padding: 8px 18px; border-radius: 6px; box-shadow: 0 0 20px rgba(0, 243, 255, 0.2);
         }
         .hud-header h1 { font-size: 13px; color: var(--neon-cyan); letter-spacing: 3px; margin: 0; }
 
         .hud-main-grid {
             display: grid;
-            grid-template-columns: 310px 1fr 310px;
-            gap: 10px; flex: 1; margin: 8px 0; align-items: stretch;
+            grid-template-columns: 290px 1fr 290px;
+            gap: 12px; flex: 1; margin: 8px 0; align-items: stretch;
         }
 
         .hud-box {
             background: var(--hud-panel); border: 1px solid var(--border-glow);
-            border-radius: 6px; padding: 12px; backdrop-filter: blur(15px);
-            box-shadow: inset 0 0 15px rgba(0, 243, 255, 0.08), 0 0 20px rgba(0, 243, 255, 0.1);
+            border-radius: 8px; padding: 12px;
+            box-shadow: inset 0 0 20px rgba(0, 243, 255, 0.08);
             display: flex; flex-direction: column; gap: 8px; position: relative;
-        }
-        .hud-box::after {
-            content: ''; position: absolute; bottom: 0; right: 0; width: 10px; height: 10px;
-            border-right: 2px solid var(--neon-cyan); border-bottom: 2px solid var(--neon-cyan);
         }
         .hud-box h3 {
             font-size: 10px; color: var(--neon-orange); margin: 0;
@@ -153,65 +151,65 @@ HTML_PAGE = """<!DOCTYPE html>
             text-transform: uppercase;
         }
 
-        /* Central Holographic Stage with Dense Node Network */
+        /* Central Holographic Stage with Dense Node Constellation */
         .hud-center-stage {
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            position: relative; background: radial-gradient(circle, rgba(0,243,255,0.1) 0%, rgba(176,0,255,0.04) 60%, transparent 90%);
-            border: 1px solid var(--border-glow); border-radius: 6px; padding: 15px; overflow: hidden;
-            box-shadow: inset 0 0 30px rgba(0,243,255,0.15);
+            position: relative; background: radial-gradient(circle, rgba(0,243,255,0.12) 0%, rgba(176,0,255,0.05) 60%, transparent 90%);
+            border: 1px solid var(--border-glow); border-radius: 8px; padding: 15px; overflow: hidden;
+            box-shadow: inset 0 0 40px rgba(0,243,255,0.2);
         }
 
         .node-svg-overlay {
-            position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; opacity: 0.8;
+            position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; opacity: 0.85;
         }
 
         .hud-core-ring {
-            width: 150px; height: 150px;
-            background: radial-gradient(circle, var(--neon-cyan) 0%, rgba(176,0,255,0.45) 65%, transparent 100%);
-            border-radius: 50%; box-shadow: 0 0 60px var(--neon-cyan);
+            width: 145px; height: 145px;
+            background: radial-gradient(circle, var(--neon-cyan) 0%, rgba(176,0,255,0.5) 65%, transparent 100%);
+            border-radius: 50%; box-shadow: 0 0 70px var(--neon-cyan);
             display: flex; align-items: center; justify-content: center;
             animation: pulseCore 4s infinite alternate; cursor: pointer; z-index: 3;
             border: 3px solid var(--neon-cyan); position: relative;
         }
-        .hud-core-ring span { font-weight: bold; color: #020408; font-size: 13px; letter-spacing: 2px; }
+        .hud-core-ring span { font-weight: bold; color: #010306; font-size: 13px; letter-spacing: 2px; }
 
         .hologram-orbit {
             display: flex; gap: 8px; margin-top: 15px; z-index: 3; flex-wrap: wrap; justify-content: center;
         }
         .orbit-node {
-            background: rgba(3, 12, 26, 0.9); border: 1px solid var(--neon-cyan);
-            padding: 6px 12px; border-radius: 4px; font-size: 10px; color: var(--neon-cyan);
+            background: rgba(2, 9, 20, 0.95); border: 1px solid var(--neon-cyan);
+            padding: 6px 12px; border-radius: 6px; font-size: 10px; color: var(--neon-cyan);
             cursor: pointer; transition: 0.3s; letter-spacing: 1px;
-            box-shadow: 0 0 12px rgba(0,243,255,0.25);
+            box-shadow: 0 0 15px rgba(0,243,255,0.3);
         }
         .orbit-node:hover {
-            background: var(--neon-cyan); color: #020408; box-shadow: 0 0 25px var(--neon-cyan);
+            background: var(--neon-cyan); color: #010306; box-shadow: 0 0 30px var(--neon-cyan);
         }
 
         /* Telemetry Graphs */
         .telemetry-graph {
-            width: 100%; height: 42px; background: rgba(0,0,0,0.5); border: 1px solid rgba(0,243,255,0.3);
+            width: 100%; height: 45px; background: rgba(0,0,0,0.6); border: 1px solid rgba(0,243,255,0.35);
             border-radius: 4px; position: relative; overflow: hidden; display: flex; align-items: flex-end; padding: 2px;
         }
         .wave-line {
-            stroke: var(--neon-cyan); stroke-width: 1.5; fill: none; filter: drop-shadow(0 0 5px var(--neon-cyan));
+            stroke: var(--neon-cyan); stroke-width: 1.8; fill: none; filter: drop-shadow(0 0 6px var(--neon-cyan));
         }
 
         .hud-footer {
             background: var(--hud-panel); border: 1px solid var(--border-glow);
-            padding: 6px 20px; border-radius: 4px; display: flex; justify-content: space-between;
+            padding: 6px 18px; border-radius: 6px; display: flex; justify-content: space-between;
             align-items: center; font-size: 10px; color: var(--text-dim);
         }
 
         /* MODAL */
         .modal {
-            display: none; position: fixed; inset: 0; background: rgba(2,4,8,0.9);
-            backdrop-filter: blur(10px); z-index: 1000; align-items: center; justify-content: center; padding: 15px;
+            display: none; position: fixed; inset: 0; background: rgba(1,3,6,0.92);
+            backdrop-filter: blur(12px); z-index: 1000; align-items: center; justify-content: center; padding: 15px;
         }
         .modal-content {
             background: var(--hud-panel); border: 1px solid var(--neon-cyan);
-            padding: 20px; border-radius: 8px; width: 100%; max-width: 440px;
-            box-shadow: 0 0 50px rgba(0,243,255,0.4);
+            padding: 22px; border-radius: 10px; width: 100%; max-width: 440px;
+            box-shadow: 0 0 60px rgba(0,243,255,0.45);
         }
         .close-modal { float: right; color: var(--neon-orange); cursor: pointer; font-weight: bold; font-size: 16px; }
     </style>
@@ -269,95 +267,97 @@ HTML_PAGE = """<!DOCTYPE html>
     </div>
 
 
-    <!-- ================= DESKTOP VIEW (HOLOGRAPHIC COMMAND CENTER) ================= -->
+    <!-- ================= DESKTOP VIEW (CURVED SCI-FI COMMAND CENTER) ================= -->
     <div class="desktop-view">
-        <header class="hud-header">
-            <h1>NEO // ENTERPRISE OS - COMMAND CENTER</h1>
-            <div style="font-size: 10px; color: var(--text-dim); font-family: 'Courier New', monospace;">
-                OPERATOR: <span style="color: var(--neon-cyan);">MARGIL MOLLAJ (WISAG HAMBURG)</span> | DATE: <span id="pc-date">--.--.----</span> | WEATHER: <span style="color: var(--neon-cyan);" id="pc-weather">Hamburg 14°C</span>
-            </div>
-        </header>
-
-        <div class="hud-main-grid">
-            <!-- Left Panel: Operations & Logs -->
-            <div class="hud-box">
-                <h3>Operations & Field Data</h3>
-                <div style="font-size: 9.5px; color: var(--text-dim); background: rgba(0,0,0,0.6); padding: 6px; border-radius: 4px; height: 95px; overflow-y: hidden; font-family: monospace; border: 1px solid rgba(0,243,255,0.15);">
-                    [SYSTEM] Sektor Hamburg-Nord aktiv.<br>
-                    [OBJECT] HafenCity Objekt 1045 geprüft.<br>
-                    [SECURITY] Torcodes verschlüsselt gesichert.<br>
-                    [TELEMETRY] Verbindung stabil (0.04ms).
+        <div class="curved-monitor-frame">
+            <header class="hud-header">
+                <h1>NEO // ENTERPRISE OS - COMMAND CENTER</h1>
+                <div style="font-size: 10px; color: var(--text-dim); font-family: 'Courier New', monospace;">
+                    OPERATOR: <span style="color: var(--neon-cyan);">MARGIL MOLLAJ (WISAG HAMBURG)</span> | DATE: <span id="pc-date">--.--.----</span> | WEATHER: <span style="color: var(--neon-cyan);" id="pc-weather">Hamburg 14°C</span>
                 </div>
-                
-                <h3>System Schematic</h3>
-                <div style="background: rgba(0,0,0,0.4); padding: 6px; border-radius: 4px; border-left: 2px solid var(--neon-cyan); cursor: pointer;" onclick="openModal('Morning Briefing', 'Objekte in Hamburg-Nord & Altona. Fokus auf Tiefenreinigung HafenCity.')">
-                    <strong style="font-size: 10px; color: var(--neon-cyan);">Hamburg-Nord / Altona</strong>
-                    <p style="font-size: 9.5px; color: var(--text-dim); margin: 2px 0 0 0;">5 Objekte zugewiesen.</p>
+            </header>
+
+            <div class="hud-main-grid">
+                <!-- Left Panel: Operations & Logs -->
+                <div class="hud-box">
+                    <h3>Operations & Field Data</h3>
+                    <div style="font-size: 9.5px; color: var(--text-dim); background: rgba(0,0,0,0.7); padding: 6px; border-radius: 4px; height: 95px; overflow-y: hidden; font-family: monospace; border: 1px solid rgba(0,243,255,0.2);">
+                        [SYSTEM] Sektor Hamburg-Nord aktiv.<br>
+                        [OBJECT] HafenCity Objekt 1045 geprüft.<br>
+                        [SECURITY] Torcodes verschlüsselt gesichert.<br>
+                        [TELEMETRY] Verbindung stabil (0.04ms).
+                    </div>
+                    
+                    <h3>System Schematic</h3>
+                    <div style="background: rgba(0,0,0,0.5); padding: 6px; border-radius: 4px; border-left: 2px solid var(--neon-cyan); cursor: pointer;" onclick="openModal('Morning Briefing', 'Objekte in Hamburg-Nord & Altona. Fokus auf Tiefenreinigung HafenCity.')">
+                        <strong style="font-size: 10px; color: var(--neon-cyan);">Hamburg-Nord / Altona</strong>
+                        <p style="font-size: 9.5px; color: var(--text-dim); margin: 2px 0 0 0;">5 Objekte zugewiesen.</p>
+                    </div>
+
+                    <h3>Live Telemetry</h3>
+                    <div class="telemetry-graph">
+                        <svg width="100%" height="100%" viewBox="0 0 200 40" preserveAspectRatio="none">
+                            <path class="wave-line" d="M0,20 Q25,2 50,25 T100,10 T150,30 T200,15" />
+                        </svg>
+                    </div>
                 </div>
 
-                <h3>Live Telemetry</h3>
-                <div class="telemetry-graph">
-                    <svg width="100%" height="100%" viewBox="0 0 200 40" preserveAspectRatio="none">
-                        <path class="wave-line" d="M0,20 Q25,5 50,25 T100,15 T150,30 T200,10" />
+                <!-- Central Holographic Stage with Node Constellation -->
+                <div class="hud-center-stage">
+                    <svg class="node-svg-overlay" viewBox="0 0 600 400" preserveAspectRatio="none">
+                        <line x1="300" y1="200" x2="70" y2="60" stroke="#00f3ff" stroke-width="1.5" stroke-dasharray="4 4" opacity="0.8"/>
+                        <line x1="300" y1="200" x2="530" y2="60" stroke="#00f3ff" stroke-width="1.5" stroke-dasharray="4 4" opacity="0.8"/>
+                        <line x1="300" y1="200" x2="70" y2="340" stroke="#ff9900" stroke-width="1.5" stroke-dasharray="4 4" opacity="0.8"/>
+                        <line x1="300" y1="200" x2="530" y2="340" stroke="#ff9900" stroke-width="1.5" stroke-dasharray="4 4" opacity="0.8"/>
+                        <circle cx="70" cy="60" r="5" fill="#00f3ff"/><circle cx="530" cy="60" r="5" fill="#00f3ff"/>
+                        <circle cx="70" cy="340" r="5" fill="#ff9900"/><circle cx="530" cy="340" r="5" fill="#ff9900"/>
                     </svg>
+
+                    <div style="position: absolute; top: 6px; font-size: 9.5px; color: var(--text-dim); letter-spacing: 2px;" id="pc-status-text">NEURAL NODE CONSTELLATION // ACTIVE</div>
+                    
+                    <div class="hud-core-ring" onclick="toggleListening()">
+                        <span>NEO CORE</span>
+                    </div>
+
+                    <div class="hologram-orbit">
+                        <div class="orbit-node" onclick="openModal('Angebots-Rechner', 'Tarif: 31.50 €/h aktiv. Berechnungen in Echtzeit für Hamburg.')">Angebots-Rechner</div>
+                        <div class="orbit-node" onclick="openModal('WhatsApp Direct', 'Direktverbindung zu Hausverwaltung & Kunden aktiv.')">WhatsApp Direct</div>
+                        <div class="orbit-node" onclick="openModal('Field Inspector', 'Mängelberichte & Sonderreinigung Dokumentation.')">Field Inspector</div>
+                        <div class="orbit-node" onclick="openModal('Outlook Sync', 'Verbindung mit margil.mollaj@wisag.de gesichert.')">Outlook Sync</div>
+                    </div>
+                </div>
+
+                <!-- Right Panel: Sales & Telemetry Graphs -->
+                <div class="hud-box">
+                    <h3>Sales & Bidding Engine</h3>
+                    <p style="font-size: 10px; color: var(--text-dim); margin:0;">Standard Tarif: <strong style="color:var(--neon-orange);">31.50 €/h</strong></p>
+                    
+                    <div style="background: rgba(0,0,0,0.6); padding: 6px; border-radius: 4px; border: 1px solid var(--border-glow);">
+                        <label style="font-size: 9.5px; color: var(--text-dim);">Fläche in m²:</label>
+                        <input type="number" id="pc-area" value="300" oninput="calculatePrice('pc-area', 'pc-total')" style="width:100%; background:#010306; border:1px solid var(--neon-cyan); color:#fff; padding:4px; border-radius:3px; font-size:10px; margin-top:2px;">
+                        <div id="pc-total" style="font-size:10px; color:var(--neon-orange); font-weight:bold; margin-top:3px;">Gesamt: 9,450.00 € netto</div>
+                        <button class="action-btn" style="margin-top:4px; padding:5px; font-size:10px;" onclick="sendWhatsApp('pc-area', 'pc-total')">WhatsApp Angebot</button>
+                    </div>
+
+                    <h3>Network Latency</h3>
+                    <div class="telemetry-graph">
+                        <svg width="100%" height="100%" viewBox="0 0 200 40" preserveAspectRatio="none">
+                            <path class="wave-line" stroke="#ff9900" d="M0,30 Q30,5 60,20 T120,5 T180,35 T200,15" />
+                        </svg>
+                    </div>
+
+                    <div style="font-size: 9.5px; color: var(--text-dim); background: rgba(0,0,0,0.5); padding: 4px; border-radius: 3px; border: 1px solid rgba(0,243,255,0.15);">
+                        Uptime: 99.9% // Node Secure
+                    </div>
                 </div>
             </div>
 
-            <!-- Central Holographic Stage with Node Network -->
-            <div class="hud-center-stage">
-                <svg class="node-svg-overlay" viewBox="0 0 600 400" preserveAspectRatio="none">
-                    <line x1="300" y1="200" x2="80" y2="70" stroke="#00f3ff" stroke-width="1.2" stroke-dasharray="4 4" opacity="0.7"/>
-                    <line x1="300" y1="200" x2="520" y2="70" stroke="#00f3ff" stroke-width="1.2" stroke-dasharray="4 4" opacity="0.7"/>
-                    <line x1="300" y1="200" x2="80" y2="330" stroke="#ff9900" stroke-width="1.2" stroke-dasharray="4 4" opacity="0.7"/>
-                    <line x1="300" y1="200" x2="520" y2="330" stroke="#ff9900" stroke-width="1.2" stroke-dasharray="4 4" opacity="0.7"/>
-                    <circle cx="80" cy="70" r="5" fill="#00f3ff"/><circle cx="520" cy="70" r="5" fill="#00f3ff"/>
-                    <circle cx="80" cy="330" r="5" fill="#ff9900"/><circle cx="520" cy="330" r="5" fill="#ff9900"/>
-                </svg>
-
-                <div style="position: absolute; top: 6px; font-size: 9.5px; color: var(--text-dim); letter-spacing: 2px;" id="pc-status-text">NEURAL NODE CONSTELLATION // ACTIVE</div>
-                
-                <div class="hud-core-ring" onclick="toggleListening()">
-                    <span>NEO CORE</span>
-                </div>
-
-                <div class="hologram-orbit">
-                    <div class="orbit-node" onclick="openModal('Angebots-Rechner', 'Tarif: 31.50 €/h aktiv. Berechnungen in Echtzeit für Hamburg.')">Angebots-Rechner</div>
-                    <div class="orbit-node" onclick="openModal('WhatsApp Direct', 'Direktverbindung zu Hausverwaltung & Kunden aktiv.')">WhatsApp Direct</div>
-                    <div class="orbit-node" onclick="openModal('Field Inspector', 'Mängelberichte & Sonderreinigung Dokumentation.')">Field Inspector</div>
-                    <div class="orbit-node" onclick="openModal('Outlook Sync', 'Verbindung mit margil.mollaj@wisag.de gesichert.')">Outlook Sync</div>
-                </div>
-            </div>
-
-            <!-- Right Panel: Sales & Telemetry Graphs -->
-            <div class="hud-box">
-                <h3>Sales & Bidding Engine</h3>
-                <p style="font-size: 10px; color: var(--text-dim); margin:0;">Standard Tarif: <strong style="color:var(--neon-orange);">31.50 €/h</strong></p>
-                
-                <div style="background: rgba(0,0,0,0.5); padding: 6px; border-radius: 4px; border: 1px solid var(--border-glow);">
-                    <label style="font-size: 9.5px; color: var(--text-dim);">Fläche in m²:</label>
-                    <input type="number" id="pc-area" value="300" oninput="calculatePrice('pc-area', 'pc-total')" style="width:100%; background:#020408; border:1px solid var(--neon-cyan); color:#fff; padding:4px; border-radius:3px; font-size:10px; margin-top:2px;">
-                    <div id="pc-total" style="font-size:10px; color:var(--neon-orange); font-weight:bold; margin-top:3px;">Gesamt: 9,450.00 € netto</div>
-                    <button class="action-btn" style="margin-top:4px; padding:5px; font-size:10px;" onclick="sendWhatsApp('pc-area', 'pc-total')">WhatsApp Angebot</button>
-                </div>
-
-                <h3>Network Latency</h3>
-                <div class="telemetry-graph">
-                    <svg width="100%" height="100%" viewBox="0 0 200 40" preserveAspectRatio="none">
-                        <path class="wave-line" stroke="#ff9900" d="M0,30 Q30,10 60,25 T120,10 T180,35 T200,20" />
-                    </svg>
-                </div>
-
-                <div style="font-size: 9.5px; color: var(--text-dim); background: rgba(0,0,0,0.4); padding: 4px; border-radius: 3px; border: 1px solid rgba(0,243,255,0.1);">
-                    Uptime: 99.9% // Node Secure
-                </div>
-            </div>
+            <footer class="hud-footer">
+                <span>STATUS: ONLINE // WESER-EMS SECTOR</span>
+                <span>„Hey Neo“ Voice Assistant Ready</span>
+                <span>RENDER CLOUD HOSTED</span>
+            </footer>
         </div>
-
-        <footer class="hud-footer">
-            <span>STATUS: ONLINE // WESER-EMS SECTOR</span>
-            <span>„Hey Neo“ Voice Assistant Ready</span>
-            <span>RENDER CLOUD HOSTED</span>
-        </footer>
     </div>
 
     <!-- Generic Modal -->
@@ -541,8 +541,8 @@ def manifest():
         "short_name": "NEO",
         "start_url": "/",
         "display": "standalone",
-        "background_color": "#020408",
-        "theme_color": "#020408",
+        "background_color": "#010306",
+        "theme_color": "#010306",
         "icons": [{"src": "/icon.svg", "sizes": "any", "type": "image/svg+xml"}]
     })
 
