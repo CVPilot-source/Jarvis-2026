@@ -31,7 +31,7 @@ HTML_PAGE = """<!DOCTYPE html>
     <style>
         :root {
             --bg-deep: #050811;
-            --panel-bg: rgba(18, 20, 28, 0.9);
+            --panel-bg: rgba(18, 20, 28, 0.95);
             --neon-cyan: #00f3ff;
             --neon-orange: #ff9900;
             --text-main: #f8fafc;
@@ -104,7 +104,7 @@ HTML_PAGE = """<!DOCTYPE html>
             align-items: center;
         }
 
-        .card p, .card div {
+        .card p, .card div, .card label {
             font-size: 12px;
             color: var(--text-dim);
         }
@@ -117,8 +117,10 @@ HTML_PAGE = """<!DOCTYPE html>
             padding: 8px 10px;
             border-radius: 6px;
             font-size: 13px;
-            margin-top: 5px;
+            margin-top: 4px;
+            outline: none;
         }
+        input:focus, select:focus { border-color: var(--neon-cyan); }
 
         .btn {
             background: linear-gradient(135deg, var(--neon-orange), #ff5500);
@@ -191,10 +193,23 @@ HTML_PAGE = """<!DOCTYPE html>
             </div>
 
             <div class="card">
-                <h3><span>💰 ANGEBOTS-RECHNER</span> <span style="color:var(--neon-orange);">31.50 €/h</span></h3>
+                <h3><span>💰 ANGEBOTS-RECHNER</span> <span style="color:var(--neon-orange);">Eigener Preis</span></h3>
                 <label>Fläche in m²:</label>
                 <input type="number" id="calcArea" value="300" oninput="calculate()">
-                <div id="calcTotal" style="font-size: 13px; color: var(--neon-orange); font-weight: bold; margin-top: 5px;">Gesamt: 9,450.00 € netto</div>
+                
+                <label>Stundensatz (€/h):</label>
+                <input type="number" step="0.5" id="calcRate" value="31.50" oninput="calculate()">
+                
+                <label>Frequenz pro Woche:</label>
+                <select id="calcFreq" onchange="calculate()">
+                    <option value="1">1x pro Woche</option>
+                    <option value="2">2x pro Woche</option>
+                    <option value="3">3x pro Woche</option>
+                    <option value="4" selected>4x pro Woche</option>
+                    <option value="5">5x pro Woche</option>
+                </select>
+
+                <div id="calcTotal" style="font-size: 13px; color: var(--neon-orange); font-weight: bold; margin-top: 5px;">Monatlich: 0.00 € netto</div>
                 <button class="btn" onclick="sendWhatsApp()">Angebot via WhatsApp senden</button>
             </div>
 
@@ -230,15 +245,24 @@ HTML_PAGE = """<!DOCTYPE html>
             });
 
         function calculate() {
-            const area = document.getElementById('calcArea').value;
-            const total = area * 31.50;
-            document.getElementById('calcTotal').innerText = `Gesamt: ${total.toLocaleString('de-DE', {minimumFractionDigits: 2})} € netto`;
+            const area = parseFloat(document.getElementById('calcArea').value) || 0;
+            const rate = parseFloat(document.getElementById('calcRate').value) || 0;
+            const freq = parseInt(document.getElementById('calcFreq').value) || 1;
+            
+            // WISAG Formel: (Fläche / 350 m² pro Stunde) * Frequenz * 4.33 Wochen * Stundensatz
+            const monthlyHours = (area / 350) * freq * 4.33;
+            const total = monthlyHours * rate;
+            document.getElementById('calcTotal').innerText = `Monatlich: ${total.toLocaleString('de-DE', {minimumFractionDigits: 2, maximumFractionDigits: 2})} € netto`;
         }
+
+        window.onload = calculate;
 
         function sendWhatsApp() {
             const area = document.getElementById('calcArea').value;
+            const rate = document.getElementById('calcRate').value;
+            const freqText = document.getElementById('calcFreq').options[document.getElementById('calcFreq').selectedIndex].text;
             const total = document.getElementById('calcTotal').innerText;
-            const text = encodeURIComponent(`Guten Tag, hier ist das Angebot der WISAG für Ihre Fläche (${area} m²): ${total} (Basis 31.50 €/h). Mit freundlichen Grüßen, Margil Mollaj`);
+            const text = encodeURIComponent(`Guten Tag, hier ist das Angebot der WISAG für Ihre Fläche (${area} m² bei ${freqText}, Stundensatz: ${rate} €/h): ${total}. Mit freundlichen Grüßen, Margil Mollaj`);
             window.open(`https://wa.me/?text=${text}`, '_blank');
         }
 
