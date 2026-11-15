@@ -67,6 +67,13 @@ HTML_PAGE = """<!DOCTYPE html>
         .brand { display: flex; align-items: center; gap: 12px; }
         .brand-logo { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 12px var(--accent); }
         .brand-name { font-weight: 700; font-size: 15px; letter-spacing: 1px; color: #fff; }
+        
+        .header-info { display: flex; align-items: center; gap: 16px; }
+        .live-clock {
+            font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--accent);
+            background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.2);
+            padding: 5px 12px; border-radius: 8px;
+        }
         .status-pill {
             display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.03);
             border: 1px solid var(--card-border); padding: 6px 14px; border-radius: 20px;
@@ -103,6 +110,7 @@ HTML_PAGE = """<!DOCTYPE html>
             font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 500;
             text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted);
             border-bottom: 1px solid var(--card-border); padding-bottom: 8px;
+            display: flex; justify-content: space-between; align-items: center;
         }
         .nav-card {
             background: rgba(255,255,255,0.015);
@@ -121,7 +129,7 @@ HTML_PAGE = """<!DOCTYPE html>
         .nav-card-title { font-weight: 600; font-size: 14px; color: #fff; display: flex; justify-content: space-between; align-items: center; }
         .nav-card-desc { font-size: 12.5px; color: var(--muted); line-height: 1.4; }
 
-        /* CENTER CORE ORB */
+        /* CENTER CORE */
         .core-display {
             background: linear-gradient(180deg, #12141C 0%, #0D0F17 100%);
             border: 1px solid var(--card-border);
@@ -138,9 +146,9 @@ HTML_PAGE = """<!DOCTYPE html>
 
         /* MINIMALIST PULSING ORB */
         .neural-orb-container {
-            width: 180px; height: 180px;
+            width: 170px; height: 170px;
             display: flex; align-items: center; justify-content: center;
-            cursor: pointer; position: relative; margin: 20px 0;
+            cursor: pointer; position: relative; margin: 15px 0;
         }
         .orb-ring {
             position: absolute; inset: 0; border-radius: 50%;
@@ -149,7 +157,7 @@ HTML_PAGE = """<!DOCTYPE html>
         }
         .orb-ring:nth-child(2) { inset: -15px; opacity: 0.15; animation-delay: 1s; }
         .orb-core {
-            width: 90px; height: 90px; border-radius: 50%;
+            width: 85px; height: 85px; border-radius: 50%;
             background: radial-gradient(circle, var(--accent) 0%, rgba(56,189,248,0.2) 60%, transparent 100%);
             box-shadow: 0 0 40px var(--accent-glow);
             transition: all 0.3s ease;
@@ -160,8 +168,8 @@ HTML_PAGE = """<!DOCTYPE html>
             100% { transform: scale(0.95); opacity: 0.2; }
         }
 
-        .core-prompt { font-size: 18px; font-weight: 600; color: #fff; margin-bottom: 8px; }
-        .core-sub { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--muted); margin-bottom: 24px; }
+        .core-prompt { font-size: 18px; font-weight: 600; color: #fff; margin-bottom: 6px; }
+        .core-sub { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--muted); margin-bottom: 20px; }
         
         .primary-btn {
             background: #fff; color: #090A0F; border: none;
@@ -174,7 +182,7 @@ HTML_PAGE = """<!DOCTYPE html>
         .activity-log {
             width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--card-border);
             border-radius: 8px; padding: 12px 16px; font-family: 'JetBrains Mono', monospace;
-            font-size: 11.5px; color: var(--accent); text-align: left; margin-top: 24px;
+            font-size: 11.5px; color: var(--accent); text-align: left; margin-top: 20px;
         }
 
         /* MODAL */
@@ -211,20 +219,23 @@ HTML_PAGE = """<!DOCTYPE html>
             <div class="brand-logo"></div>
             <span class="brand-name">NEO // ENTERPRISE OS</span>
         </div>
-        <div class="status-pill">
-            <div class="status-dot"></div>
-            <span>HAMBURG • READY</span>
+        <div class="header-info">
+            <div class="live-clock" id="liveClockDisplay">--:--:--</div>
+            <div class="status-pill">
+                <div class="status-dot"></div>
+                <span>HAMBURG ACTIVE</span>
+            </div>
         </div>
     </header>
 
     <div class="app-container">
         <!-- LEFT PANEL -->
         <div class="panel">
-            <div class="section-title">Workspace Operations</div>
+            <div class="section-title"><span>Operations</span> <span id="eventCountBadge" style="color:var(--accent);">0 Termine</span></div>
             
             <div class="nav-card" onclick="quickCmd('Gib mir mein Morning Briefing mit Terminen heute.')">
                 <div class="nav-card-title"><span>☀️ Morning Brief</span> <span style="font-size:10px; color:var(--accent);">API</span></div>
-                <div class="nav-card-desc">Tagesübersicht und Termine in Hamburg.</div>
+                <div class="nav-card-desc">Tagesübersicht und Einsätze in Hamburg.</div>
             </div>
 
             <div class="nav-card" onclick="openModal('calendar')">
@@ -233,7 +244,7 @@ HTML_PAGE = """<!DOCTYPE html>
             </div>
 
             <div class="nav-card" onclick="openModal('codes')">
-                <div class="nav-card-title"><span>🔐 Objekt-Codes</span> <span style="font-size:10px; color:var(--orange);">SECURE</span></div>
+                <div class="nav-card-title"><span>🔐 Objekt-Codes</span> <span id="codeCountBadge" style="font-size:10px; color:var(--orange);">0 Codes</span></div>
                 <div class="nav-card-desc">Sichere Notizen und Zugangscodes.</div>
             </div>
         </div>
@@ -254,17 +265,17 @@ HTML_PAGE = """<!DOCTYPE html>
             <button class="primary-btn" onclick="toggleListening()">Sprachbefehl starten</button>
 
             <div class="activity-log" id="activityLog">
-                > System initialisiert. Bereit für Befehle...
+                > System initialisiert. Bereit për Befehle...
             </div>
         </div>
 
         <!-- RIGHT PANEL -->
         <div class="panel">
-            <div class="section-title">Business & Tools</div>
+            <div class="section-title"><span>Business Tools</span> <span style="color:var(--success);">31.50 €/h</span></div>
 
             <div class="nav-card" onclick="openModal('calc')">
                 <div class="nav-card-title"><span>📐 Angebots-Rechner</span> <span style="font-size:10px; color:var(--accent);">PRO</span></div>
-                <div class="nav-card-desc">Kalkulation (31,50 €/Std) für Kunden.</div>
+                <div class="nav-card-desc">Kalkulation für Kunden in Hamburg.</div>
             </div>
 
             <div class="nav-card" onclick="document.getElementById('cam').click()">
@@ -294,6 +305,16 @@ HTML_PAGE = """<!DOCTYPE html>
     <audio id="audioPlayer" playsinline></audio>
 
     <script>
+        // LIVE CLOCK SCRIPT
+        function updateClock() {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('de-DE');
+            const dateStr = now.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' });
+            document.getElementById('liveClockDisplay').innerText = `${dateStr}, ${timeStr}`;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
         let isRecording = false, isSpeaking = false, inConversation = false;
         let mediaRecorder = null, audioStream = null, wakeRecognition = null;
         let eventsCache = [];
@@ -302,8 +323,13 @@ HTML_PAGE = """<!DOCTYPE html>
         const coreSub = document.getElementById('coreSub');
         const activityLog = document.getElementById('activityLog');
 
-        fetch('/calendar_preview').then(r => r.json()).then(d => { eventsCache = d.events || []; }).catch(()=>{});
+        fetch('/calendar_preview').then(r => r.json()).then(d => { 
+            eventsCache = d.events || []; 
+            document.getElementById('eventCountBadge').innerText = eventsCache.length + " Termine";
+        }).catch(()=>{});
+
         let localMemory = JSON.parse(localStorage.getItem('neo_memory') || '[]');
+        document.getElementById('codeCountBadge').innerText = localMemory.length + " Codes";
 
         function logActivity(text) {
             activityLog.innerText = "> " + text;
@@ -322,8 +348,8 @@ HTML_PAGE = """<!DOCTYPE html>
                     : '<div style="color:var(--muted);">Keine Termine gefunden.</div>';
             } else if (type === 'codes') {
                 title.innerText = `OBJEKT-CODES (${localMemory.length})`;
-                let list = localMemory.length ? localMemory.map((x, i) => `<div class="modal-row" style="display:flex; justify-content:space-between; align-items:center;"><span>${x}</span><button onclick="localMemory.splice(${i},1);localStorage.setItem('neo_memory',JSON.stringify(localMemory));openModal('codes');" style="background:none;border:none;color:var(--muted);cursor:pointer;">✕</button></div>`).join('') : '<div style="color:var(--muted);">Keine Codes gespeichert.</div>';
-                body.innerHTML = `<div style="display:flex; gap:8px; margin-bottom:4px;"><input id="inputCode" type="text" placeholder="Neuer Code..." style="flex:1;"><button class="primary-btn" onclick="if(document.getElementById('inputCode').value.trim()){localMemory.push(document.getElementById('inputCode').value.trim());localStorage.setItem('neo_memory',JSON.stringify(localMemory));openModal('codes');}">Speichern</button></div>` + list;
+                let list = localMemory.length ? localMemory.map((x, i) => `<div class="modal-row" style="display:flex; justify-content:space-between; align-items:center;"><span>${x}</span><button onclick="localMemory.splice(${i},1);localStorage.setItem('neo_memory',JSON.stringify(localMemory));document.getElementById('codeCountBadge').innerText = localMemory.length + ' Codes';openModal('codes');" style="background:none;border:none;color:var(--muted);cursor:pointer;">✕</button></div>`).join('') : '<div style="color:var(--muted);">Keine Codes gespeichert.</div>';
+                body.innerHTML = `<div style="display:flex; gap:8px; margin-bottom:4px;"><input id="inputCode" type="text" placeholder="Neuer Code..." style="flex:1;"><button class="primary-btn" onclick="if(document.getElementById('inputCode').value.trim()){localMemory.push(document.getElementById('inputCode').value.trim());localStorage.setItem('neo_memory',JSON.stringify(localMemory));document.getElementById('codeCountBadge').innerText = localMemory.length + ' Codes';openModal('codes');}">Speichern</button></div>` + list;
             } else if (type === 'calc') {
                 title.innerText = 'ANGEBOTS-KALKULATOR (31,50 €/Std)';
                 body.innerHTML = `<div style="display:flex; flex-direction:column; gap:12px;">
@@ -435,7 +461,11 @@ HTML_PAGE = """<!DOCTYPE html>
                 const data = await res.json();
                 if (data.error) { inConversation = false; resetState(); logActivity("Fehler: " + data.error); startWakeWord(); return; }
                 if (data.end_conversation) inConversation = false;
-                if (data.new_memory) { localMemory.push(data.new_memory); localStorage.setItem('neo_memory', JSON.stringify(localMemory)); }
+                if (data.new_memory) { 
+                    localMemory.push(data.new_memory); 
+                    localStorage.setItem('neo_memory', JSON.stringify(localMemory)); 
+                    document.getElementById('codeCountBadge').innerText = localMemory.length + " Codes";
+                }
                 logActivity(data.reply || "Aktion erfolgreich abgeschlossen.");
                 if (data.audio) {
                     audioPlayer.src = "data:audio/mp3;base64," + data.audio;
@@ -576,6 +606,7 @@ def tg_notify():
 
 @app.route("/chat", methods=["POST"])
 def chat():
+    text_content = ""
     try:
         api_key = os.environ.get("GEMINI_API_KEY", "").strip()
         data = request.json or {}
@@ -589,10 +620,11 @@ def chat():
             temperature=0.3
         )
         resp = generate_with_fallback(client, parts, cfg)
+        text_content = resp.text.strip()
 
-        m = re.search(r'\{.*\}', resp.text.strip(), re.DOTALL)
-        res = json.loads(m.group(0)) if m else {"reply": resp.text.strip()}
-        reply = res.get("reply", "Zu Befehl, Margil.")
+        m = re.search(r'\{.*\}', text_content, re.DOTALL)
+        res = json.loads(m.group(0)) if m else {"reply": text_content}
+        reply = res.get("reply", text_content)
         audio = asyncio.run(make_voice(reply, "de"))
         return jsonify({
             "reply": reply,
@@ -604,7 +636,21 @@ def chat():
             "audio": audio
         })
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        # Fallback if AI didn't return pure JSON
+        try:
+            fallback_reply = text_content if text_content else "Zu Befehl, Margil."
+            audio = asyncio.run(make_voice(fallback_reply, "de"))
+            return jsonify({
+                "reply": fallback_reply,
+                "copy_text": "",
+                "new_memory": "",
+                "action_url": "",
+                "action_label": "",
+                "end_conversation": False,
+                "audio": audio
+            })
+        except Exception as inner_e:
+            return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
     app.run("0.0.0.0", port=int(os.environ.get("PORT", 5000)))
