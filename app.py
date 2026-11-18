@@ -249,7 +249,6 @@ HTML_PAGE = """<!DOCTYPE html>
             const rate = parseFloat(document.getElementById('calcRate').value) || 0;
             const freq = parseInt(document.getElementById('calcFreq').value) || 1;
             
-            // WISAG Formel: (Fläche / 350 m² pro Stunde) * Frequenz * 4.33 Wochen * Stundensatz
             const monthlyHours = (area / 350) * freq * 4.33;
             const total = monthlyHours * rate;
             document.getElementById('calcTotal').innerText = `Monatlich: ${total.toLocaleString('de-DE', {minimumFractionDigits: 2, maximumFractionDigits: 2})} € netto`;
@@ -300,13 +299,13 @@ HTML_PAGE = """<!DOCTYPE html>
                                 body: JSON.stringify({ audio: base64Audio, mode: "ARBEIT" })
                             });
                             const data = await res.json();
-                            if (data.reply) document.getElementById('statusText').innerText = "🎙️ " + data.reply;
+                            if (data.reply) statusEl.innerText = "🎙️ " + data.reply;
                             if (data.audio) {
                                 audioPlayer.src = "data:audio/mp3;base64," + data.audio;
                                 audioPlayer.play();
                             }
                         } catch(err) {
-                            document.getElementById('statusText').innerText = "❌ Fehler bei Verbindung";
+                            statusEl.innerText = "❌ Fehler bei Verbindung";
                         }
                         isListening = false;
                     };
@@ -315,7 +314,7 @@ HTML_PAGE = """<!DOCTYPE html>
                 setTimeout(() => { if (mediaRecorder.state === 'recording') mediaRecorder.stop(); }, 5000);
             } catch(e) {
                 isListening = false;
-                document.getElementById('statusText').innerText = "❌ Mikrofon gesperrt";
+                statusEl.innerText = "❌ Mikrofon gesperrt";
             }
         }
     </script>
