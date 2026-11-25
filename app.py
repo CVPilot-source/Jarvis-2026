@@ -204,6 +204,31 @@ HTML_PAGE = """
         .empty { color: var(--muted); font-size: 12px; margin: 0 0 18px; }
         .ok-btn { background: transparent; border: 1px solid var(--border-hi); color: var(--text); border-radius: 8px; width: 30px; height: 30px; cursor: pointer; flex-shrink: 0; }
 
+
+        /* Brain */
+        .brain-legend { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+        .lg { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--border); border-radius: 999px; padding: 4px 9px; font-size: 10.5px; color: var(--muted); }
+        .lg i { width: 7px; height: 7px; border-radius: 50%; display: block; }
+        .lg b { color: var(--text); font-weight: 600; }
+        .brain-wrap { position: relative; border: 1px solid var(--border); border-radius: 16px; background: radial-gradient(circle at 50% 50%, #151515 0%, #0A0A0A 70%); overflow: hidden; }
+        .brain-wrap svg { display: block; width: 100%; height: auto; }
+        .brain-wrap text { font-family: inherit; }
+        .bn-leaf { cursor: pointer; }
+        .bn-pulse { animation: bnp 3s ease-in-out infinite; transform-origin: 200px 200px; }
+        @keyframes bnp { 0%,100% { opacity: .55; } 50% { opacity: 1; } }
+        .brain-count { position: absolute; top: 10px; right: 12px; text-align: right; }
+        .brain-count b { font-size: 22px; font-weight: 600; display: block; line-height: 1; }
+        .brain-count span { font-size: 9.5px; color: var(--muted); letter-spacing: 1px; }
+        .brain-detail { border: 1px solid var(--border); border-radius: 14px; background: var(--card); padding: 12px; margin-top: 10px; font-size: 12.5px; line-height: 1.45; }
+        .brain-detail .gtag { display: flex; align-items: center; gap: 6px; font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+        .brain-detail .gtag i { width: 7px; height: 7px; border-radius: 50%; }
+        .links { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+        .links button { background: transparent; border: 1px solid var(--border-hi); color: var(--text); border-radius: 999px; padding: 4px 10px; font-size: 11px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+        .links button i { width: 6px; height: 6px; border-radius: 50%; }
+        .dump { display: flex; align-items: center; gap: 8px; border: 1px solid var(--border-hi); border-radius: 999px; padding: 6px 6px 6px 14px; margin-top: 10px; background: var(--card); }
+        .dump input { flex: 1; min-width: 0; background: transparent; border: none; outline: none; color: var(--text); font-size: 13px; }
+        .dump input::placeholder { color: var(--muted); }
+
         @media (max-height: 700px) {
             body { gap: 9px; padding: 10px 14px; }
             .head h1 { font-size: 21px; margin: 4px 0 6px; }
@@ -299,7 +324,7 @@ HTML_PAGE = """
             </button>
             <div class="status-txt" id="stTxt" onclick="toggleRec()">Tippen oder „Hey Neo“</div>
             <button type="button" class="chip" onclick="openDash()">Übersicht</button>
-            <button type="button" class="chip" onclick="openList()">Listen</button>
+            <button type="button" class="chip" onclick="openBrain()">Gehirn</button>
         </div>
         <div class="cmd">
             <div class="cmd-row">
@@ -339,6 +364,27 @@ HTML_PAGE = """
                 <div id="dCal"></div>
                 <div class="sec" style="margin-top:14px;"><span class="eyebrow">// Verlauf</span><button type="button" onclick="clearLog()">Löschen</button></div>
                 <div id="dLog"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="brain">
+        <div class="modal-wrap">
+            <div class="modal-h">
+                <div><div class="eyebrow">// Wissen · Radial</div><h2>Gehirn</h2></div>
+                <button type="button" class="chip" onclick="closeBrain()">✕ Schließen</button>
+            </div>
+            <div class="modal-b">
+                <div class="brain-legend" id="bLegend"></div>
+                <div class="brain-wrap">
+                    <div class="brain-count"><b id="bCount">0</b><span>EINTRÄGE</span></div>
+                    <svg id="bSvg" viewBox="0 0 400 400" role="img" aria-label="Wissens-Graph"></svg>
+                </div>
+                <div class="brain-detail" id="bDetail"></div>
+                <div class="dump">
+                    <input type="text" id="bInput" placeholder="Ins Gehirn werfen… z. B. Code Müller 4711" onkeypress="if(event.key==='Enter')brainDump()">
+                    <button type="button" class="send" onclick="brainDump()" aria-label="Speichern">↑</button>
+                </div>
             </div>
         </div>
     </div>
@@ -411,6 +457,182 @@ HTML_PAGE = """
                 ? neoLog.slice(0, 20).map(x => `<div class="log"><div class="log-q">${new Date(x.t).toLocaleString('de-DE', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'})} · ${esc(x.q)}</div>${esc(x.a)}</div>`).join('')
                 : '<p class="empty">Noch keine Gespräche.</p>';
         }
+        // ---------- Gehirn (Wissens-Graph) ----------
+        const BG = {
+            client: { n: 'Kunden',    c: '#F472B6' },
+            event:  { n: 'Termine',   c: '#60A5FA' },
+            code:   { n: 'Codes',     c: '#F59E0B' },
+            offer:  { n: 'Angebote',  c: '#34D399' },
+            report: { n: 'Berichte',  c: '#A78BFA' },
+            note:   { n: 'Notizen',   c: '#D4D4D4' }
+        };
+        const BG_ORDER = ['client', 'event', 'code', 'offer', 'report', 'note'];
+        const STOP = new Set(('termin termine angebot angebote notiz notizen büro buero hamburg objektbegehung praxis schule ' +
+            'qualitätskontrolle schlüsselcode schlüssel code codes kunde kunden woche monat netto brutto uhr heute morgen ' +
+            'bericht mängelbericht mängel reinigung gebäudereinigung objekt straße strasse gibt bitte danke kalkuliere erstelle ' +
+            'erkläre briefing navigation fahre nächsten nächster auto whatsapp text kurz meine mein eine einen dein deine ' +
+            'sprachbefehl foto mängel-foto alarm alarmcode türcode pin tür eingang hintereingang keller büros stunde stunden ' +
+            'preis gesamt bitte sofort neuer neue neues kontrolle angebotspreis ' +
+            'altona wandsbek barmbek eppendorf eimsbüttel harburg bergedorf ottensen winterhude hammerbrook ' +
+            'billstedt rahlstedt bahrenfeld uhlenhorst hafencity steindamm montag dienstag mittwoch donnerstag freitag samstag sonntag').split(' '));
+        const CODE_RE = /(code|schlüssel|schluessel|pin|tür|tuer|alarm|tresor|passwort)/i;
+        let brainSel = null, brainItems = [];
+
+        function brainKeywords(t) {
+            const out = new Set();
+            (String(t).match(/[A-ZÄÖÜ][a-zäöüß]{3,}/g) || []).forEach(w => { if (!STOP.has(w.toLowerCase())) out.add(w); });
+            return out;
+        }
+        function short(t, n) { t = String(t || '').replace(/\\s+/g, ' ').trim(); return t.length > n ? t.slice(0, n - 1) + '…' : t; }
+
+        function buildBrain() {
+            const items = [];
+            mem.forEach((x, i) => items.push({ id: 'n' + i, g: CODE_RE.test(x) ? 'code' : 'note', label: x, text: x, sub: 'Notiz' }));
+            calEvents.forEach((e, i) => items.push({ id: 'e' + i, g: 'event', label: e.title, text: e.title + ' ' + (e.loc || ''), sub: e.time + (e.loc ? ' · ' + e.loc : '') }));
+            neoLog.filter(x => x.kind === 'offer').slice(0, 10).forEach((x, i) => items.push({ id: 'o' + i, g: 'offer', label: x.q, text: x.q + ' ' + x.a, sub: new Date(x.t).toLocaleDateString('de-DE') + ' · ' + x.a }));
+            neoLog.filter(x => x.kind === 'photo').slice(0, 10).forEach((x, i) => items.push({ id: 'r' + i, g: 'report', label: x.a, text: x.a, sub: new Date(x.t).toLocaleDateString('de-DE') + ' · Mängelbericht' }));
+            // Kunden = Namen, die in mindestens zwei Einträgen vorkommen
+            const kwMap = {};
+            items.forEach(it => { it.kw = brainKeywords(it.text); it.kw.forEach(k => (kwMap[k] = kwMap[k] || []).push(it.id)); });
+            Object.keys(kwMap).filter(k => kwMap[k].length >= 2)
+                .sort((a, b) => kwMap[b].length - kwMap[a].length).slice(0, 10)
+                .forEach(k => items.push({ id: 'c_' + k, g: 'client', label: k, text: k, sub: kwMap[k].length + ' Verknüpfungen', links: kwMap[k] }));
+            items.forEach(it => { if (!it.links) it.links = []; });
+            items.filter(it => it.g === 'client').forEach(c => c.links.forEach(id => { const o = items.find(x => x.id === id); if (o) o.links.push(c.id); }));
+            return items.slice(0, 60);
+        }
+
+        function svgEl(tag, attrs, text) {
+            const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+            for (const k in attrs) el.setAttribute(k, attrs[k]);
+            if (text != null) el.textContent = text;
+            return el;
+        }
+
+        function renderBrain() {
+            brainItems = buildBrain();
+            const svg = document.getElementById('bSvg');
+            svg.innerHTML = '';
+            const C = 200, RH = 60, RL = 124;
+            const groups = BG_ORDER.map(g => ({ g, items: brainItems.filter(i => i.g === g) })).filter(x => x.items.length);
+            document.getElementById('bCount').innerText = brainItems.length;
+            document.getElementById('bLegend').innerHTML = BG_ORDER.map(g =>
+                `<span class="lg"><i style="background:${BG[g].c}"></i><b>${brainItems.filter(i => i.g === g).length}</b>${BG[g].n}</span>`).join('');
+
+            // Ringe
+            svg.appendChild(svgEl('circle', { cx: C, cy: C, r: RL, fill: 'none', stroke: 'rgba(255,255,255,0.06)' }));
+            svg.appendChild(svgEl('circle', { cx: C, cy: C, r: RH, fill: 'none', stroke: 'rgba(255,255,255,0.08)', 'stroke-dasharray': '2 4' }));
+            svg.appendChild(svgEl('circle', { cx: C, cy: C, r: 40, fill: 'none', stroke: 'rgba(255,255,255,0.05)' }));
+            for (let a = 0; a < 120; a++) {
+                const t = a / 120 * Math.PI * 2;
+                svg.appendChild(svgEl('circle', { cx: C + Math.cos(t) * (RH + 18), cy: C + Math.sin(t) * (RH + 18), r: 0.6, fill: 'rgba(255,255,255,0.18)' }));
+            }
+
+            if (!groups.length) {
+                svg.appendChild(svgEl('text', { x: C, y: C + 44, 'text-anchor': 'middle', fill: '#8A8A8A', 'font-size': 9 }, 'Noch leer – wirf etwas ins Gehirn'));
+            }
+
+            // Winkel verteilen
+            const total = brainItems.length, gap = groups.length > 1 ? 0.22 : 0;
+            const span = Math.PI * 2 - gap * groups.length;
+            let ang = -Math.PI / 2 + gap / 2;
+            const pos = {}, hubs = {};
+            groups.forEach(gr => {
+                const w = span * gr.items.length / total;
+                hubs[gr.g] = { a: ang + w / 2, x: C + Math.cos(ang + w / 2) * RH, y: C + Math.sin(ang + w / 2) * RH, n: gr.items.length };
+                gr.items.forEach((it, k) => {
+                    const a = ang + w * (k + 0.5) / gr.items.length;
+                    pos[it.id] = { a, x: C + Math.cos(a) * RL, y: C + Math.sin(a) * RL };
+                });
+                ang += w + gap;
+            });
+
+            const sel = brainSel && brainItems.find(i => i.id === brainSel) ? brainSel : null;
+            const selItem = sel ? brainItems.find(i => i.id === sel) : null;
+            const lit = new Set(sel ? [sel, ...selItem.links] : []);
+            const dimOf = id => (sel && !lit.has(id)) ? 0.15 : 1;
+
+            // Querverbindungen Kunde <-> Eintrag
+            brainItems.filter(i => i.g === 'client').forEach(c => c.links.forEach(id => {
+                if (!pos[id] || !pos[c.id]) return;
+                const p1 = pos[c.id], p2 = pos[id];
+                const on = sel && (sel === c.id || sel === id);
+                svg.appendChild(svgEl('path', {
+                    d: `M${p1.x},${p1.y} Q${C + (p1.x + p2.x - 2 * C) * 0.15},${C + (p1.y + p2.y - 2 * C) * 0.15} ${p2.x},${p2.y}`,
+                    fill: 'none', stroke: BG.client.c, 'stroke-width': on ? 1.2 : 0.6, opacity: sel ? (on ? 0.9 : 0.06) : 0.35
+                }));
+            }));
+
+            // Zentrum -> Gruppen -> Einträge
+            groups.forEach(gr => {
+                const h = hubs[gr.g];
+                svg.appendChild(svgEl('line', { x1: C, y1: C, x2: h.x, y2: h.y, stroke: 'rgba(255,255,255,0.12)', 'stroke-dasharray': '1 3' }));
+                gr.items.forEach(it => {
+                    const p = pos[it.id], mr = (RH + RL) / 2;
+                    svg.appendChild(svgEl('path', {
+                        d: `M${h.x},${h.y} Q${C + Math.cos(p.a) * mr},${C + Math.sin(p.a) * mr} ${p.x},${p.y}`,
+                        fill: 'none', stroke: BG[gr.g].c, 'stroke-width': 0.7, opacity: 0.3 * dimOf(it.id)
+                    }));
+                });
+            });
+
+            // Blätter + Beschriftung
+            brainItems.forEach(it => {
+                const p = pos[it.id]; if (!p) return;
+                const g = svgEl('g', { class: 'bn-leaf', opacity: dimOf(it.id) });
+                g.addEventListener('click', () => { brainSel = (brainSel === it.id ? null : it.id); renderBrain(); });
+                g.appendChild(svgEl('circle', { cx: p.x, cy: p.y, r: 11, fill: 'transparent' }));
+                if (it.id === sel) g.appendChild(svgEl('circle', { cx: p.x, cy: p.y, r: 7, fill: 'none', stroke: BG[it.g].c, 'stroke-width': 1 }));
+                g.appendChild(svgEl('circle', { cx: p.x, cy: p.y, r: it.g === 'client' ? 4.2 : 3.4, fill: BG[it.g].c }));
+                let deg = p.a * 180 / Math.PI, left = deg > 90 && deg < 270 || deg < -90;
+                const lx = C + Math.cos(p.a) * (RL + 9), ly = C + Math.sin(p.a) * (RL + 9);
+                g.appendChild(svgEl('text', {
+                    x: lx, y: ly, 'font-size': 7, fill: it.id === sel ? '#F5F5F5' : '#A3A3A3', 'dominant-baseline': 'middle',
+                    'text-anchor': left ? 'end' : 'start', transform: `rotate(${left ? deg + 180 : deg} ${lx} ${ly})`
+                }, short(it.label, 14)));
+                svg.appendChild(g);
+            });
+
+            // Gruppen-Knoten
+            groups.forEach(gr => {
+                const h = hubs[gr.g];
+                svg.appendChild(svgEl('circle', { cx: h.x, cy: h.y, r: 9, fill: BG[gr.g].c, opacity: 0.18 }));
+                svg.appendChild(svgEl('circle', { cx: h.x, cy: h.y, r: 5.5, fill: BG[gr.g].c }));
+                const right = Math.cos(h.a) >= 0;
+                svg.appendChild(svgEl('text', { x: h.x + (right ? 10 : -10), y: h.y + 0.5, 'font-size': 7.5, fill: '#E5E5E5', 'dominant-baseline': 'middle', 'text-anchor': right ? 'start' : 'end' }, BG[gr.g].n.toLowerCase() + ' ' + h.n));
+            });
+
+            // Zentrum
+            const defs = svgEl('defs', {});
+            const rg = svgEl('radialGradient', { id: 'bnCore' });
+            rg.appendChild(svgEl('stop', { offset: '0%', 'stop-color': '#FFFFFF' }));
+            rg.appendChild(svgEl('stop', { offset: '70%', 'stop-color': '#D4D4D4' }));
+            rg.appendChild(svgEl('stop', { offset: '100%', 'stop-color': '#737373' }));
+            defs.appendChild(rg); svg.appendChild(defs);
+            svg.appendChild(svgEl('circle', { cx: C, cy: C, r: 22, fill: 'none', stroke: 'rgba(255,255,255,0.25)', class: 'bn-pulse' }));
+            svg.appendChild(svgEl('circle', { cx: C, cy: C, r: 13, fill: 'url(#bnCore)' }));
+            svg.appendChild(svgEl('text', { x: C, y: C + 34, 'text-anchor': 'middle', 'font-size': 8.5, fill: '#F5F5F5', 'font-weight': 600 }, 'NEO'));
+
+            // Detail
+            const d = document.getElementById('bDetail');
+            if (!selItem) {
+                d.innerHTML = '<div class="gtag">// Tipp</div>Tippe auf einen Punkt, um die Notiz und ihre Verbindungen zu sehen. Namen, die mehrfach vorkommen (z. B. „Müller“), werden automatisch als Kunde verknüpft.';
+            } else {
+                const links = selItem.links.map(id => brainItems.find(x => x.id === id)).filter(Boolean);
+                d.innerHTML = `<div class="gtag"><i style="background:${BG[selItem.g].c}"></i>${BG[selItem.g].n}</div>` +
+                    `<div>${esc(selItem.label)}</div><div class="row-sub">${esc(short(selItem.sub, 160))}</div>` +
+                    (links.length ? `<div class="links">${links.map(l => `<button type="button" data-id="${esc(l.id)}"><i style="background:${BG[l.g].c}"></i>${esc(short(l.label, 28))}</button>`).join('')}</div>` : '');
+                d.querySelectorAll('.links button').forEach(b => b.addEventListener('click', () => { brainSel = b.getAttribute('data-id'); renderBrain(); }));
+            }
+        }
+        function brainDump() {
+            const inp = document.getElementById('bInput');
+            const v = inp.value.trim(); if (!v) return;
+            mem.push(v); saveState(); addLog('Notiz: ' + v, 'Notiz gespeichert.', 'note');
+            inp.value = ''; brainSel = 'n' + (mem.length - 1); renderBrain();
+        }
+        function openBrain() { brainSel = null; renderBrain(); document.getElementById('brain').classList.add('open'); }
+        function closeBrain() { document.getElementById('brain').classList.remove('open'); }
         function openDash() { renderDash(); document.getElementById('dash').classList.add('open'); }
         function closeDash() { document.getElementById('dash').classList.remove('open'); }
         let wakeOn = true, isRec = false, isSpk = false, inConv = false;
