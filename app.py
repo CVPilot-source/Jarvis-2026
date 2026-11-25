@@ -20,15 +20,15 @@ MANIFEST_JSON = {
     "short_name": "NEO",
     "start_url": "/",
     "display": "standalone",
-    "background_color": "#060913",
-    "theme_color": "#060913",
+    "background_color": "#0A0A0A",
+    "theme_color": "#0A0A0A",
     "icons": [{"src": "/icon.svg", "sizes": "any", "type": "image/svg+xml"}]
 }
 
 ICON_SVG = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="120" fill="#060913"/>
-  <circle cx="256" cy="256" r="150" fill="none" stroke="#38BDF8" stroke-width="12"/>
-  <circle cx="256" cy="256" r="28" fill="#38BDF8"/>
+  <rect width="512" height="512" rx="120" fill="#0A0A0A"/>
+  <circle cx="256" cy="256" r="150" fill="none" stroke="#F5F5F5" stroke-width="12"/>
+  <circle cx="256" cy="256" r="28" fill="#F5F5F5"/>
 </svg>"""
 
 HTML_PAGE = """
@@ -39,168 +39,254 @@ HTML_PAGE = """
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#060913">
+    <meta name="theme-color" content="#0A0A0A">
     <link rel="manifest" href="/manifest.json">
     <title>NEO</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --accent: #38BDF8;
-            --bg: #060913;
-            --card: #111827;
-            --border: rgba(255,255,255,0.1);
-            --text: #F8FAFC;
-            --muted: #94A3B8;
+            --bg: #0A0A0A;
+            --card: #111111;
+            --card-hi: #171717;
+            --border: rgba(255,255,255,0.09);
+            --border-hi: rgba(255,255,255,0.22);
+            --text: #F5F5F5;
+            --muted: #8A8A8A;
+            --dim: #555555;
+            --live: #22C55E;
+            --warn: #F59E0B;
+            --alert: #EF4444;
+            --state: #F5F5F5;
         }
-        body.listening { --accent: #10B981; }
-        body.thinking  { --accent: #F59E0B; }
-        body.speaking  { --accent: #A855F7; }
+        body.listening { --state: #22C55E; }
+        body.thinking  { --state: #F59E0B; }
+        body.speaking  { --state: #60A5FA; }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+        button, input { font-family: inherit; }
 
         body {
-            margin: 0;
+            margin: 0 auto;
             background: var(--bg);
             color: var(--text);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-family: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
             height: 100dvh;
-            overflow: hidden;
+            overflow-x: hidden;
+            overflow-y: auto;
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
-            padding: 12px 14px;
+            padding: 14px 16px;
             max-width: 520px;
-            margin-left: auto;
-            margin-right: auto;
-            gap: 10px;
+            gap: 12px;
         }
 
+        .eyebrow { font-size: 10px; letter-spacing: 3px; color: var(--muted); text-transform: uppercase; }
+
+        /* Top bar */
         .top { display: flex; justify-content: space-between; align-items: center; }
+        .brand { display: flex; align-items: center; gap: 10px; }
+        .brand svg { width: 26px; height: 26px; flex-shrink: 0; }
+        .brand-n { font-size: 14px; font-weight: 700; letter-spacing: 4px; line-height: 1; }
+        .brand-s { font-size: 8.5px; letter-spacing: 2.5px; color: var(--muted); margin-top: 4px; }
+        .top-r { display: flex; gap: 6px; }
         .chip {
-            background: var(--card); border: 1px solid var(--border); color: var(--text);
-            padding: 6px 12px; border-radius: 999px; font-size: 12px; font-weight: 700;
-            display: flex; align-items: center; gap: 6px; cursor: pointer;
+            background: transparent; border: 1px solid var(--border); color: var(--text);
+            padding: 7px 10px; border-radius: 10px; font-size: 10.5px; font-weight: 500;
+            letter-spacing: 1px; text-transform: uppercase;
+            display: inline-flex; align-items: center; gap: 7px; cursor: pointer; white-space: nowrap;
         }
-        .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+        .chip:active { border-color: var(--border-hi); background: var(--card-hi); }
+        .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--live); flex-shrink: 0; }
+        .dot.off { background: var(--dim); }
 
-        .hero {
-            background: var(--card); border: 1px solid var(--border); border-radius: 18px;
-            padding: 12px; display: flex; align-items: center; gap: 12px;
+        /* Greeting */
+        .head { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; }
+        .head h1 { margin: 6px 0 8px; font-size: 25px; font-weight: 700; letter-spacing: -0.5px; line-height: 1.1; }
+        .meta { display: flex; flex-wrap: nowrap; white-space: nowrap; align-items: center; gap: 6px 8px; font-size: 11.5px; color: var(--muted); }
+        .meta .sep { color: var(--dim); }
+        .attn {
+            display: none; align-items: center; gap: 6px; color: var(--alert);
+            border: 1px solid rgba(239,68,68,0.45); border-radius: 999px; padding: 2px 9px; font-size: 11px;
         }
+        .attn.on { display: inline-flex; }
+        .attn::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--alert); }
         .avatar {
-            width: 68px; height: 76px; border-radius: 14px; overflow: hidden;
-            border: 2px solid var(--accent); flex-shrink: 0; cursor: pointer;
+            width: 54px; height: 54px; border-radius: 14px; overflow: hidden; flex-shrink: 0; cursor: pointer;
+            border: 1px solid var(--border-hi); background: var(--card);
+            box-shadow: 0 0 0 3px var(--bg), 0 0 0 4px var(--state);
+            transition: box-shadow .2s;
         }
-        .avatar img { width: 100%; height: 114%; object-fit: cover; object-position: center 12%; display: block; }
-        .title { font-size: 18px; font-weight: 800; }
-        .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
-        .tag {
-            background: rgba(56,189,248,0.12); color: var(--accent); border-radius: 6px;
-            padding: 3px 8px; font-size: 11px; font-weight: 700;
-        }
+        .avatar img { width: 100%; height: 100%; object-fit: cover; object-position: center 15%; display: block; filter: grayscale(1) contrast(1.05); }
 
+        /* Stats */
+        .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .stat {
+            border: 1px solid var(--border); border-radius: 14px; padding: 10px 12px;
+            background: linear-gradient(180deg, #141414, #0D0D0D); cursor: pointer;
+        }
+        .stat-l { font-size: 10px; color: var(--muted); display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+        .stat-l::before { content: ""; width: 2px; height: 10px; background: var(--text); border-radius: 1px; }
+        .stat-v { font-size: 24px; font-weight: 600; margin-top: 4px; line-height: 1; }
+        .stat-v small { font-size: 10px; color: var(--muted); font-weight: 400; margin-left: 3px; }
+
+        /* Next appointment */
         .cal-box {
-            background: var(--card); border: 1px solid var(--border); border-left: 3px solid var(--accent);
-            border-radius: 14px; padding: 10px 12px; cursor: pointer;
+            border: 1px solid var(--border); border-radius: 14px; padding: 11px 12px; background: var(--card);
+            display: flex; align-items: center; gap: 12px; cursor: pointer;
         }
-        .cal-lbl { font-size: 10px; font-weight: 800; color: var(--accent); text-transform: uppercase; }
-        .cal-val { font-size: 13.5px; font-weight: 700; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .cal-box:active, .tile:active, .stat:active { border-color: var(--border-hi); background: var(--card-hi); }
+        .cal-main { flex: 1; min-width: 0; }
+        .cal-val { font-size: 13.5px; font-weight: 500; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .cal-val.soon { color: var(--warn); }
+        .arrow { color: var(--dim); font-size: 14px; }
 
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; flex: 1; }
+        /* Actions */
+        .grid { display: grid; grid-template-columns: 1fr 1fr; grid-auto-rows: 1fr; gap: 8px; flex: 1; min-height: 150px; }
         .tile {
-            background: var(--card); border: 1px solid var(--border); border-radius: 16px;
-            padding: 12px; display: flex; flex-direction: column; justify-content: center;
-            cursor: pointer;
+            border: 1px solid var(--border); border-radius: 14px; padding: 12px; background: var(--card);
+            display: flex; flex-direction: column; justify-content: space-between; cursor: pointer; min-height: 0;
         }
-        .tile:active { border-color: var(--accent); }
-        .tile-t { font-size: 14px; font-weight: 700; }
-        .tile-s { font-size: 11px; color: var(--muted); margin-top: 2px; }
+        .tile-top { display: flex; justify-content: space-between; font-size: 10px; color: var(--dim); letter-spacing: 1px; }
+        .tile-t { font-size: 14px; font-weight: 600; }
+        .tile-s { font-size: 10.5px; color: var(--muted); margin-top: 3px; }
 
-        .action-bar { display: flex; gap: 8px; justify-content: center; min-height: 30px; }
+        .action-bar { display: flex; gap: 8px; justify-content: center; min-height: 0; }
+        .action-bar:empty { display: none; }
         .pill {
-            background: var(--accent); color: #060913; border: none; border-radius: 999px;
-            padding: 6px 14px; font-size: 12px; font-weight: 800; text-decoration: none; cursor: pointer;
+            background: var(--text); color: var(--bg); border: none; border-radius: 999px;
+            padding: 7px 14px; font-size: 11px; font-weight: 600; letter-spacing: .5px;
+            text-transform: uppercase; text-decoration: none; cursor: pointer;
         }
 
-        .dock {
-            background: var(--card); border: 1px solid var(--border); border-radius: 18px;
-            padding: 10px; display: flex; flex-direction: column; gap: 8px;
-        }
+        /* Dock / command bar */
+        .dock { border: 1px solid var(--border); border-radius: 16px; background: var(--card); padding: 10px; display: flex; flex-direction: column; gap: 10px; }
         .dock-top { display: flex; align-items: center; gap: 10px; }
         .mic {
-            width: 50px; height: 50px; border-radius: 50%; background: #0B1324;
-            border: 2px solid var(--accent); color: #FFF; font-size: 20px;
-            display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0;
+            width: 42px; height: 42px; border-radius: 50%; background: var(--bg);
+            border: 1px solid var(--state); color: var(--state); flex-shrink: 0; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; transition: border-color .2s, color .2s;
         }
-        .status-txt { flex: 1; font-size: 13px; font-weight: 700; color: var(--accent); cursor: pointer; }
-        .input-row { display: flex; gap: 6px; }
-        .input-row input {
-            flex: 1; background: #060913; border: 1px solid var(--border); border-radius: 10px;
-            color: #FFF; padding: 9px 10px; font-size: 13.5px; outline: none;
+        .mic svg { width: 18px; height: 18px; }
+        body.listening .mic, body.speaking .mic { animation: pulse 1.2s ease-in-out infinite; }
+        @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 var(--state); } 50% { box-shadow: 0 0 0 5px transparent; } }
+        .status-txt { flex: 1; min-width: 0; font-size: 11.5px; color: var(--state); cursor: pointer; line-height: 1.3; }
+        .cmd { border: 1px solid var(--border); border-radius: 12px; background: var(--bg); padding: 8px 8px 7px 12px; }
+        .cmd-row { display: flex; align-items: center; gap: 8px; }
+        .cmd input { flex: 1; min-width: 0; background: transparent; border: none; outline: none; color: var(--text); font-size: 14px; padding: 4px 0; }
+        .cmd input::placeholder { color: var(--muted); }
+        .send {
+            width: 32px; height: 32px; border-radius: 9px; border: 1px solid var(--border-hi);
+            background: var(--card-hi); color: var(--text); cursor: pointer; font-size: 15px; flex-shrink: 0;
         }
-        .input-row button {
-            background: var(--accent); color: #060913; border: none; border-radius: 10px;
-            padding: 0 14px; font-weight: 800; font-size: 12.5px; cursor: pointer;
-        }
+        .hint { font-size: 9.5px; color: var(--dim); margin-top: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-        .modal {
-            position: fixed; inset: 0; background: #060913; z-index: 40;
-            display: none; flex-direction: column; padding: 16px;
-        }
+        /* Panels */
+        .modal { position: fixed; inset: 0; background: var(--bg); z-index: 40; display: none; flex-direction: column; padding: 16px; }
         .modal.open { display: flex; }
-        .kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
-        .kpi { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 10px 12px; }
-        .kpi-l { font-size: 10px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
-        .kpi-v { font-size: 24px; font-weight: 800; margin-top: 2px; }
-        .sec { font-size: 11px; font-weight: 800; color: var(--accent); text-transform: uppercase; margin: 6px 0 8px; }
-        .log { background: var(--card); padding: 10px 12px; border-radius: 10px; margin-bottom: 8px; font-size: 12.5px; }
-        .log-q { color: var(--muted); font-size: 11px; margin-bottom: 3px; }
-        .soon { color: #F59E0B; }
+        .modal-wrap { width: 100%; max-width: 520px; margin: 0 auto; display: flex; flex-direction: column; flex: 1; min-height: 0; }
+        .modal-h { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+        .modal-h h2 { margin: 6px 0 0; font-size: 24px; font-weight: 700; letter-spacing: -0.5px; }
+        .modal-b { flex: 1; overflow-y: auto; }
+        .kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 18px; }
+        .kpi { border: 1px solid var(--border); border-radius: 14px; padding: 11px 12px; background: linear-gradient(180deg, #141414, #0D0D0D); }
+        .kpi .stat-v { font-size: 28px; }
+        .sec { margin: 4px 0 10px; display: flex; justify-content: space-between; align-items: center; }
+        .sec button { background: none; border: none; color: var(--muted); font-size: 10px; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; padding: 0; }
         .row {
-            display: flex; justify-content: space-between; align-items: center;
-            background: var(--card); padding: 10px 12px; border-radius: 10px; margin-bottom: 8px; font-size: 13px;
+            display: flex; justify-content: space-between; align-items: center; gap: 10px;
+            border: 1px solid var(--border); background: var(--card); padding: 11px 12px; border-radius: 12px; margin-bottom: 8px; font-size: 12.5px;
+        }
+        .row-sub { color: var(--muted); font-size: 10.5px; margin-top: 3px; }
+        .log { border: 1px solid var(--border); background: var(--card); padding: 11px 12px; border-radius: 12px; margin-bottom: 8px; font-size: 12.5px; line-height: 1.45; }
+        .log-q { color: var(--muted); font-size: 10.5px; margin-bottom: 4px; }
+        .empty { color: var(--muted); font-size: 12px; margin: 0 0 18px; }
+        .ok-btn { background: transparent; border: 1px solid var(--border-hi); color: var(--text); border-radius: 8px; width: 30px; height: 30px; cursor: pointer; flex-shrink: 0; }
+
+        @media (max-height: 700px) {
+            body { gap: 9px; padding: 10px 14px; }
+            .head h1 { font-size: 21px; margin: 4px 0 6px; }
+            .avatar { width: 46px; height: 46px; }
+            .stat-v { font-size: 20px; }
+            .hint { display: none; }
+            .stat { padding: 8px 10px; }
+            .cal-box { padding: 9px 12px; }
+        }
+        @media (max-height: 620px) {
+            .tile { padding: 10px 12px; justify-content: center; }
+            .tile-top, .tile-s { display: none; }
+        }
+        .top, .head, .stats, .cal-box, .action-bar, .dock { flex-shrink: 0; }
+        @media (max-width: 370px) {
+            .status-txt { display: none; }
+            .dock-top { justify-content: space-between; }
+            .head h1 { font-size: 20px; }
+            .stat-v small, .wx { display: none; }
         }
     </style>
 </head>
 <body>
     <div class="top">
-        <button type="button" class="chip" onclick="toggleWake()"><span class="dot"></span><span id="wLabel">Voice Aktiv</span></button>
-        <span style="font-weight:800; letter-spacing:2px; font-size:12px; color:var(--accent);">NEO</span>
-        <button type="button" class="chip" id="mBtn" onclick="toggleMode()">Arbeit</button>
-    </div>
-
-    <div class="hero">
-        <div class="avatar" onclick="toggleRec()"><img src="/avatar" alt="NEO" onerror="this.src='/icon.svg'"></div>
-        <div>
-            <div class="title">Hallo, Margil</div>
-            <div class="tags">
-                <span class="tag" id="clock">--:--</span>
-                <span class="tag" id="weather">Hamburg</span>
-                <span class="tag" onclick="openList()" style="cursor:pointer;">Notizen: <span id="nCount">0</span></span>
+        <div class="brand">
+            <svg viewBox="0 0 32 32" fill="none" aria-hidden="true">
+                <circle cx="16" cy="16" r="13" stroke="#F5F5F5" stroke-width="2"/>
+                <circle cx="16" cy="16" r="4" fill="#F5F5F5"/>
+                <path d="M16 3v5M16 24v5M3 16h5M24 16h5" stroke="#F5F5F5" stroke-width="2"/>
+            </svg>
+            <div>
+                <div class="brand-n">NEO</div>
+                <div class="brand-s">OPERATOR MODE</div>
             </div>
+        </div>
+        <div class="top-r">
+            <button type="button" class="chip" onclick="toggleWake()"><span class="dot" id="wDot"></span><span id="wLabel">Voice</span></button>
+            <button type="button" class="chip" id="mBtn" onclick="toggleMode()">Arbeit</button>
         </div>
     </div>
 
+    <div class="head">
+        <div style="min-width:0;">
+            <div class="eyebrow">// Home · Hamburg</div>
+            <h1 id="greet">Guten Tag, Margil</h1>
+            <div class="meta">
+                <span class="attn" id="attn"></span>
+                <span id="clock">--:--</span><span class="sep wx">·</span><span id="weather" class="wx">–°C</span>
+            </div>
+        </div>
+        <div class="avatar" onclick="toggleRec()"><img src="/avatar" alt="NEO" onerror="this.src='/icon.svg'"></div>
+    </div>
+
+    <div class="stats">
+        <div class="stat" onclick="openDash()"><div class="stat-l">Termine</div><div class="stat-v" id="sToday">–<small>heute</small></div></div>
+        <div class="stat" onclick="openList()"><div class="stat-l">Notizen</div><div class="stat-v"><span id="nCount">0</span><small>offen</small></div></div>
+        <div class="stat" onclick="openDash()"><div class="stat-l">Anfragen</div><div class="stat-v"><span id="sAsk">0</span><small>heute</small></div></div>
+    </div>
+
     <div class="cal-box" onclick="quickCmd('Erkläre mir kurz meine nächsten Termine im Kalender.')">
-        <div class="cal-lbl">Nächster Termin</div>
-        <div class="cal-val" id="nextEv">Wird geladen...</div>
+        <div class="cal-main">
+            <div class="eyebrow">Nächster Termin</div>
+            <div class="cal-val" id="nextEv">Wird geladen...</div>
+        </div>
+        <span class="arrow">→</span>
     </div>
 
     <div class="grid">
         <div class="tile" onclick="quickCmd('Ich fahre los zum nächsten Termin. Gib mir das Briefing mit Codes und starte Navigation.')">
-            <div class="tile-t">Auto-Briefing</div>
-            <div class="tile-s">Codes & Route</div>
+            <div class="tile-top"><span>01</span><span>↗</span></div>
+            <div><div class="tile-t">Auto-Briefing</div><div class="tile-s">Codes & Route</div></div>
         </div>
         <div class="tile" onclick="quickCmd('Kalkuliere 600 qm Büro, 2x pro Woche, mit WhatsApp-Angebot.')">
-            <div class="tile-t">Angebot Rechner</div>
-            <div class="tile-s">m² & Preis</div>
+            <div class="tile-top"><span>02</span><span>↗</span></div>
+            <div><div class="tile-t">Angebot</div><div class="tile-s">m² & Preis</div></div>
         </div>
         <div class="tile" onclick="document.getElementById('cam').click()">
-            <div class="tile-t">Mängel-Foto</div>
-            <div class="tile-s">Kamera Bericht</div>
+            <div class="tile-top"><span>03</span><span>↗</span></div>
+            <div><div class="tile-t">Mängel-Foto</div><div class="tile-s">Kamera-Bericht</div></div>
         </div>
         <div class="tile" onclick="sendTg()">
-            <div class="tile-t">Telegram Alert</div>
-            <div class="tile-s">Autorisierung</div>
+            <div class="tile-top"><span>04</span><span>↗</span></div>
+            <div><div class="tile-t">Telegram</div><div class="tile-s">Autorisierung</div></div>
         </div>
     </div>
 
@@ -208,46 +294,52 @@ HTML_PAGE = """
 
     <div class="dock">
         <div class="dock-top">
-            <button type="button" class="mic" onclick="toggleRec()">🎙️</button>
-            <div class="status-txt" id="stTxt" onclick="toggleRec()">Tippen oder „Hey Neo“ sagen</div>
+            <button type="button" class="mic" onclick="toggleRec()" aria-label="Mikrofon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v5"/></svg>
+            </button>
+            <div class="status-txt" id="stTxt" onclick="toggleRec()">Tippen oder „Hey Neo“</div>
             <button type="button" class="chip" onclick="openDash()">Übersicht</button>
             <button type="button" class="chip" onclick="openList()">Listen</button>
         </div>
-        <div class="input-row">
-            <input type="text" id="msg" placeholder="Befehl oder „Notiz: …“" onkeypress="if(event.key==='Enter')sendTxt()">
-            <button type="button" onclick="sendTxt()">Senden</button>
+        <div class="cmd">
+            <div class="cmd-row">
+                <input type="text" id="msg" placeholder="Sag NEO, was zu tun ist…" onkeypress="if(event.key==='Enter')sendTxt()">
+                <button type="button" class="send" onclick="sendTxt()" aria-label="Senden">↑</button>
+            </div>
+            <div class="hint">Freitext fragt NEO · „Notiz …“ speichert direkt</div>
         </div>
     </div>
 
     <input type="file" id="cam" accept="image/*" capture="environment" style="display:none" onchange="handleImg(event)">
 
     <div class="modal" id="modal">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-            <b>Notizen & Codes</b>
-            <button type="button" class="chip" onclick="closeList()">✕ Schließen</button>
+        <div class="modal-wrap">
+            <div class="modal-h">
+                <div><div class="eyebrow">// Speicher</div><h2>Notizen & Codes</h2></div>
+                <button type="button" class="chip" onclick="closeList()">✕ Schließen</button>
+            </div>
+            <div class="modal-b" id="listBody"></div>
         </div>
-        <div id="listBody" style="flex:1; overflow-y:auto;"></div>
     </div>
 
     <div class="modal" id="dash">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-            <b>Übersicht</b>
-            <button type="button" class="chip" onclick="closeDash()">✕ Schließen</button>
-        </div>
-        <div style="flex:1; overflow-y:auto;">
-            <div class="kpis">
-                <div class="kpi"><div class="kpi-l">Termine heute</div><div class="kpi-v" id="kToday">–</div></div>
-                <div class="kpi"><div class="kpi-l">Offene Notizen</div><div class="kpi-v" id="kNotes">0</div></div>
-                <div class="kpi"><div class="kpi-l">Anfragen heute</div><div class="kpi-v" id="kAsk">0</div></div>
-                <div class="kpi"><div class="kpi-l">Angebote & Berichte</div><div class="kpi-v" id="kOffer">0</div></div>
+        <div class="modal-wrap">
+            <div class="modal-h">
+                <div><div class="eyebrow">// Übersicht · Heute</div><h2>Lagebild</h2></div>
+                <button type="button" class="chip" onclick="closeDash()">✕ Schließen</button>
             </div>
-            <div class="sec">Kommende Termine</div>
-            <div id="dCal"></div>
-            <div class="sec" style="display:flex; justify-content:space-between;">
-                <span>Verlauf</span>
-                <span style="cursor:pointer; color:var(--muted);" onclick="clearLog()">Löschen</span>
+            <div class="modal-b">
+                <div class="kpis">
+                    <div class="kpi"><div class="stat-l">Termine heute</div><div class="stat-v" id="kToday">–</div></div>
+                    <div class="kpi"><div class="stat-l">Offene Notizen</div><div class="stat-v" id="kNotes">0</div></div>
+                    <div class="kpi"><div class="stat-l">Anfragen heute</div><div class="stat-v" id="kAsk">0</div></div>
+                    <div class="kpi"><div class="stat-l">Angebote & Berichte</div><div class="stat-v" id="kOffer">0</div></div>
+                </div>
+                <div class="sec"><span class="eyebrow">// Kommende Termine</span></div>
+                <div id="dCal"></div>
+                <div class="sec" style="margin-top:14px;"><span class="eyebrow">// Verlauf</span><button type="button" onclick="clearLog()">Löschen</button></div>
+                <div id="dLog"></div>
             </div>
-            <div id="dLog"></div>
         </div>
     </div>
 
@@ -258,10 +350,14 @@ HTML_PAGE = """
             document.getElementById('clock').innerText = new Date().toLocaleTimeString('de-DE', {hour:'2-digit', minute:'2-digit'}) + " Uhr";
         }
         updClock(); setInterval(updClock, 15000);
+        (function () {
+            const h = new Date().getHours();
+            document.getElementById('greet').innerText = (h < 11 ? 'Guten Morgen' : (h < 18 ? 'Guten Tag' : 'Guten Abend')) + ', Margil';
+        })();
 
         fetch('https://api.open-meteo.com/v1/forecast?latitude=53.5511&longitude=9.9937&current_weather=true')
             .then(r => r.json()).then(d => {
-                if (d.current_weather) document.getElementById('weather').innerText = "Hamburg " + Math.round(d.current_weather.temperature) + "°C";
+                if (d.current_weather) document.getElementById('weather').innerText = Math.round(d.current_weather.temperature) + "°C";
             }).catch(()=>{});
 
         function esc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
@@ -270,11 +366,15 @@ HTML_PAGE = """
         function renderNext() {
             const el = document.getElementById('nextEv');
             const next = calEvents.find(e => { const m = minsUntil(e); return m === null || m >= -30; });
-            if (!next) { el.innerText = "Keine Termine"; el.classList.remove('soon'); return; }
+            updStats();
+            if (!next) { el.innerText = "Keine Termine"; el.classList.remove('soon'); document.getElementById('attn').classList.remove('on'); return; }
             const m = minsUntil(next);
             const soon = m !== null && m >= 0 && m <= 90;
             el.innerText = (soon ? "In " + m + " Min – " : next.time + " – ") + next.title;
             el.classList.toggle('soon', soon);
+            const attn = document.getElementById('attn');
+            attn.classList.toggle('on', soon);
+            attn.innerText = soon ? 'Termin in ' + m + ' Min' : '';
         }
         function loadCal() {
             fetch('/calendar_preview?n=10').then(r => r.json()).then(d => { calEvents = d.events || []; renderNext(); })
@@ -289,8 +389,14 @@ HTML_PAGE = """
             neoLog.unshift({ t: new Date().toISOString(), q: q, a: a, kind: kind });
             neoLog = neoLog.slice(0, 50);
             localStorage.setItem('neo_log', JSON.stringify(neoLog));
+            updStats();
         }
-        function clearLog() { neoLog = []; localStorage.setItem('neo_log', '[]'); renderDash(); }
+        function updStats() {
+            const todayEv = calEvents.filter(e => e.iso && new Date(e.iso).toDateString() === new Date().toDateString());
+            document.getElementById('sToday').innerHTML = (calEvents.length ? todayEv.length : '–') + '<small>heute</small>';
+            document.getElementById('sAsk').innerText = neoLog.filter(x => x.kind !== 'note' && new Date(x.t).toDateString() === new Date().toDateString()).length;
+        }
+        function clearLog() { neoLog = []; localStorage.setItem('neo_log', '[]'); updStats(); renderDash(); }
         function isToday(d) { return d.toDateString() === new Date().toDateString(); }
         function renderDash() {
             const todayEv = calEvents.filter(e => e.iso && isToday(new Date(e.iso)));
@@ -299,11 +405,11 @@ HTML_PAGE = """
             document.getElementById('kAsk').innerText = neoLog.filter(x => x.kind !== 'note' && isToday(new Date(x.t))).length;
             document.getElementById('kOffer').innerText = neoLog.filter(x => x.kind === 'offer' || x.kind === 'photo').length;
             document.getElementById('dCal').innerHTML = calEvents.length
-                ? calEvents.map(e => `<div class="row"><span><b>${esc(e.time)}</b> ${esc(e.title)}${e.loc ? `<br><span style="color:var(--muted);font-size:11px">${esc(e.loc)}</span>` : ''}</span></div>`).join('')
-                : '<p style="color:#94A3B8;font-size:13px">Keine Termine (ICAL_URL gesetzt?).</p>';
+                ? calEvents.map(e => `<div class="row"><div><div>${esc(e.title)}</div><div class="row-sub">${esc(e.time)}${e.loc ? ' · ' + esc(e.loc) : ''}</div></div><span class="arrow">→</span></div>`).join('')
+                : '<p class="empty">Keine Termine (ICAL_URL gesetzt?).</p>';
             document.getElementById('dLog').innerHTML = neoLog.length
                 ? neoLog.slice(0, 20).map(x => `<div class="log"><div class="log-q">${new Date(x.t).toLocaleString('de-DE', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'})} · ${esc(x.q)}</div>${esc(x.a)}</div>`).join('')
-                : '<p style="color:#94A3B8;font-size:13px">Noch keine Gespräche.</p>';
+                : '<p class="empty">Noch keine Gespräche.</p>';
         }
         function openDash() { renderDash(); document.getElementById('dash').classList.add('open'); }
         function closeDash() { document.getElementById('dash').classList.remove('open'); }
@@ -316,6 +422,7 @@ HTML_PAGE = """
             localStorage.setItem('neo_memory', JSON.stringify(mem));
             localStorage.setItem('neo_mode', mode);
             document.getElementById('nCount').innerText = mem.length;
+            updStats();
             document.getElementById('mBtn').innerText = mode === 'ARBEIT' ? 'Arbeit' : 'Privat';
         }
         saveState();
@@ -323,13 +430,14 @@ HTML_PAGE = """
         function toggleMode() { mode = mode === 'ARBEIT' ? 'PRIVAT' : 'ARBEIT'; saveState(); }
         function setSt(s) {
             document.body.className = s || '';
-            stTxt.innerText = s === 'listening' ? 'Hört zu...' : (s === 'thinking' ? 'Antwort kommt...' : (s === 'speaking' ? 'NEO spricht...' : 'Tippen oder „Hey Neo“ sagen'));
+            stTxt.innerText = s === 'listening' ? 'Hört zu...' : (s === 'thinking' ? 'Antwort kommt...' : (s === 'speaking' ? 'NEO spricht...' : 'Tippen oder „Hey Neo“'));
         }
 
         function stopWake() { if (wakeRec) { try { wakeRec.onend = null; wakeRec.abort(); } catch(e){} wakeRec = null; } }
         function toggleWake() {
             wakeOn = !wakeOn;
-            document.getElementById('wLabel').innerText = wakeOn ? 'Voice Aktiv' : 'Stumm';
+            document.getElementById('wLabel').innerText = wakeOn ? 'Voice' : 'Stumm';
+            document.getElementById('wDot').classList.toggle('off', !wakeOn);
             if (wakeOn) startWake(); else stopWake();
         }
         function startWake() {
@@ -385,7 +493,7 @@ HTML_PAGE = """
 
         function openList() {
             document.getElementById('modal').classList.add('open');
-            document.getElementById('listBody').innerHTML = mem.length ? mem.map((x,i) => `<div class="row"><span>${x}</span><button class="pill" onclick="mem.splice(${i},1);saveState();openList();">✓</button></div>`).join('') : '<p style="color:#94A3B8">Keine Notizen.</p>';
+            document.getElementById('listBody').innerHTML = mem.length ? mem.map((x,i) => `<div class="row"><span>${esc(x)}</span><button class="ok-btn" aria-label="Erledigt" onclick="mem.splice(${i},1);saveState();openList();">✓</button></div>`).join('') : '<p class="empty">Keine Notizen.</p>';
         }
         function closeList() { document.getElementById('modal').classList.remove('open'); }
 
