@@ -147,6 +147,14 @@ HTML_PAGE = """
             display: none; flex-direction: column; padding: 16px;
         }
         .modal.open { display: flex; }
+        .kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+        .kpi { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 10px 12px; }
+        .kpi-l { font-size: 10px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
+        .kpi-v { font-size: 24px; font-weight: 800; margin-top: 2px; }
+        .sec { font-size: 11px; font-weight: 800; color: var(--accent); text-transform: uppercase; margin: 6px 0 8px; }
+        .log { background: var(--card); padding: 10px 12px; border-radius: 10px; margin-bottom: 8px; font-size: 12.5px; }
+        .log-q { color: var(--muted); font-size: 11px; margin-bottom: 3px; }
+        .soon { color: #F59E0B; }
         .row {
             display: flex; justify-content: space-between; align-items: center;
             background: var(--card); padding: 10px 12px; border-radius: 10px; margin-bottom: 8px; font-size: 13px;
@@ -202,10 +210,11 @@ HTML_PAGE = """
         <div class="dock-top">
             <button type="button" class="mic" onclick="toggleRec()">🎙️</button>
             <div class="status-txt" id="stTxt" onclick="toggleRec()">Tippen oder „Hey Neo“ sagen</div>
+            <button type="button" class="chip" onclick="openDash()">Übersicht</button>
             <button type="button" class="chip" onclick="openList()">Listen</button>
         </div>
         <div class="input-row">
-            <input type="text" id="msg" placeholder="Befehl oder Übersetzung..." onkeypress="if(event.key==='Enter')sendTxt()">
+            <input type="text" id="msg" placeholder="Befehl oder „Notiz: …“" onkeypress="if(event.key==='Enter')sendTxt()">
             <button type="button" onclick="sendTxt()">Senden</button>
         </div>
     </div>
@@ -218,6 +227,28 @@ HTML_PAGE = """
             <button type="button" class="chip" onclick="closeList()">✕ Schließen</button>
         </div>
         <div id="listBody" style="flex:1; overflow-y:auto;"></div>
+    </div>
+
+    <div class="modal" id="dash">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <b>Übersicht</b>
+            <button type="button" class="chip" onclick="closeDash()">✕ Schließen</button>
+        </div>
+        <div style="flex:1; overflow-y:auto;">
+            <div class="kpis">
+                <div class="kpi"><div class="kpi-l">Termine heute</div><div class="kpi-v" id="kToday">–</div></div>
+                <div class="kpi"><div class="kpi-l">Offene Notizen</div><div class="kpi-v" id="kNotes">0</div></div>
+                <div class="kpi"><div class="kpi-l">Anfragen heute</div><div class="kpi-v" id="kAsk">0</div></div>
+                <div class="kpi"><div class="kpi-l">Angebote & Berichte</div><div class="kpi-v" id="kOffer">0</div></div>
+            </div>
+            <div class="sec">Kommende Termine</div>
+            <div id="dCal"></div>
+            <div class="sec" style="display:flex; justify-content:space-between;">
+                <span>Verlauf</span>
+                <span style="cursor:pointer; color:var(--muted);" onclick="clearLog()">Löschen</span>
+            </div>
+            <div id="dLog"></div>
+        </div>
     </div>
 
     <audio id="player" playsinline></audio>
@@ -233,12 +264,49 @@ HTML_PAGE = """
                 if (d.current_weather) document.getElementById('weather').innerText = "Hamburg " + Math.round(d.current_weather.temperature) + "°C";
             }).catch(()=>{});
 
-        fetch('/calendar_preview').then(r => r.json()).then(d => {
-            document.getElementById('nextEv').innerText = (d.events && d.events.length) ? (d.events[0].time + " – " + d.events[0].title) : "Keine Termine";
-        }).catch(()=>{});
+        function esc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+        function minsUntil(ev) { return ev.iso ? Math.round((new Date(ev.iso) - new Date()) / 60000) : null; }
+        let calEvents = [];
+        function renderNext() {
+            const el = document.getElementById('nextEv');
+            const next = calEvents.find(e => { const m = minsUntil(e); return m === null || m >= -30; });
+            if (!next) { el.innerText = "Keine Termine"; el.classList.remove('soon'); return; }
+            const m = minsUntil(next);
+            const soon = m !== null && m >= 0 && m <= 90;
+            el.innerText = (soon ? "In " + m + " Min – " : next.time + " – ") + next.title;
+            el.classList.toggle('soon', soon);
+        }
+        function loadCal() {
+            fetch('/calendar_preview?n=10').then(r => r.json()).then(d => { calEvents = d.events || []; renderNext(); })
+                .catch(() => { document.getElementById('nextEv').innerText = "Kalender nicht erreichbar"; });
+        }
+        loadCal(); setInterval(renderNext, 60000); setInterval(loadCal, 300000);
 
         let mem = JSON.parse(localStorage.getItem('neo_memory') || '[]');
         let mode = localStorage.getItem('neo_mode') || 'ARBEIT';
+        let neoLog = JSON.parse(localStorage.getItem('neo_log') || '[]');
+        function addLog(q, a, kind) {
+            neoLog.unshift({ t: new Date().toISOString(), q: q, a: a, kind: kind });
+            neoLog = neoLog.slice(0, 50);
+            localStorage.setItem('neo_log', JSON.stringify(neoLog));
+        }
+        function clearLog() { neoLog = []; localStorage.setItem('neo_log', '[]'); renderDash(); }
+        function isToday(d) { return d.toDateString() === new Date().toDateString(); }
+        function renderDash() {
+            const todayEv = calEvents.filter(e => e.iso && isToday(new Date(e.iso)));
+            document.getElementById('kToday').innerText = calEvents.length ? todayEv.length : '–';
+            document.getElementById('kNotes').innerText = mem.length;
+            document.getElementById('kAsk').innerText = neoLog.filter(x => x.kind !== 'note' && isToday(new Date(x.t))).length;
+            document.getElementById('kOffer').innerText = neoLog.filter(x => x.kind === 'offer' || x.kind === 'photo').length;
+            document.getElementById('dCal').innerHTML = calEvents.length
+                ? calEvents.map(e => `<div class="row"><span><b>${esc(e.time)}</b> ${esc(e.title)}${e.loc ? `<br><span style="color:var(--muted);font-size:11px">${esc(e.loc)}</span>` : ''}</span></div>`).join('')
+                : '<p style="color:#94A3B8;font-size:13px">Keine Termine (ICAL_URL gesetzt?).</p>';
+            document.getElementById('dLog').innerHTML = neoLog.length
+                ? neoLog.slice(0, 20).map(x => `<div class="log"><div class="log-q">${new Date(x.t).toLocaleString('de-DE', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'})} · ${esc(x.q)}</div>${esc(x.a)}</div>`).join('')
+                : '<p style="color:#94A3B8;font-size:13px">Noch keine Gespräche.</p>';
+        }
+        function openDash() { renderDash(); document.getElementById('dash').classList.add('open'); }
+        function closeDash() { document.getElementById('dash').classList.remove('open'); }
         let wakeOn = true, isRec = false, isSpk = false, inConv = false;
         let rec = null, stream = null, chunks = [], wakeRec = null;
         const player = document.getElementById('player');
@@ -341,6 +409,13 @@ HTML_PAGE = """
             const inp = document.getElementById('msg');
             if (!inp.value.trim()) return;
             const v = inp.value.trim(); inp.value = '';
+            const note = v.match(/^notiz(?:\\s*:|\\s)\\s*(.+)$/i);
+            if (note) {
+                mem.push(note[1].trim()); saveState();
+                addLog(v, 'Notiz gespeichert.', 'note');
+                stTxt.innerText = 'Notiz gespeichert ✓';
+                return;
+            }
             setSt('thinking'); sendNeo({ message: v });
         }
 
@@ -353,6 +428,8 @@ HTML_PAGE = """
                 const d = await res.json();
                 if (d.error) { inConv = false; setSt(null); stTxt.innerText = d.error; return; }
                 if (d.end_conversation) inConv = false;
+                const q = payload.image ? '📷 Mängel-Foto' : (payload.audio ? '🎙️ Sprachbefehl' : payload.message);
+                addLog(q, d.reply || '', payload.image ? 'photo' : (d.copy_text ? 'offer' : 'chat'));
                 if (d.new_memory) { mem.push(d.new_memory); saveState(); }
                 if (d.copy_text) {
                     const b = document.createElement('button'); b.className = 'pill'; b.innerText = 'Text kopieren';
@@ -399,9 +476,10 @@ def parse_upcoming_events():
                     dt += timedelta(hours=1)
                 if dt >= now:
                     out.append((dt, {
+                        "iso": dt.isoformat(),
                         "time": dt.strftime("%d.%m. %H:%M") if "T" in clean else dt.strftime("%d.%m."),
                         "title": tm.group(1).strip().replace("\\n", " ").replace("\\,", ","),
-                        "loc": lm.group(1).strip().replace("\\n", " ") if lm else ""
+                        "loc": lm.group(1).strip().replace("\\n", " ").replace("\\,", ",") if lm else ""
                     }))
         out.sort(key=lambda x: x[0])
         ICAL_CACHE["ts"] = now_ts
@@ -443,7 +521,8 @@ def avatar():
 
 @app.route("/calendar_preview")
 def cal_prev():
-    return jsonify({"events": parse_upcoming_events()[:3]})
+    n = max(1, min(request.args.get("n", 3, type=int), 10))
+    return jsonify({"events": parse_upcoming_events()[:n]})
 
 @app.route("/manifest.json")
 def manifest():
