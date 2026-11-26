@@ -193,3 +193,15 @@ input[type=text], input[type=email], input[type=password], input:not([type]) { f
   .no-print { display: none; }
   .sheet { box-shadow: none; margin: 0; }
 }
+
+/* Fußzeile + Rechtstexte */
+.w-foot { max-width: 560px; margin: 0 auto; padding: 8px 16px calc(24px + env(safe-area-inset-bottom)); text-align: center; font-size: .82rem; color: var(--muted); line-height: 1.8; }
+.w-foot a { color: var(--muted); }
+.legal { max-width: 760px; margin: 0 auto; padding: 24px 16px 60px; }
+.legal h1 { font-size: 1.6rem; margin-bottom: 1rem; }
+.legal h2 { font-size: 1.08rem; margin: 1.6rem 0 .4rem; }
+.legal p, .legal li { color: #2A3640; }
+.legal .missing { background: var(--warn-soft); color: var(--warn); padding: 0 4px; border-radius: 4px; }
+.legal .tabs { display: flex; gap: 16px; margin-bottom: 18px; font-weight: 600; }
+.legal .tabs a { text-decoration: none; }
+.legal .tabs a.on { color: var(--text); border-bottom: 2px solid var(--brand); }

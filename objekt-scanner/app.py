@@ -43,6 +43,19 @@ SMTP_PASS = os.environ.get("SMTP_PASS", "")
 SMTP_FROM = os.environ.get("SMTP_FROM", SMTP_USER)
 SMTP_SSL = os.environ.get("SMTP_SSL", "0") == "1"  # 1 = Port 465 (SSL), sonst STARTTLS
 
+# Angaben für Impressum (§ 5 DDG) und Datenschutzhinweise (Art. 13 DSGVO)
+RECHT = {
+    "adresse": os.environ.get("FIRMA_ADRESSE", ""),
+    "vertreten": os.environ.get("FIRMA_VERTRETEN", ""),
+    "kontakt": os.environ.get("FIRMA_KONTAKT", ""),
+    "register": os.environ.get("FIRMA_REGISTER", ""),
+    "ustid": os.environ.get("FIRMA_USTID", ""),
+    "dsb": os.environ.get("DSB_KONTAKT", ""),
+    "aufsicht": os.environ.get("AUFSICHTSBEHOERDE", ""),
+    "hoster": os.environ.get("HOSTER", "Hetzner Online GmbH, Industriestr. 25, 91710 Gunzenhausen (Rechenzentrum Nürnberg)"),
+}
+RECHT_FEHLT = [k for k in ("adresse", "vertreten", "kontakt", "dsb") if not RECHT[k]]
+
 DOC_TYPES = {
     "reinigung": "Reinigungsnachweis",
     "stunden": "Stundenzettel",
@@ -289,6 +302,17 @@ def api_submit(token):
     return jsonify(ok=True)
 
 
+@app.route("/impressum")
+def impressum():
+    return render_template("rechtliches.html", seite="impressum", firma=FIRMA, r=RECHT)
+
+
+@app.route("/datenschutz")
+def datenschutz():
+    return render_template("rechtliches.html", seite="datenschutz", firma=FIRMA, r=RECHT,
+                           retention=RETENTION_DAYS)
+
+
 @app.route("/sw.js")
 def service_worker():
     resp = send_file(BASE_DIR / "static" / "sw.js", mimetype="application/javascript")
@@ -370,7 +394,8 @@ def dashboard():
     next_m = f"{y + 1}-01" if m == 12 else f"{y}-{m + 1:02d}"
     return render_template("admin.html", firma=FIRMA, objects=objects, counts=counts, doc_types=DOC_TYPES,
                            recent=recent, month=month, prev_m=prev_m, next_m=next_m,
-                           smtp_ok=bool(SMTP_HOST), default_email=DEFAULT_EMAIL)
+                           smtp_ok=bool(SMTP_HOST), default_email=DEFAULT_EMAIL,
+                           recht_fehlt=RECHT_FEHLT)
 
 
 @app.route("/admin/objekt/neu", methods=["POST"])

@@ -5,6 +5,9 @@
 <div class="flash warn">E-Mail-Versand ist noch nicht eingerichtet (SMTP in <code>.env</code>). PDFs werden trotzdem gespeichert und sind hier abrufbar.</div>
 {% endif %}
 
+{% if recht_fehlt %}
+<div class="flash warn">Impressum/Datenschutz unvollständig – bitte in <code>.env</code> ergänzen: {{ recht_fehlt|join(', ') }}. <a href="/datenschutz" target="_blank">Vorschau</a></div>
+{% endif %}
 <section class="card">
   <div class="row-between">
     <h2>Monatsübersicht</h2>

@@ -1,0 +1,68 @@
+{% macro v(x) %}{% if x %}{{ x }}{% else %}<span class="missing">[bitte eintragen]</span>{% endif %}{% endmacro %}
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <link rel="icon" href="/static/icon.svg">
+  <title>{{ 'Impressum' if seite == 'impressum' else 'Datenschutzhinweise' }} · {{ firma }}</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<main class="legal">
+  <nav class="tabs">
+    <a href="javascript:history.back()">‹</a>
+    <a href="/datenschutz" class="{{ 'on' if seite == 'datenschutz' }}">Datenschutz</a>
+    <a href="/impressum" class="{{ 'on' if seite == 'impressum' }}">Impressum</a>
+  </nav>
+
+{% if seite == 'impressum' %}
+  <h1>Impressum</h1>
+  <p>Angaben gemäß § 5 Digitale-Dienste-Gesetz (DDG)</p>
+  <p><strong>{{ firma }}</strong><br>{{ v(r.adresse) }}</p>
+  <p><strong>Vertreten durch:</strong> {{ v(r.vertreten) }}</p>
+  <p><strong>Kontakt:</strong> {{ v(r.kontakt) }}</p>
+  {% if r.register %}<p><strong>Registereintrag:</strong> {{ r.register }}</p>{% endif %}
+  {% if r.ustid %}<p><strong>USt-IdNr.:</strong> {{ r.ustid }}</p>{% endif %}
+  <h2>Hinweis</h2>
+  <p>Diese Anwendung ist ein internes Werkzeug zur Übermittlung von Leistungs- und Arbeitszeitnachweisen und nicht für die Öffentlichkeit bestimmt.</p>
+
+{% else %}
+  <h1>Datenschutzhinweise</h1>
+  <p>Informationen nach Art. 13 DSGVO für Mitarbeiterinnen und Mitarbeiter, die über diese Anwendung Dokumente übermitteln.</p>
+
+  <h2>1. Verantwortlicher</h2>
+  <p>{{ firma }}, {{ v(r.adresse) }}<br>Kontakt: {{ v(r.kontakt) }}</p>
+
+  <h2>2. Datenschutzbeauftragter</h2>
+  <p>{{ v(r.dsb) }}</p>
+
+  <h2>3. Zweck der Verarbeitung</h2>
+  <p>Übermittlung von Reinigungsnachweisen, Stundenzetteln und Abnahmeprotokollen für Sonderleistungen an die zuständige Kundenbetreuung – zur Abrechnung gegenüber Kunden, zur Arbeitszeitdokumentation und zur Qualitätssicherung.</p>
+
+  <h2>4. Welche Daten verarbeitet werden</h2>
+  <ul>
+    <li>Die fotografierten Dokumente. Diese können Namen, Arbeitszeiten und Unterschriften enthalten.</li>
+    <li>Zeitpunkt der Übermittlung, Objekt und Dokumentart, optional eine freiwillige Notiz.</li>
+  </ul>
+  <p><strong>Nicht</strong> erhoben werden: Anmeldedaten, Name oder Telefonnummer des Absenders, Standort, Gerätekennungen. Die Anwendung setzt keine Cookies und verwendet kein Tracking. Technisch bedingt werden IP-Adressen kurzzeitig in Server-Protokollen verarbeitet (Sicherheit, Missbrauchsschutz).</p>
+
+  <h2>5. Rechtsgrundlage</h2>
+  <p>Art. 6 Abs. 1 lit. b DSGVO (Durchführung des Arbeitsverhältnisses und der Kundenverträge), Art. 6 Abs. 1 lit. c DSGVO (gesetzliche Pflicht zur Arbeitszeitdokumentation) sowie Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse an einer effizienten, sicheren Dokumentenübermittlung).</p>
+
+  <h2>6. Empfänger</h2>
+  <p>Die Dokumente werden als PDF per E-Mail an die zuständige Kundenbetreuung übermittelt. Der Server wird betrieben von: {{ r.hoster }} – als Auftragsverarbeiter nach Art. 28 DSGVO. Eine Übermittlung in Drittländer findet nicht statt.</p>
+
+  <h2>7. Speicherdauer</h2>
+  <p>Dokumente werden auf dem Server nach {{ retention }} Tagen automatisch gelöscht. Gesetzliche Aufbewahrungspflichten in den Systemen des Unternehmens bleiben unberührt.</p>
+
+  <h2>8. Speicherung auf dem Handy</h2>
+  <p>Auf dem Gerät werden nur die gewählte Sprache und – falls gerade kein Internet besteht – noch nicht gesendete Dokumente zwischengespeichert. Dies ist für die Funktion technisch erforderlich (§ 25 Abs. 2 TDDDG). Nach erfolgreichem Versand werden die Dokumente vom Gerät gelöscht.</p>
+
+  <h2>9. Ihre Rechte</h2>
+  <p>Sie haben das Recht auf Auskunft, Berichtigung, Löschung, Einschränkung der Verarbeitung und Widerspruch (Art. 15–21 DSGVO). Sie können sich außerdem bei einer Datenschutz-Aufsichtsbehörde beschweren{% if r.aufsicht %}, z. B. {{ r.aufsicht }}{% endif %}.</p>
+{% endif %}
+</main>
+</body>
+</html>
