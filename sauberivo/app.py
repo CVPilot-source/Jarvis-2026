@@ -1,4 +1,4 @@
-"""Objekt-Scanner – Dokumente von Reinigungsobjekten per QR-Code scannen und per E-Mail senden.
+"""Sauberivo – Dokumente von Reinigungsobjekten per QR-Code scannen und per E-Mail senden.
 
 Mitarbeiter brauchen kein Konto: Jedes Objekt hat einen eigenen QR-Code (geheimer Link).
 """
@@ -192,7 +192,7 @@ def send_mail(obj, doctype_label: str, pdf_path: Path, pages: int, note: str, cr
     ]
     if note:
         body += ["", "Notiz vom Mitarbeiter:", note]
-    body += ["", f"– Objekt-Scanner {FIRMA}"]
+    body += ["", f"– Gesendet über Sauberivo für {FIRMA}"]
     msg.set_content("\n".join(body))
     msg.add_attachment(pdf_path.read_bytes(), maintype="application", subtype="pdf", filename=pdf_path.name)
     try:
@@ -325,8 +325,8 @@ def service_worker():
 def manifest(token):
     obj = get_object_by_token(token)
     return jsonify({
-        "name": f"Scanner – {obj['name']}",
-        "short_name": f"Scan {obj['number']}",
+        "name": f"Sauberivo – {obj['name']}",
+        "short_name": "Sauberivo",
         "start_url": f"/o/{token}",
         "scope": f"/o/{token}",
         "display": "standalone",

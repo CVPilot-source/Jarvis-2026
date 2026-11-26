@@ -1,4 +1,7 @@
-# Objekt-Scanner
+# Sauberivo
+
+**sauberivo.de** – dokumentet e pastrimit, të skanuara dhe të dërguara, pa WhatsApp.
+
 
 Me këtë app, Mitarbeiter-ët dërgojnë **Reinigungsnachweis, Stundenzettel dhe Abnahmezettel për Sonderleistung** me telefon, **pa emër dhe pa login**. Mjafton të skanojnë QR-Code-in e objektit. Aplikacioni e bën foton si scanner (e drejton, heq hijet), e kthen në PDF dhe e dërgon me email në zyrë.
 
@@ -30,7 +33,7 @@ Anhang:  2026-11-26_205620_0142_Praxis-Dr-Weber_Stundenzettel.pdf
 ## Testim në kompjuter (5 minuta)
 
 ```bash
-cd objekt-scanner
+cd sauberivo
 python3 -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
 ADMIN_PASSWORD=test123 python3 app.py
@@ -44,14 +47,14 @@ Hap në browser: <http://localhost:5050/admin> me fjalëkalimin `test123`.
 Këtu supozohet Ubuntu ose Debian me nginx. Serveri yt ekzistues (NEO) vazhdon të punojë normalisht, sepse ky app përdor portin **5050** dhe një **subdomain** të vetin.
 
 ### 1. Subdomain
-Te DNS-i i domain-it tënd, krijo një rekord **A**: `scan.deine-domain.de` → IP-ja e serverit Hetzner.
+Te DNS-i i domain-it tënd, krijo një rekord **A**: `app.sauberivo.de` → IP-ja e serverit Hetzner.
 
 ### 2. Kopjo app-in në server
 ```bash
 sudo apt update && sudo apt install -y python3-venv nginx certbot python3-certbot-nginx git
-sudo useradd --system --home /opt/objekt-scanner scanner
-sudo git clone <REPO-URL> /tmp/repo && sudo cp -r /tmp/repo/objekt-scanner /opt/objekt-scanner
-cd /opt/objekt-scanner
+sudo useradd --system --home /opt/sauberivo sauberivo
+sudo git clone <REPO-URL> /tmp/repo && sudo cp -r /tmp/repo/sauberivo /opt/sauberivo
+cd /opt/sauberivo
 sudo python3 -m venv venv
 sudo venv/bin/pip install -r requirements.txt
 ```
@@ -60,39 +63,39 @@ sudo venv/bin/pip install -r requirements.txt
 ```bash
 sudo cp .env.example .env
 sudo nano .env      # plotëso firmën, fjalëkalimin, SMTP, emailin
-sudo chown -R scanner:scanner /opt/objekt-scanner
+sudo chown -R sauberivo:sauberivo /opt/sauberivo
 sudo chmod 600 .env
 ```
 > **SMTP:** përdor një postë të firmës, p.sh. `scanner@firma.de`. Për Microsoft 365 / Outlook duhet që administratori i IT-së të lejojë „SMTP AUTH“ për këtë postë.
 
 ### 4. Nise si shërbim
 ```bash
-sudo cp deploy/objekt-scanner.service /etc/systemd/system/
+sudo cp deploy/sauberivo.service /etc/systemd/system/
 sudo systemctl daemon-reload
-sudo systemctl enable --now objekt-scanner
-sudo systemctl status objekt-scanner      # duhet të shkruajë "active (running)"
+sudo systemctl enable --now sauberivo
+sudo systemctl status sauberivo      # duhet të shkruajë "active (running)"
 ```
 
 ### 5. nginx + HTTPS
 ```bash
-sudo cp deploy/nginx-scan.conf /etc/nginx/sites-available/scan
-sudo nano /etc/nginx/sites-available/scan     # vendos subdomain-in tënd
-sudo ln -s /etc/nginx/sites-available/scan /etc/nginx/sites-enabled/
+sudo cp deploy/nginx-sauberivo.conf /etc/nginx/sites-available/sauberivo
+sudo nano /etc/nginx/sites-available/sauberivo     # vendos subdomain-in tënd
+sudo ln -s /etc/nginx/sites-available/sauberivo /etc/nginx/sites-enabled/
 sudo nginx -t && sudo systemctl reload nginx
-sudo certbot --nginx -d scan.deine-domain.de
+sudo certbot --nginx -d app.sauberivo.de
 ```
-**Gati.** Hap `https://scan.deine-domain.de/admin`.
+**Gati.** Hap `https://app.sauberivo.de/admin`.
 
 > HTTPS është i detyrueshëm: pa të kamera dhe funksioni offline nuk punojnë mirë në telefon.
 
 ### Përditësim
 ```bash
-cd /tmp/repo && sudo git pull && sudo cp -r objekt-scanner/*.py objekt-scanner/templates objekt-scanner/static /opt/objekt-scanner/
-sudo systemctl restart objekt-scanner
+cd /tmp/repo && sudo git pull && sudo cp -r sauberivo/*.py sauberivo/templates sauberivo/static /opt/sauberivo/
+sudo systemctl restart sauberivo
 ```
 
 ### Backup
-Të gjitha të dhënat janë në `/opt/objekt-scanner/data/`: databaza `scanner.db` dhe PDF-të. Mjafton të ruash këtë folder. Mund të përdorësh edhe **Hetzner Backups** ose **Snapshots**.
+Të gjitha të dhënat janë në `/opt/sauberivo/data/`: databaza `scanner.db` dhe PDF-të. Mjafton të ruash këtë folder. Mund të përdorësh edhe **Hetzner Backups** ose **Snapshots**.
 
 ---
 
@@ -114,7 +117,7 @@ Të gjitha të dhënat janë në `/opt/objekt-scanner/data/`: databaza `scanner.
 ## Struktura e kodit
 
 ```
-objekt-scanner/
+sauberivo/
 ├── app.py            Server (Flask): objektet, upload, PDF, email, admin
 ├── scanner.py        Efekti scanner (OpenCV): skajet, perspektiva, hijet
 ├── templates/        Faqet HTML (Mitarbeiter, Admin, Aushang)

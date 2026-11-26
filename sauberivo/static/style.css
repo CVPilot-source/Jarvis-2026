@@ -205,3 +205,4 @@ input[type=text], input[type=email], input[type=password], input:not([type]) { f
 .legal .tabs { display: flex; gap: 16px; margin-bottom: 18px; font-weight: 600; }
 .legal .tabs a { text-decoration: none; }
 .legal .tabs a.on { color: var(--text); border-bottom: 2px solid var(--brand); }
+.w-brand, .p-brand { color: var(--brand); letter-spacing: .01em; }

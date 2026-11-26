@@ -1,4 +1,4 @@
-/* Objekt-Scanner – Mitarbeiter-Seite */
+/* Sauberivo – Mitarbeiter-Seite */
 (function () {
   "use strict";
   const CFG = window.SCAN_CFG;
@@ -281,7 +281,7 @@
   // ------------------------------------------------------------ Offline-Warteschlange (IndexedDB)
   function idb() {
     return new Promise((res, rej) => {
-      const r = indexedDB.open("objekt-scanner", 1);
+      const r = indexedDB.open("sauberivo", 1);
       r.onupgradeneeded = () => r.result.createObjectStore("queue", { keyPath: "id", autoIncrement: true });
       r.onsuccess = () => res(r.result);
       r.onerror = () => rej(r.error);

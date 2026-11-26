@@ -1,0 +1,14 @@
+[Unit]
+Description=Sauberivo (Dokumente per QR-Code scannen)
+After=network.target
+
+[Service]
+User=sauberivo
+WorkingDirectory=/opt/sauberivo
+EnvironmentFile=/opt/sauberivo/.env
+ExecStart=/opt/sauberivo/venv/bin/gunicorn -w 2 --threads 4 -t 120 -b 127.0.0.1:5050 app:app
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

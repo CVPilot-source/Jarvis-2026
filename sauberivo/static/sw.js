@@ -1,5 +1,5 @@
 /* Service Worker: Mitarbeiter-Seite auch ohne Internet öffnen können */
-const CACHE = "objekt-scanner-v2";
+const CACHE = "sauberivo-v3";
 const STATIC = ["/static/style.css", "/static/worker.js", "/static/icon.svg"];
 
 self.addEventListener("install", (e) => {

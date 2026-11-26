@@ -5,12 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow">
   <link rel="icon" href="/static/icon.svg">
-  <title>{% block title %}Objekt-Scanner{% endblock %} · {{ firma }}</title>
+  <title>{% block title %}Sauberivo{% endblock %} · {{ firma }}</title>
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <body class="admin">
   <header class="a-head">
-    <a class="brand" href="{{ url_for('dashboard') }}"><img src="/static/icon.svg" alt="" width="28" height="28"> Objekt-Scanner <span class="muted">· {{ firma }}</span></a>
+    <a class="brand" href="{{ url_for('dashboard') }}"><img src="/static/icon.svg" alt="" width="28" height="28"> Sauberivo <span class="muted">· {{ firma }}</span></a>
     {% if session.admin %}<a class="muted small" href="{{ url_for('logout') }}">Abmelden</a>{% endif %}
   </header>
   <main class="a-main">
