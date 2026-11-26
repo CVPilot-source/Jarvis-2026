@@ -3,6 +3,7 @@
 Mitarbeiter brauchen kein Konto: Jedes Objekt hat einen eigenen QR-Code (geheimer Link).
 """
 import base64
+import json
 import os
 import re
 import secrets
@@ -222,10 +223,24 @@ def api_scan(token):
     if not f:
         return jsonify(error="no image"), 400
     try:
-        out, found = scanner.scan(f.read())
+        r = scanner.scan(f.read(), parse_corners(request.form.get("corners")))
     except Exception:  # noqa: BLE001
         return jsonify(error="bad image"), 400
-    return jsonify(image="data:image/jpeg;base64," + base64.b64encode(out).decode(), found=found)
+    return jsonify(image="data:image/jpeg;base64," + base64.b64encode(r["jpeg"]).decode(),
+                   found=r["found"], corners=r["corners"], blurry=r["blurry"], sharp=r["sharp"])
+
+
+def parse_corners(raw):
+    """4 relative Eckpunkte vom Mitarbeiter (JSON) prüfen, sonst None."""
+    if not raw:
+        return None
+    try:
+        pts = json.loads(raw)
+        if len(pts) == 4 and all(len(p) == 2 and all(0 <= float(v) <= 1 for v in p) for p in pts):
+            return [[float(x), float(y)] for x, y in pts]
+    except (ValueError, TypeError):
+        pass
+    return None
 
 
 @app.route("/o/<token>/submit", methods=["POST"])
@@ -240,6 +255,7 @@ def api_submit(token):
     if not files or len(files) > MAX_PAGES:
         return jsonify(error="pages"), 400
     flags = request.form.getlist("processed")
+    corners = request.form.getlist("corners")
     note = (request.form.get("note") or "").strip()[:1000]
 
     pages = []
@@ -247,7 +263,11 @@ def api_submit(token):
         for i, f in enumerate(files):
             data = f.read()
             already = i < len(flags) and flags[i] == "1"
-            pages.append(data if already else scanner.scan(data)[0])
+            if already:
+                pages.append(data)
+            else:
+                c = parse_corners(corners[i]) if i < len(corners) else None
+                pages.append(scanner.scan(data, c)["jpeg"])
         pdf = scanner.to_pdf(pages)
     except Exception:  # noqa: BLE001
         return jsonify(error="bad image"), 400

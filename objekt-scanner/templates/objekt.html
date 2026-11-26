@@ -95,6 +95,22 @@
     </section>
   </main>
 
+  <!-- Ecken-Editor -->
+  <div id="editor" class="editor" hidden>
+    <p class="ed-hint" data-t="adjust_hint"></p>
+    <div class="ed-area" id="ed-area">
+      <div class="ed-stage" id="ed-stage">
+        <img id="ed-img" alt="">
+        <svg id="ed-svg" preserveAspectRatio="none"><polygon id="ed-poly"/></svg>
+        <span class="ed-h"></span><span class="ed-h"></span><span class="ed-h"></span><span class="ed-h"></span>
+      </div>
+    </div>
+    <div class="ed-bar">
+      <button class="btn secondary" id="ed-cancel" data-t="cancel"></button>
+      <button class="btn" id="ed-ok" data-t="apply"></button>
+    </div>
+  </div>
+
   <script>
     window.SCAN_CFG = {
       token: {{ token|tojson }},

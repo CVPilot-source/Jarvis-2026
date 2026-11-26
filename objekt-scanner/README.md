@@ -17,6 +17,7 @@ Anhang:  2026-11-26_205620_0142_Praxis-Dr-Weber_Stundenzettel.pdf
 ```
 
 **Funksione:**
+- **Cilësi dokumenti:** app-i kontrollon nëse fotoja është e paqartë („E paqartë – bëj foto përsëri“). Nëse skajet nuk gjenden mirë, Mitarbeiter-i i rregullon 4 qoshet me gisht.
 - 7 gjuhë për Mitarbeiter-ët: DE, SQ, TR, RO, PL, AR, EN
 - Funksionon edhe **pa internet**: dokumenti ruhet në telefon dhe dërgohet vetë kur kthehet lidhja
 - Çdo objekt mund të ketë **adresën e vet të emailit**, p.sh. për Objektleiter të ndryshëm
