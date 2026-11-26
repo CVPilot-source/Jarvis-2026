@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}Übersicht{% endblock %}
+{% block content %}
+{% if not smtp_ok %}
+<div class="flash warn">E-Mail-Versand ist noch nicht eingerichtet (SMTP in <code>.env</code>). PDFs werden trotzdem gespeichert und sind hier abrufbar.</div>
+{% endif %}
+
+<section class="card">
+  <div class="row-between">
+    <h2>Monatsübersicht</h2>
+    <div class="month-nav">
+      <a href="?month={{ prev_m }}" aria-label="Vormonat">‹</a>
+      <strong>{{ month[5:] }}.{{ month[:4] }}</strong>
+      <a href="?month={{ next_m }}" aria-label="Nächster Monat">›</a>
+    </div>
+  </div>
+  {% if objects %}
+  <div class="table-wrap">
+  <table class="grid">
+    <thead><tr><th>Objekt</th>{% for k, label in doc_types.items() %}<th class="c">{{ label }}</th>{% endfor %}<th></th></tr></thead>
+    <tbody>
+    {% for o in objects %}
+      <tr class="{{ '' if o.active else 'inactive' }}">
+        <td><span class="num">{{ o.number }}</span> {{ o.name }}{% if not o.active %} <span class="tag">inaktiv</span>{% endif %}</td>
+        {% for k in doc_types %}
+          {% set c = counts[o.id][k] %}
+          <td class="c">{% if c %}<span class="pill ok">✓ {{ c }}</span>{% else %}<span class="pill miss">fehlt</span>{% endif %}</td>
+        {% endfor %}
+        <td class="r"><a href="{{ url_for('objekt_edit', oid=o.id) }}">QR &amp; Details ›</a></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% else %}
+  <p class="muted">Noch keine Objekte. Lege unten das erste an.</p>
+  {% endif %}
+</section>
+
+<div class="cols">
+<section class="card">
+  <h2>Neues Objekt</h2>
+  <form method="post" action="{{ url_for('objekt_neu') }}" class="form">
+    <div class="form-2">
+      <label>Objekt-Nr.*<input name="number" required placeholder="0142"></label>
+      <label>Name*<input name="name" required placeholder="Praxis Dr. Weber"></label>
+    </div>
+    <label>Adresse<input name="address" placeholder="Hauptstr. 12, 90402 Nürnberg"></label>
+    <label>E-Mail-Empfänger <span class="muted small">(leer = {{ default_email or 'MAIL_TO aus .env' }})</span><input name="email" type="email" placeholder="optional"></label>
+    <button class="btn btn-send">Objekt anlegen</button>
+  </form>
+</section>
+
+<section class="card">
+  <h2>Letzte Eingänge</h2>
+  {% if recent %}
+  <ul class="list">
+    {% for s in recent %}
+    <li>
+      <a href="{{ url_for('pdf_download', sid=s.id) }}" target="_blank">{{ doc_types.get(s.doctype, s.doctype) }}</a>
+      <span class="muted">· {{ s.number }} {{ s.name }}</span>
+      <div class="small muted">{{ s.created_at[8:10] }}.{{ s.created_at[5:7] }}. {{ s.created_at[11:16] }} · {{ s.pages }} S. · <span class="mail-{{ s.email_status|replace(' ', '-') }}">{{ s.email_status }}</span>{% if s.note %} · 📝{% endif %}</div>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}<p class="muted">Noch nichts eingegangen.</p>{% endif %}
+</section>
+</div>
+{% endblock %}

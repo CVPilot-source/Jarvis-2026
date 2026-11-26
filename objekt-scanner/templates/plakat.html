@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <title>Aushang {{ obj.number }} {{ obj.name }}</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="plakat">
+  <div class="no-print toolbar"><button class="btn btn-send" onclick="window.print()">Drucken</button></div>
+  <div class="sheet">
+    <div class="p-firma">{{ firma }}</div>
+    <h1>Dokumente scannen</h1>
+    <p class="p-sub">Reinigungsnachweis · Stundenzettel · Abnahme Sonderleistung</p>
+    <div class="p-obj"><span>Objekt {{ obj.number }}</span>{{ obj.name }}</div>
+    <div class="p-qr">{{ qr|safe }}</div>
+    <ol class="p-steps">
+      <li><b>1</b><span>QR-Code mit der Handy-Kamera scannen</span></li>
+      <li><b>2</b><span>Dokumentart wählen</span></li>
+      <li><b>3</b><span>Foto machen &amp; senden</span></li>
+    </ol>
+    <div class="p-langs">
+      <p><b>SQ</b> Skano kodin QR me kamerën e telefonit, zgjidh dokumentin, bëj foto dhe dërgo.</p>
+      <p><b>TR</b> QR kodunu telefon kamerasıyla tara, belgeyi seç, fotoğraf çek ve gönder.</p>
+      <p><b>RO</b> Scanează codul QR cu camera telefonului, alege documentul, fă poza și trimite.</p>
+      <p><b>PL</b> Zeskanuj kod QR aparatem telefonu, wybierz dokument, zrób zdjęcie i wyślij.</p>
+      <p dir="rtl"><b>AR</b> امسح رمز QR بكاميرا الهاتف، اختر المستند، التقط صورة وأرسلها.</p>
+    </div>
+    <p class="p-foot">Kein Name, kein Passwort nötig. Bitte diesen Aushang nicht mitnehmen.</p>
+  </div>
+</body>
+</html>

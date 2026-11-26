@@ -1,0 +1,14 @@
+[Unit]
+Description=Objekt-Scanner (Dokumente per QR-Code)
+After=network.target
+
+[Service]
+User=scanner
+WorkingDirectory=/opt/objekt-scanner
+EnvironmentFile=/opt/objekt-scanner/.env
+ExecStart=/opt/objekt-scanner/venv/bin/gunicorn -w 2 --threads 4 -t 120 -b 127.0.0.1:5050 app:app
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

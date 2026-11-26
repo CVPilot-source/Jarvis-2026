@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0E5A8A">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="referrer" content="no-referrer">
+  <link rel="manifest" href="/manifest/{{ token }}.json">
+  <link rel="icon" href="/static/icon.svg">
+  <link rel="apple-touch-icon" href="/static/icon.svg">
+  <title>Scanner – {{ obj.name }}</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="worker">
+  <header class="w-head">
+    <div class="w-head-row">
+      <div>
+        <div class="w-firma">{{ firma }}</div>
+        <div class="w-obj"><span class="w-num">{{ obj.number }}</span> {{ obj.name }}</div>
+      </div>
+      <select id="lang" aria-label="Sprache / Language">
+        <option value="de">DE</option>
+        <option value="sq">SQ</option>
+        <option value="tr">TR</option>
+        <option value="ro">RO</option>
+        <option value="pl">PL</option>
+        <option value="ar">AR</option>
+        <option value="en">EN</option>
+      </select>
+    </div>
+  </header>
+
+  <div id="pending" class="banner" hidden></div>
+
+  <main class="w-main">
+    <!-- Schritt 1: Dokumentart -->
+    <section id="step-type">
+      <h1 data-t="what"></h1>
+      <p class="muted small" data-t="anon"></p>
+      <div class="types">
+        {% for key, label in doc_types.items() %}
+        <button class="type-btn" data-type="{{ key }}">
+          <span class="type-ico" aria-hidden="true">
+            {% if key == 'reinigung' %}
+            <svg viewBox="0 0 24 24"><path d="M9 3h6v3H9zM7 6h10l1 15H6z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9.5 13l2 2 3.5-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            {% elif key == 'stunden' %}
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 7.5V12l3 2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            {% else %}
+            <svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M8.5 17c1.5-2 2.5-2 3 0s2 1 3.5-1" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M9 9h5M9 12h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            {% endif %}
+          </span>
+          <span class="type-txt">
+            <span class="type-title">{{ label }}</span>
+            <span class="type-sub" data-t="sub_{{ key }}"></span>
+          </span>
+          <span class="chev" aria-hidden="true">›</span>
+        </button>
+        {% endfor %}
+      </div>
+    </section>
+
+    <!-- Schritt 2: Fotos -->
+    <section id="step-photos" hidden>
+      <button class="link-back" id="back">‹ <span data-t="back"></span></button>
+      <h1 id="doc-title"></h1>
+      <p class="hint"><span aria-hidden="true">💡</span> <span data-t="hint"></span></p>
+
+      <div id="pages" class="pages"></div>
+
+      <label class="btn btn-camera" id="camera-label">
+        <input type="file" id="camera" accept="image/*" capture="environment" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.5" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+        <span id="camera-txt" data-t="photo"></span>
+      </label>
+
+      <details class="note-wrap">
+        <summary data-t="note"></summary>
+        <textarea id="note" rows="3" maxlength="1000"></textarea>
+      </details>
+
+      <button class="btn btn-send" id="send" disabled>
+        <span data-t="send"></span> <span id="send-count"></span>
+      </button>
+      <p id="error" class="error" hidden></p>
+    </section>
+
+    <!-- Schritt 3: Fertig -->
+    <section id="step-done" hidden>
+      <div class="done">
+        <div class="done-ico" id="done-ico">✓</div>
+        <h1 id="done-msg"></h1>
+        <button class="btn btn-send" id="again" data-t="again"></button>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    window.SCAN_CFG = {
+      token: {{ token|tojson }},
+      docTypes: {{ doc_types|tojson }},
+      maxPages: {{ max_pages }}
+    };
+  </script>
+  <script src="/static/worker.js"></script>
+</body>
+</html>

@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}{{ obj.number }} {{ obj.name }}{% endblock %}
+{% block content %}
+<p><a href="{{ url_for('dashboard') }}">‹ Übersicht</a></p>
+<h1><span class="num">{{ obj.number }}</span> {{ obj.name }}</h1>
+
+<div class="cols">
+<section class="card qr-card">
+  <h2>QR-Code für Mitarbeiter</h2>
+  <div class="qr">{{ qr|safe }}</div>
+  <input class="link" value="{{ link }}" readonly onclick="this.select()">
+  <div class="btn-row">
+    <a class="btn btn-send" href="{{ url_for('objekt_plakat', oid=obj.id) }}" target="_blank">Aushang drucken</a>
+    <a class="btn secondary" href="{{ link }}" target="_blank">Testen</a>
+  </div>
+  <form method="post" onsubmit="return confirm('Neuen QR-Code erstellen? Der alte Aushang funktioniert danach nicht mehr.')">
+    <button class="btn-text" name="action" value="newtoken">Neuen QR-Code erzeugen (alten sperren)</button>
+  </form>
+</section>
+
+<section class="card">
+  <h2>Daten</h2>
+  <form method="post" class="form">
+    <div class="form-2">
+      <label>Objekt-Nr.<input name="number" value="{{ obj.number }}"></label>
+      <label>Name<input name="name" value="{{ obj.name }}"></label>
+    </div>
+    <label>Adresse<input name="address" value="{{ obj.address }}"></label>
+    <label>E-Mail-Empfänger<input name="email" type="email" value="{{ obj.email }}" placeholder="leer = Standard"></label>
+    <label class="check"><input type="checkbox" name="active" {{ 'checked' if obj.active }}> Aktiv (QR-Code funktioniert)</label>
+    <button class="btn btn-send" name="action" value="save">Speichern</button>
+  </form>
+  <form method="post" onsubmit="return confirm('Objekt und alle Dokumente endgültig löschen?')">
+    <button class="btn-text danger" name="action" value="delete">Objekt löschen</button>
+  </form>
+</section>
+</div>
+
+<section class="card">
+  <h2>Dokumente</h2>
+  {% if subs %}
+  <div class="table-wrap">
+  <table class="grid">
+    <thead><tr><th>Eingang</th><th>Art</th><th class="c">Seiten</th><th>E-Mail</th><th>Notiz</th><th></th></tr></thead>
+    <tbody>
+    {% for s in subs %}
+    <tr>
+      <td>{{ s.created_at[8:10] }}.{{ s.created_at[5:7] }}.{{ s.created_at[:4] }} {{ s.created_at[11:16] }}</td>
+      <td>{{ doc_types.get(s.doctype, s.doctype) }}</td>
+      <td class="c">{{ s.pages }}</td>
+      <td><span class="mail-{{ s.email_status|replace(' ', '-') }}">{{ s.email_status }}</span>
+        {% if s.email_status != 'gesendet' %}<form method="post" action="{{ url_for('pdf_resend', sid=s.id) }}" class="inline"><button class="btn-text">erneut senden</button></form>{% endif %}</td>
+      <td class="small">{{ s.note }}</td>
+      <td class="r"><a href="{{ url_for('pdf_download', sid=s.id) }}" target="_blank">PDF</a></td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% else %}<p class="muted">Noch keine Dokumente.</p>{% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="/static/icon.svg">
+  <title>{% block title %}Objekt-Scanner{% endblock %} · {{ firma }}</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="admin">
+  <header class="a-head">
+    <a class="brand" href="{{ url_for('dashboard') }}"><img src="/static/icon.svg" alt="" width="28" height="28"> Objekt-Scanner <span class="muted">· {{ firma }}</span></a>
+    {% if session.admin %}<a class="muted small" href="{{ url_for('logout') }}">Abmelden</a>{% endif %}
+  </header>
+  <main class="a-main">
+    {% with msgs = get_flashed_messages() %}{% for m in msgs %}<div class="flash">{{ m }}</div>{% endfor %}{% endwith %}
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>
